@@ -1,0 +1,269 @@
+{
+	"arena_size": [
+		2560.0,
+		1440.0
+	],
+	"average_fps": 1.36772936440653,
+	"camera_zoom": 0.5,
+	"captures_during_measurement": 10,
+	"configured_counts": [
+		960,
+		96,
+		48
+	],
+	"cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+	"decision_mean_ms": 10.9787386363636,
+	"display_driver": "Windows",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"final_counts": [
+		950,
+		96,
+		48
+	],
+	"frame_p95_ms": 2470.348,
+	"gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+	"grass_depletions_total": 60,
+	"grass_meals_total": 60,
+	"grass_patches": 20,
+	"grass_points": 480,
+	"grass_regrowths_total": 0,
+	"headless": false,
+	"initial_counts": [
+		960,
+		96,
+		48
+	],
+	"layout": "spread",
+	"limboai": {
+		"binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+		"binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+		"version": "v1.8.1"
+	},
+	"loop_hz": 1.36772936440653,
+	"loop_max_ms": 3727.355,
+	"loop_mean_ms": 731.138795454545,
+	"loop_p95_ms": 2470.348,
+	"max_fps": 0,
+	"measured_wall_seconds": 32.170107,
+	"movement_interaction_mean_ms": 3.01712215909091,
+	"perception_mean_ms": 76.5255539772728,
+	"physics_hz": 60,
+	"physics_steps": 352,
+	"process_iterations": 44,
+	"profiler_requested": false,
+	"renderer": "gl_compatibility",
+	"samples": [
+		{
+			"dogs": 48,
+			"last_step_ms": 62.113,
+			"loop_hz_average_so_far": 2.44921551627014,
+			"sheep": 960,
+			"simulation_seconds": 0.65,
+			"wall_seconds": 1.224882,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 71.989,
+			"loop_hz_average_so_far": 2.11370760519042,
+			"sheep": 960,
+			"simulation_seconds": 1.05,
+			"wall_seconds": 2.838614,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 43.029,
+			"loop_hz_average_so_far": 2.1310107526067,
+			"sheep": 960,
+			"simulation_seconds": 1.45,
+			"wall_seconds": 4.223348,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 94.315,
+			"loop_hz_average_so_far": 2.1155413485201,
+			"sheep": 960,
+			"simulation_seconds": 1.85,
+			"wall_seconds": 5.672307,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 60.294,
+			"loop_hz_average_so_far": 1.6305826491098,
+			"sheep": 960,
+			"simulation_seconds": 2.11666666666666,
+			"wall_seconds": 8.585888,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 63.564,
+			"loop_hz_average_so_far": 1.69803689954044,
+			"sheep": 960,
+			"simulation_seconds": 2.51666666666666,
+			"wall_seconds": 10.011561,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 66.445,
+			"loop_hz_average_so_far": 1.7179048360287,
+			"sheep": 960,
+			"simulation_seconds": 2.78333333333333,
+			"wall_seconds": 11.059984,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 115.753,
+			"loop_hz_average_so_far": 1.68275824269076,
+			"sheep": 958,
+			"simulation_seconds": 3.04999999999999,
+			"wall_seconds": 12.479511,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 54.885,
+			"loop_hz_average_so_far": 1.68658833026069,
+			"sheep": 957,
+			"simulation_seconds": 3.31666666666666,
+			"wall_seconds": 13.636997,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 63.287,
+			"loop_hz_average_so_far": 1.68856453440366,
+			"sheep": 957,
+			"simulation_seconds": 3.58333333333333,
+			"wall_seconds": 14.805475,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 129.895,
+			"loop_hz_average_so_far": 1.6654585923507,
+			"sheep": 956,
+			"simulation_seconds": 3.84999999999999,
+			"wall_seconds": 16.211751,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 69.321,
+			"loop_hz_average_so_far": 1.4734610359996,
+			"sheep": 955,
+			"simulation_seconds": 4.11666666666666,
+			"wall_seconds": 19.681552,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 66.555,
+			"loop_hz_average_so_far": 1.48632088545985,
+			"sheep": 954,
+			"simulation_seconds": 4.38333333333332,
+			"wall_seconds": 20.856869,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 66.901,
+			"loop_hz_average_so_far": 1.49166255555426,
+			"sheep": 953,
+			"simulation_seconds": 4.64999999999999,
+			"wall_seconds": 22.122966,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 78.593,
+			"loop_hz_average_so_far": 1.49059553465277,
+			"sheep": 953,
+			"simulation_seconds": 4.91666666666665,
+			"wall_seconds": 23.480548,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 63.932,
+			"loop_hz_average_so_far": 1.50499642543011,
+			"sheep": 952,
+			"simulation_seconds": 5.18333333333332,
+			"wall_seconds": 24.584776,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 88.297,
+			"loop_hz_average_so_far": 1.50810292098654,
+			"sheep": 952,
+			"simulation_seconds": 5.44999999999999,
+			"wall_seconds": 25.860304,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 93.294,
+			"loop_hz_average_so_far": 1.50327012583544,
+			"sheep": 952,
+			"simulation_seconds": 5.71666666666665,
+			"wall_seconds": 27.273874,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 63.202,
+			"loop_hz_average_so_far": 1.51180870261781,
+			"sheep": 951,
+			"simulation_seconds": 5.98333333333332,
+			"wall_seconds": 28.442752,
+			"wolves": 96
+		},
+		{
+			"dogs": 48,
+			"last_step_ms": 104.499,
+			"loop_hz_average_so_far": 1.36772936440653,
+			"sheep": 950,
+			"simulation_seconds": 6.11666666666665,
+			"wall_seconds": 32.170107,
+			"wolves": 96
+		}
+	],
+	"seed": 1337,
+	"simulation_seconds_advanced": 5.86666666666665,
+	"simulation_wall_ratio": 0.182363915254203,
+	"spatial_candidates": 6467420,
+	"spatial_candidates_per_query": 57.3002330134935,
+	"spatial_max_candidates": 277,
+	"spatial_max_occupancy": 36,
+	"spatial_nonempty_cells_mean": 147.744318181818,
+	"spatial_queries": 112869,
+	"spatial_queries_per_step": 320.650568181818,
+	"stats_enabled": true,
+	"step_max_ms": 2894.956,
+	"step_mean_ms": 90.5214147727273,
+	"step_p95_ms": 117.314,
+	"tier": 1,
+	"tiles": 2,
+	"viewport": [
+		1280,
+		720
+	],
+	"vsync": false,
+	"warmup_wall_seconds": 3.0
+}

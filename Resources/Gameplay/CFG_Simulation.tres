@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SimulationConfig" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Core/SimulationConfig.gd" id="1"]
+[ext_resource type="Resource" path="res://Resources/Gameplay/CFG_Sheep.tres" id="2"]
+[ext_resource type="Resource" path="res://Resources/Gameplay/CFG_Wolf.tres" id="3"]
+[ext_resource type="Resource" path="res://Resources/Gameplay/CFG_Sheepdog.tres" id="4"]
+[ext_resource type="Resource" path="res://Resources/Gameplay/CFG_Grass.tres" id="5"]
+
+[resource]
+script = ExtResource("1")
+arena_size = Vector2(1280.0, 720.0)
+random_seed = 1337
+initial_sheep = 240
+initial_wolves = 24
+initial_sheepdogs = 12
+perception_interval = 0.125
+separation_distance = 24.0
+death_duration = 0.3
+sheep = ExtResource("2")
+wolf = ExtResource("3")
+sheepdog = ExtResource("4")
+grass = ExtResource("5")

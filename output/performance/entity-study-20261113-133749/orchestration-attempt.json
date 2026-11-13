@@ -1,0 +1,15 @@
+[
+  {
+    "group": "formal",
+    "headless": true,
+    "scenario": "scaled",
+    "entities": 1000,
+    "repeat": 1,
+    "stats": "on",
+    "profile": false,
+    "warmup": 3,
+    "duration": 30,
+    "elapsed_seconds": 30.035924399999203,
+    "exit_code": 4294967295
+  }
+]

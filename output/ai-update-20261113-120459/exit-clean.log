@@ -1,0 +1,101 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+TextServer: Added interface "Dummy"
+TextServer: Added interface "ICU / HarfBuzz / Graphite (Built-in)"
+Accessibility: AccessKit driver loaded.
+Wacom tablet config found at "C:/Users/Shangli Zhou/AppData/Roaming/WTablet/Wacom_Tablet.dat", Windows Ink support is enabled.
+Native OpenGL API detected: 3.3: NVIDIA - NVIDIA GeForce RTX 5070 Ti Laptop GPU
+NVAPI: Init OK!
+NVAPI: Profile not found, creating...
+NVAPI: Application not found in profile, creating...
+NVAPI: Error creating application: NVAPI_EXECUTABLE_ALREADY_IN_USE(code -167)
+Accessibility: window 0 adapter created.
+SDL: Init OK!
+Accessibility: window 0 adapter activated.
+Using "winink" pen tablet driver...
+Shader 'CanvasSdfShaderGLES3' SHA256: 8980b05af5d7b09abc264b611e4fee5b2596e2c4d9090bfefd3c720ba6b13c4c
+Shader 'SkeletonShaderGLES3' SHA256: 6881483a7e436610bc13c5a652bdfdc27f739428849935e89cad2e8e7d7846d3
+Shader 'ParticlesShaderGLES3' SHA256: dc2bd3cc30a879b3bc53ffacf9462baa735898b462c6fe354929ae358cfa528b
+Shader 'ParticlesCopyShaderGLES3' SHA256: 5a4972e1fa11bfecbdd8e6b4624b2bf4b59140457ce7216a328e13f2e6fc8269
+Shader 'CopyShaderGLES3' SHA256: 73321f43eb9c1f843ea61ae3a8c09596a72a0f874d506bf1a68dac76cd0c89f4
+Shader 'CubemapFilterShaderGLES3' SHA256: a029ed14ea6ed5bc846b691117e249a0a0c7d1199e227ba3dbd955741bb6d010
+Shader 'GlowShaderGLES3' SHA256: b0f0aeb0ed84f7f6c1ae53f91284204733906afaba217045c100f0448aafc3a7
+Shader 'PostShaderGLES3' SHA256: 914391eb2122608889d99c61e7d9e6b9bfe7922f4b84b787d05fc81c0ba0fb89
+Shader 'FeedShaderGLES3' SHA256: 7fb06659d7ed2f8c2ed9b6a1cd9fa553a39e6f891b015c88d1ca1950b5995e16
+Shader 'CanvasShaderGLES3' SHA256: 90b30cc5c2e06e4919e5174b4013b13493514c26b89d647e1ed81d03e994444e
+Shader 'CanvasOcclusionShaderGLES3' SHA256: ff7bcbab6bf7a47e570affa631e17b61d9234a706aa7035eb3d1d8a03f5c9394
+Shader 'SceneShaderGLES3' SHA256: 80f5855190b633de1fa7610f6cafcd5e4b93181d62dc0dff67f812dcc887442f
+Shader 'SkyShaderGLES3' SHA256: 4f2e885a1ba8f2b3386cb88d17998c4bdd13f430710d7df06d7bdd8e1852ccd6
+Shader 'TexBlitShaderGLES3' SHA256: 8b994d489c074f1b80752f291260f0e8418071d6f92ebf8a93949ed48a114681
+OpenGL API 3.3.0 NVIDIA 621.01 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070 Ti Laptop GPU
+WASAPI: Activated output_device using IAudioClient3 interface
+WASAPI: wFormatTag = 65534
+WASAPI: nChannels = 2
+WASAPI: nSamplesPerSec = 48000
+WASAPI: nAvgBytesPerSec = 384000
+WASAPI: nBlockAlign = 8
+WASAPI: wBitsPerSample = 32
+WASAPI: cbSize = 22
+WASAPI: mix_rate = 48000
+WASAPI: fundamental_period_frames = 480
+WASAPI: min_period_frames = 480
+WASAPI: max_period_frames = 480
+WASAPI: selected a period frame size of 480
+WASAPI: detected 2 channels
+WASAPI: audio buffer frames: 480 calculated latency: 10ms
+
+TextServer: Primary interface set to: "ICU / HarfBuzz / Graphite (Built-in)".
+CORE API HASH: 2004498165
+EDITOR API HASH: 1696660745
+Loading resource: res://output/ai-update-20261113-120459/ExitDiagnostic.gd remapped: res://output/ai-update-20261113-120459/ExitDiagnostic.gd
+Completed load for: 'res://output/ai-update-20261113-120459/ExitDiagnostic.gd' remapped 'res://output/ai-update-20261113-120459/ExitDiagnostic.gd' at thread -1
+SceneTreeFTI: traversal method DEFAULT
+Loading resource: res://Prefabs/Runtime/Core/SCN_GameplayEngine.tscn remapped: res://Prefabs/Runtime/Core/SCN_GameplayEngine.tscn
+Loading resource: res://Scripts/Core/GameplayEngine.gd remapped: res://Scripts/Core/GameplayEngine.gd
+Completed load for: 'res://Scripts/Core/GameplayEngine.gd' remapped 'res://Scripts/Core/GameplayEngine.gd' at thread -1
+Loading resource: res://Prefabs/Runtime/Objects/SCN_Sheep.tscn remapped: res://Prefabs/Runtime/Objects/SCN_Sheep.tscn
+Loading resource: res://Art/Placeholder/TEX_WhiteCircle.svg remapped: res://Art/Placeholder/TEX_WhiteCircle.svg
+Loading resource: res://.godot/imported/TEX_WhiteCircle.svg-091a5730a7b6fd4b44bfde854b7e6531.ctex remapped: res://.godot/imported/TEX_WhiteCircle.svg-091a5730a7b6fd4b44bfde854b7e6531.ctex
+Completed load for: 'res://Art/Placeholder/TEX_WhiteCircle.svg' remapped 'res://Art/Placeholder/TEX_WhiteCircle.svg' at thread -1
+Loading resource: res://Resources/AI/BT_Sheep.tres remapped: res://Resources/AI/BT_Sheep.tres
+Loading resource: res://Scripts/AI/Tasks/AnimalCondition.gd remapped: res://Scripts/AI/Tasks/AnimalCondition.gd
+Completed load for: 'res://Scripts/AI/Tasks/AnimalCondition.gd' remapped 'res://Scripts/AI/Tasks/AnimalCondition.gd' at thread -1
+Loading resource: res://Scripts/AI/Tasks/AnimalAction.gd remapped: res://Scripts/AI/Tasks/AnimalAction.gd
+Completed load for: 'res://Scripts/AI/Tasks/AnimalAction.gd' remapped 'res://Scripts/AI/Tasks/AnimalAction.gd' at thread -1
+Completed load for: 'res://Resources/AI/BT_Sheep.tres' remapped 'res://Resources/AI/BT_Sheep.tres' at thread -1
+Completed load for: 'res://Prefabs/Runtime/Objects/SCN_Sheep.tscn' remapped 'res://Prefabs/Runtime/Objects/SCN_Sheep.tscn' at thread -1
+Loading resource: res://Prefabs/Runtime/Objects/SCN_Wolf.tscn remapped: res://Prefabs/Runtime/Objects/SCN_Wolf.tscn
+Loading resource: res://Art/Placeholder/TEX_WhiteTriangle.svg remapped: res://Art/Placeholder/TEX_WhiteTriangle.svg
+Loading resource: res://.godot/imported/TEX_WhiteTriangle.svg-356fa85e093833daf7660c0c64064422.ctex remapped: res://.godot/imported/TEX_WhiteTriangle.svg-356fa85e093833daf7660c0c64064422.ctex
+Completed load for: 'res://Art/Placeholder/TEX_WhiteTriangle.svg' remapped 'res://Art/Placeholder/TEX_WhiteTriangle.svg' at thread -1
+Loading resource: res://Resources/AI/BT_Wolf.tres remapped: res://Resources/AI/BT_Wolf.tres
+Completed load for: 'res://Resources/AI/BT_Wolf.tres' remapped 'res://Resources/AI/BT_Wolf.tres' at thread -1
+Completed load for: 'res://Prefabs/Runtime/Objects/SCN_Wolf.tscn' remapped 'res://Prefabs/Runtime/Objects/SCN_Wolf.tscn' at thread -1
+Loading resource: res://Prefabs/Runtime/Objects/SCN_Sheepdog.tscn remapped: res://Prefabs/Runtime/Objects/SCN_Sheepdog.tscn
+Loading resource: res://Art/Placeholder/TEX_WhiteSquare.svg remapped: res://Art/Placeholder/TEX_WhiteSquare.svg
+Loading resource: res://.godot/imported/TEX_WhiteSquare.svg-9b3293f7905aa07cfda755067e8627e3.ctex remapped: res://.godot/imported/TEX_WhiteSquare.svg-9b3293f7905aa07cfda755067e8627e3.ctex
+Completed load for: 'res://Art/Placeholder/TEX_WhiteSquare.svg' remapped 'res://Art/Placeholder/TEX_WhiteSquare.svg' at thread -1
+Loading resource: res://Resources/AI/BT_Sheepdog.tres remapped: res://Resources/AI/BT_Sheepdog.tres
+Completed load for: 'res://Resources/AI/BT_Sheepdog.tres' remapped 'res://Resources/AI/BT_Sheepdog.tres' at thread -1
+Completed load for: 'res://Prefabs/Runtime/Objects/SCN_Sheepdog.tscn' remapped 'res://Prefabs/Runtime/Objects/SCN_Sheepdog.tscn' at thread -1
+Loading resource: res://Resources/Gameplay/CFG_Simulation.tres remapped: res://Resources/Gameplay/CFG_Simulation.tres
+Loading resource: res://Resources/Gameplay/CFG_Sheep.tres remapped: res://Resources/Gameplay/CFG_Sheep.tres
+Completed load for: 'res://Resources/Gameplay/CFG_Sheep.tres' remapped 'res://Resources/Gameplay/CFG_Sheep.tres' at thread -1
+Loading resource: res://Resources/Gameplay/CFG_Wolf.tres remapped: res://Resources/Gameplay/CFG_Wolf.tres
+Completed load for: 'res://Resources/Gameplay/CFG_Wolf.tres' remapped 'res://Resources/Gameplay/CFG_Wolf.tres' at thread -1
+Loading resource: res://Resources/Gameplay/CFG_Sheepdog.tres remapped: res://Resources/Gameplay/CFG_Sheepdog.tres
+Completed load for: 'res://Resources/Gameplay/CFG_Sheepdog.tres' remapped 'res://Resources/Gameplay/CFG_Sheepdog.tres' at thread -1
+Loading resource: res://Resources/Gameplay/CFG_Grass.tres remapped: res://Resources/Gameplay/CFG_Grass.tres
+Completed load for: 'res://Resources/Gameplay/CFG_Grass.tres' remapped 'res://Resources/Gameplay/CFG_Grass.tres' at thread -1
+Completed load for: 'res://Resources/Gameplay/CFG_Simulation.tres' remapped 'res://Resources/Gameplay/CFG_Simulation.tres' at thread -1
+Completed load for: 'res://Prefabs/Runtime/Core/SCN_GameplayEngine.tscn' remapped 'res://Prefabs/Runtime/Core/SCN_GameplayEngine.tscn' at thread -1
+MbedTLS: Some X509 certificates could not be parsed (1 certificates skipped).
+Loaded system CA certificates
+Loading resource: res://Levels/Map/SCN_Root.tscn remapped: res://Levels/Map/SCN_Root.tscn
+Loading resource: res://Scripts/RootController.gd remapped: res://Scripts/RootController.gd
+Completed load for: 'res://Scripts/RootController.gd' remapped 'res://Scripts/RootController.gd' at thread -1
+Loading resource: res://Prefabs/Runtime/UI/SCN_DebugHUD.tscn remapped: res://Prefabs/Runtime/UI/SCN_DebugHUD.tscn
+Completed load for: 'res://Prefabs/Runtime/UI/SCN_DebugHUD.tscn' remapped 'res://Prefabs/Runtime/UI/SCN_DebugHUD.tscn' at thread -1
+Completed load for: 'res://Levels/Map/SCN_Root.tscn' remapped 'res://Levels/Map/SCN_Root.tscn' at thread -1
+BENCHMARK_START tier=1 configured=(240, 24, 12) warmup=0.0s measurement=1.0s
+BENCHMARK_SAMPLE tier=1 wall=1.0 fps=47.8 step_ms=9.50 alive=(240, 24, 12) sim=1.2
+BENCHMARK_RESULT {"average_fps":47.7692744046257,"captures_total":0,"cpu":"Intel(R) Core(TM) Ultra 9 275HX","decision_mean_ms":2.65614925373134,"engine":"4.7.2-stable (official)","final_counts":[240,24,12],"frame_p95_ms":64.504,"gpu":"NVIDIA GeForce RTX 5070 Ti Laptop GPU","grass_depletions_total":0,"grass_meals_total":0,"grass_regrowths_total":0,"initial_counts":[240,24,12],"max_fps":60,"measured_wall_seconds":1.00483,"movement_interaction_mean_ms":0.726880597014926,"observed_behaviors":{"Sheep:Flee":4510,"Sheep:Flock":10226,"Sheep:Graze":1274,"Sheep:Seek grass":1750,"Sheepdog:Intercept":18,"Sheepdog:Patrol":870,"Wolf:Chase":1776},"perception_mean_ms":6.69901492537313,"physics_hz":60,"physics_steps":67,"rendered_frames":48,"renderer":"gl_compatibility","risk_sheep_steps":0,"samples":[{"dogs":12,"fps_average_so_far":47.7692744046257,"last_step_ms":9.5,"sheep":240,"simulation_seconds":1.23333333333333,"wall_seconds":1.00483,"wolves":24}],"seed":1337,"sheep_behavior_switches":268,"sheep_distance_total":14695.2140098022,"simulation_seconds_advanced":1.11666666666667,"step_mean_ms":10.0820447761194,"step_p95_ms":13.254,"tier":1,"viewport":"1280x720","vsync":false,"warmup_wall_seconds":0.0}

@@ -1,0 +1,1119 @@
+{
+	"average_fps": 48.1996561757859,
+	"captures_total": 4,
+	"cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+	"decision_mean_ms": 2.6835886376326,
+	"engine": "4.7.2-stable (official)",
+	"final_counts": [
+		236,
+		24,
+		12
+	],
+	"frame_p95_ms": 42.241,
+	"gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+	"grass_depletions_total": 175,
+	"grass_meals_total": 395,
+	"grass_regrowths_total": 140,
+	"initial_counts": [
+		240,
+		24,
+		12
+	],
+	"max_fps": 60,
+	"measured_wall_seconds": 120.000856,
+	"movement_interaction_mean_ms": 0.657593941931879,
+	"observed_behaviors": {
+		"Sheep:Flee": 129204,
+		"Sheep:Flock": 1155378,
+		"Sheep:Graze": 133872,
+		"Sheep:Seek grass": 288919,
+		"Sheepdog:Drive off": 4697,
+		"Sheepdog:Intercept": 25931,
+		"Sheepdog:Patrol": 19349,
+		"Sheepdog:Return": 36075,
+		"Wolf:Capture": 180,
+		"Wolf:Chase": 60499,
+		"Wolf:Flee": 74176,
+		"Wolf:Search": 37249
+	},
+	"perception_mean_ms": 9.67130555555554,
+	"physics_hz": 60,
+	"physics_steps": 7164,
+	"rendered_frames": 5784,
+	"renderer": "gl_compatibility",
+	"risk_sheep_steps": 103209,
+	"samples": [
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.9033372357743,
+			"last_step_ms": 9.034,
+			"sheep": 240,
+			"simulation_seconds": 1.23333333333333,
+			"wall_seconds": 1.001937,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 54.3932260971713,
+			"last_step_ms": 9.867,
+			"sheep": 240,
+			"simulation_seconds": 2.25,
+			"wall_seconds": 2.003926,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.1935425306978,
+			"last_step_ms": 13.517,
+			"sheep": 240,
+			"simulation_seconds": 3.23333333333333,
+			"wall_seconds": 3.007463,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.8951825589064,
+			"last_step_ms": 10.32,
+			"sheep": 240,
+			"simulation_seconds": 4.24999999999999,
+			"wall_seconds": 4.007501,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.865683256149,
+			"last_step_ms": 11.359,
+			"sheep": 240,
+			"simulation_seconds": 5.24999999999999,
+			"wall_seconds": 5.01181,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.4679653080751,
+			"last_step_ms": 11.778,
+			"sheep": 240,
+			"simulation_seconds": 6.24999999999998,
+			"wall_seconds": 6.021113,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.634867184833,
+			"last_step_ms": 11.749,
+			"sheep": 240,
+			"simulation_seconds": 7.26666666666665,
+			"wall_seconds": 7.027473,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.1942960054434,
+			"last_step_ms": 13.481,
+			"sheep": 240,
+			"simulation_seconds": 8.26666666666666,
+			"wall_seconds": 8.043521,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.8470233039916,
+			"last_step_ms": 15.657,
+			"sheep": 240,
+			"simulation_seconds": 9.30000000000004,
+			"wall_seconds": 9.060465,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.8371922595742,
+			"last_step_ms": 14.439,
+			"sheep": 240,
+			"simulation_seconds": 10.3000000000001,
+			"wall_seconds": 10.064976,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.1059236471561,
+			"last_step_ms": 14.622,
+			"sheep": 240,
+			"simulation_seconds": 11.3166666666668,
+			"wall_seconds": 11.06835,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.2739728158644,
+			"last_step_ms": 13.462,
+			"sheep": 240,
+			"simulation_seconds": 12.3166666666669,
+			"wall_seconds": 12.083739,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.5916045094573,
+			"last_step_ms": 10.546,
+			"sheep": 240,
+			"simulation_seconds": 13.3333333333336,
+			"wall_seconds": 13.093815,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.5264182634375,
+			"last_step_ms": 10.633,
+			"sheep": 240,
+			"simulation_seconds": 14.3500000000003,
+			"wall_seconds": 14.099602,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.7389860326095,
+			"last_step_ms": 8.514,
+			"sheep": 240,
+			"simulation_seconds": 15.3500000000003,
+			"wall_seconds": 15.104253,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.8517464099301,
+			"last_step_ms": 10.747,
+			"sheep": 240,
+			"simulation_seconds": 16.3500000000004,
+			"wall_seconds": 16.112082,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 57.0011918271738,
+			"last_step_ms": 10.613,
+			"sheep": 240,
+			"simulation_seconds": 17.366666666667,
+			"wall_seconds": 17.122449,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 57.1048030380859,
+			"last_step_ms": 12.41,
+			"sheep": 240,
+			"simulation_seconds": 18.3666666666669,
+			"wall_seconds": 18.12457,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 57.26869001059,
+			"last_step_ms": 9.229,
+			"sheep": 240,
+			"simulation_seconds": 19.3833333333335,
+			"wall_seconds": 19.137857,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 57.3440984010827,
+			"last_step_ms": 14.571,
+			"sheep": 240,
+			"simulation_seconds": 20.3833333333335,
+			"wall_seconds": 20.141567,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 57.4407629721808,
+			"last_step_ms": 12.463,
+			"sheep": 240,
+			"simulation_seconds": 21.3833333333334,
+			"wall_seconds": 21.152226,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 57.0340772745869,
+			"last_step_ms": 13.582,
+			"sheep": 240,
+			"simulation_seconds": 22.3833333333333,
+			"wall_seconds": 22.162189,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 57.0529164937349,
+			"last_step_ms": 13.705,
+			"sheep": 240,
+			"simulation_seconds": 23.4,
+			"wall_seconds": 23.171471,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 57.0026988171816,
+			"last_step_ms": 9.478,
+			"sheep": 240,
+			"simulation_seconds": 24.4166666666666,
+			"wall_seconds": 24.174294,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.4749905223941,
+			"last_step_ms": 16.002,
+			"sheep": 240,
+			"simulation_seconds": 25.4333333333332,
+			"wall_seconds": 25.214701,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.5478200281549,
+			"last_step_ms": 10.306,
+			"sheep": 240,
+			"simulation_seconds": 26.4666666666664,
+			"wall_seconds": 26.225591,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.6334956716694,
+			"last_step_ms": 10.455,
+			"sheep": 240,
+			"simulation_seconds": 27.4666666666664,
+			"wall_seconds": 27.227703,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.5646659693546,
+			"last_step_ms": 10.993,
+			"sheep": 240,
+			"simulation_seconds": 28.4666666666663,
+			"wall_seconds": 28.233173,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.5225481882933,
+			"last_step_ms": 10.95,
+			"sheep": 240,
+			"simulation_seconds": 29.4833333333329,
+			"wall_seconds": 29.244966,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.5638570904068,
+			"last_step_ms": 9.886,
+			"sheep": 240,
+			"simulation_seconds": 30.4999999999995,
+			"wall_seconds": 30.248998,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.2959575728075,
+			"last_step_ms": 10.84,
+			"sheep": 240,
+			"simulation_seconds": 31.4833333333328,
+			"wall_seconds": 31.263346,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.0151416859325,
+			"last_step_ms": 13.286,
+			"sheep": 240,
+			"simulation_seconds": 32.4999999999994,
+			"wall_seconds": 32.276987,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.1344276501603,
+			"last_step_ms": 10.837,
+			"sheep": 240,
+			"simulation_seconds": 33.516666666666,
+			"wall_seconds": 33.277261,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.1717057635057,
+			"last_step_ms": 10.312,
+			"sheep": 240,
+			"simulation_seconds": 34.5333333333327,
+			"wall_seconds": 34.287725,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 56.2498321851683,
+			"last_step_ms": 17.736,
+			"sheep": 240,
+			"simulation_seconds": 35.5499999999993,
+			"wall_seconds": 35.306772,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.6800796024217,
+			"last_step_ms": 12.725,
+			"sheep": 240,
+			"simulation_seconds": 36.5666666666659,
+			"wall_seconds": 36.332563,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.7488154380841,
+			"last_step_ms": 11.02,
+			"sheep": 240,
+			"simulation_seconds": 37.5833333333325,
+			"wall_seconds": 37.346085,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.549348649348,
+			"last_step_ms": 12.329,
+			"sheep": 240,
+			"simulation_seconds": 38.5833333333324,
+			"wall_seconds": 38.362286,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.6507197256021,
+			"last_step_ms": 8.919,
+			"sheep": 240,
+			"simulation_seconds": 39.6166666666657,
+			"wall_seconds": 39.37056,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.6881715946448,
+			"last_step_ms": 13.679,
+			"sheep": 240,
+			"simulation_seconds": 40.6166666666656,
+			"wall_seconds": 40.385596,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.7904669531608,
+			"last_step_ms": 19.081,
+			"sheep": 240,
+			"simulation_seconds": 41.6166666666656,
+			"wall_seconds": 41.386999,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.3338414958101,
+			"last_step_ms": 12.729,
+			"sheep": 240,
+			"simulation_seconds": 42.6166666666655,
+			"wall_seconds": 42.397201,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.3123274729373,
+			"last_step_ms": 11.173,
+			"sheep": 240,
+			"simulation_seconds": 43.6499999999988,
+			"wall_seconds": 43.408045,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.1910839850899,
+			"last_step_ms": 12.988,
+			"sheep": 240,
+			"simulation_seconds": 44.6499999999987,
+			"wall_seconds": 44.409347,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.2783310197227,
+			"last_step_ms": 15.023,
+			"sheep": 240,
+			"simulation_seconds": 45.6666666666654,
+			"wall_seconds": 45.424671,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.1977477079151,
+			"last_step_ms": 10.27,
+			"sheep": 240,
+			"simulation_seconds": 46.683333333332,
+			"wall_seconds": 46.433054,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.3046600730894,
+			"last_step_ms": 12.975,
+			"sheep": 240,
+			"simulation_seconds": 47.6833333333319,
+			"wall_seconds": 47.446273,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.2625154172203,
+			"last_step_ms": 12.544,
+			"sheep": 240,
+			"simulation_seconds": 48.6999999999985,
+			"wall_seconds": 48.459611,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.3708109828519,
+			"last_step_ms": 13.384,
+			"sheep": 240,
+			"simulation_seconds": 49.6999999999985,
+			"wall_seconds": 49.466496,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.4372126708387,
+			"last_step_ms": 10.144,
+			"sheep": 240,
+			"simulation_seconds": 50.7166666666651,
+			"wall_seconds": 50.471513,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.5250644764898,
+			"last_step_ms": 10.851,
+			"sheep": 240,
+			"simulation_seconds": 51.716666666665,
+			"wall_seconds": 51.47225,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.5795123514177,
+			"last_step_ms": 10.633,
+			"sheep": 240,
+			"simulation_seconds": 52.716666666665,
+			"wall_seconds": 52.483368,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 55.3722089068504,
+			"last_step_ms": 20.839,
+			"sheep": 240,
+			"simulation_seconds": 53.7166666666649,
+			"wall_seconds": 53.546717,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 54.5556465488049,
+			"last_step_ms": 13.12,
+			"sheep": 240,
+			"simulation_seconds": 54.7833333333315,
+			"wall_seconds": 54.586467,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 53.7478523119104,
+			"last_step_ms": 16.781,
+			"sheep": 240,
+			"simulation_seconds": 55.6166666666648,
+			"wall_seconds": 55.592919,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 52.9202639015999,
+			"last_step_ms": 13.043,
+			"sheep": 240,
+			"simulation_seconds": 56.6333333333314,
+			"wall_seconds": 56.651267,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 52.7766977507484,
+			"last_step_ms": 9.105,
+			"sheep": 240,
+			"simulation_seconds": 57.699999999998,
+			"wall_seconds": 57.658022,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 52.5686749579612,
+			"last_step_ms": 13.889,
+			"sheep": 240,
+			"simulation_seconds": 58.6833333333313,
+			"wall_seconds": 58.76123,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 51.7876655530479,
+			"last_step_ms": 12.046,
+			"sheep": 239,
+			"simulation_seconds": 59.5666666666646,
+			"wall_seconds": 59.782575,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 51.3386415065103,
+			"last_step_ms": 11.887,
+			"sheep": 239,
+			"simulation_seconds": 60.6666666666645,
+			"wall_seconds": 60.792415,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 51.1416627942348,
+			"last_step_ms": 16.731,
+			"sheep": 239,
+			"simulation_seconds": 61.6166666666645,
+			"wall_seconds": 61.808706,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.4998964704391,
+			"last_step_ms": 11.489,
+			"sheep": 239,
+			"simulation_seconds": 62.6833333333311,
+			"wall_seconds": 62.851614,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.3928449551532,
+			"last_step_ms": 9.706,
+			"sheep": 237,
+			"simulation_seconds": 63.7499999999977,
+			"wall_seconds": 63.858272,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.5206681332923,
+			"last_step_ms": 12.755,
+			"sheep": 236,
+			"simulation_seconds": 64.7499999999976,
+			"wall_seconds": 64.864542,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.4198235989369,
+			"last_step_ms": 8.883,
+			"sheep": 236,
+			"simulation_seconds": 65.7499999999976,
+			"wall_seconds": 65.86695,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.4489696635274,
+			"last_step_ms": 11.847,
+			"sheep": 236,
+			"simulation_seconds": 66.7666666666642,
+			"wall_seconds": 66.879463,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.6004490874559,
+			"last_step_ms": 13.583,
+			"sheep": 236,
+			"simulation_seconds": 67.7666666666641,
+			"wall_seconds": 67.884773,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.4273383061695,
+			"last_step_ms": 11.124,
+			"sheep": 236,
+			"simulation_seconds": 68.7833333333307,
+			"wall_seconds": 68.891203,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.3777479784551,
+			"last_step_ms": 11.164,
+			"sheep": 236,
+			"simulation_seconds": 69.7833333333307,
+			"wall_seconds": 69.891969,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.2974841669386,
+			"last_step_ms": 13.026,
+			"sheep": 236,
+			"simulation_seconds": 70.7833333333306,
+			"wall_seconds": 70.91806,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.3284403430442,
+			"last_step_ms": 10.495,
+			"sheep": 236,
+			"simulation_seconds": 71.8166666666639,
+			"wall_seconds": 71.927522,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.077103244164,
+			"last_step_ms": 19.245,
+			"sheep": 236,
+			"simulation_seconds": 72.7666666666638,
+			"wall_seconds": 72.927541,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.913245638962,
+			"last_step_ms": 11.243,
+			"sheep": 236,
+			"simulation_seconds": 73.8166666666638,
+			"wall_seconds": 73.928272,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.829855863739,
+			"last_step_ms": 11.944,
+			"sheep": 236,
+			"simulation_seconds": 74.7833333333304,
+			"wall_seconds": 74.934995,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.8807457766692,
+			"last_step_ms": 10.664,
+			"sheep": 236,
+			"simulation_seconds": 75.8333333333303,
+			"wall_seconds": 75.941126,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.8697979875574,
+			"last_step_ms": 14.335,
+			"sheep": 236,
+			"simulation_seconds": 76.7999999999969,
+			"wall_seconds": 76.960408,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.9080459324872,
+			"last_step_ms": 11.596,
+			"sheep": 236,
+			"simulation_seconds": 77.8499999999969,
+			"wall_seconds": 77.963381,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.0196418902623,
+			"last_step_ms": 15.137,
+			"sheep": 236,
+			"simulation_seconds": 78.8499999999968,
+			"wall_seconds": 78.968978,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.1483176189644,
+			"last_step_ms": 9.592,
+			"sheep": 236,
+			"simulation_seconds": 79.8833333333301,
+			"wall_seconds": 79.982743,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.2566497203384,
+			"last_step_ms": 11.92,
+			"sheep": 236,
+			"simulation_seconds": 80.88333333333,
+			"wall_seconds": 80.984308,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.3626734551338,
+			"last_step_ms": 9.041,
+			"sheep": 236,
+			"simulation_seconds": 81.88333333333,
+			"wall_seconds": 81.985322,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 50.3174105638753,
+			"last_step_ms": 11.763,
+			"sheep": 236,
+			"simulation_seconds": 82.8499999999966,
+			"wall_seconds": 82.993142,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.9159385364602,
+			"last_step_ms": 26.126,
+			"sheep": 236,
+			"simulation_seconds": 83.7999999999965,
+			"wall_seconds": 84.021259,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.6338632230457,
+			"last_step_ms": 14.209,
+			"sheep": 236,
+			"simulation_seconds": 84.8999999999965,
+			"wall_seconds": 85.022598,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.4580814005432,
+			"last_step_ms": 17.549,
+			"sheep": 236,
+			"simulation_seconds": 85.8666666666631,
+			"wall_seconds": 86.07289,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.0135061493518,
+			"last_step_ms": 12.847,
+			"sheep": 236,
+			"simulation_seconds": 86.8833333333297,
+			"wall_seconds": 87.078039,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.0322655353182,
+			"last_step_ms": 17.018,
+			"sheep": 236,
+			"simulation_seconds": 87.9499999999963,
+			"wall_seconds": 88.084855,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 48.8904450426727,
+			"last_step_ms": 12.632,
+			"sheep": 236,
+			"simulation_seconds": 88.9666666666629,
+			"wall_seconds": 89.097164,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 48.9910045123778,
+			"last_step_ms": 12.916,
+			"sheep": 236,
+			"simulation_seconds": 89.9833333333295,
+			"wall_seconds": 90.098173,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 49.0613394911039,
+			"last_step_ms": 27.589,
+			"sheep": 236,
+			"simulation_seconds": 90.9666666666628,
+			"wall_seconds": 91.130818,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 48.9754855827695,
+			"last_step_ms": 14.666,
+			"sheep": 236,
+			"simulation_seconds": 91.9999999999961,
+			"wall_seconds": 92.148142,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 48.5986406523476,
+			"last_step_ms": 10.707,
+			"sheep": 236,
+			"simulation_seconds": 93.0166666666627,
+			"wall_seconds": 93.191907,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 48.5572444655114,
+			"last_step_ms": 33.689,
+			"sheep": 236,
+			"simulation_seconds": 94.0333333333293,
+			"wall_seconds": 94.239285,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 48.1356773934933,
+			"last_step_ms": 17.225,
+			"sheep": 236,
+			"simulation_seconds": 94.9666666666626,
+			"wall_seconds": 95.251594,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.6820461479137,
+			"last_step_ms": 12.761,
+			"sheep": 236,
+			"simulation_seconds": 95.8999999999958,
+			"wall_seconds": 96.304592,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.1920194323991,
+			"last_step_ms": 10.948,
+			"sheep": 236,
+			"simulation_seconds": 96.8333333333291,
+			"wall_seconds": 97.452918,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.0935648385409,
+			"last_step_ms": 12.876,
+			"sheep": 236,
+			"simulation_seconds": 97.9666666666624,
+			"wall_seconds": 98.463559,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.0982370122792,
+			"last_step_ms": 13.507,
+			"sheep": 236,
+			"simulation_seconds": 98.9666666666623,
+			"wall_seconds": 99.49417,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.1038190958624,
+			"last_step_ms": 13.613,
+			"sheep": 236,
+			"simulation_seconds": 99.9999999999956,
+			"wall_seconds": 100.501405,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.1617459455649,
+			"last_step_ms": 13.76,
+			"sheep": 236,
+			"simulation_seconds": 100.999999999996,
+			"wall_seconds": 101.522959,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.2070090157975,
+			"last_step_ms": 10.732,
+			"sheep": 236,
+			"simulation_seconds": 102.033333333329,
+			"wall_seconds": 102.527148,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.3235769566206,
+			"last_step_ms": 9.144,
+			"sheep": 236,
+			"simulation_seconds": 103.049999999995,
+			"wall_seconds": 103.542469,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.2973251511862,
+			"last_step_ms": 10.827,
+			"sheep": 236,
+			"simulation_seconds": 104.049999999995,
+			"wall_seconds": 104.551367,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.3335012597513,
+			"last_step_ms": 11.585,
+			"sheep": 236,
+			"simulation_seconds": 105.066666666662,
+			"wall_seconds": 105.570048,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.3271521670591,
+			"last_step_ms": 12.335,
+			"sheep": 236,
+			"simulation_seconds": 106.083333333329,
+			"wall_seconds": 106.577298,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.412735981069,
+			"last_step_ms": 12.706,
+			"sheep": 236,
+			"simulation_seconds": 107.083333333329,
+			"wall_seconds": 107.587126,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.5046066761293,
+			"last_step_ms": 11.518,
+			"sheep": 236,
+			"simulation_seconds": 108.116666666662,
+			"wall_seconds": 108.599994,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.6174883058647,
+			"last_step_ms": 11.559,
+			"sheep": 236,
+			"simulation_seconds": 109.116666666662,
+			"wall_seconds": 109.602589,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.7012646639573,
+			"last_step_ms": 12.678,
+			"sheep": 236,
+			"simulation_seconds": 110.099999999995,
+			"wall_seconds": 110.605034,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.7350831896712,
+			"last_step_ms": 18.294,
+			"sheep": 236,
+			"simulation_seconds": 111.083333333328,
+			"wall_seconds": 111.61602,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.6772161903836,
+			"last_step_ms": 13.106,
+			"sheep": 236,
+			"simulation_seconds": 112.133333333328,
+			"wall_seconds": 112.632415,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.7248661466645,
+			"last_step_ms": 12.613,
+			"sheep": 236,
+			"simulation_seconds": 113.149999999995,
+			"wall_seconds": 113.651445,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.7761918276024,
+			"last_step_ms": 11.191,
+			"sheep": 236,
+			"simulation_seconds": 114.166666666661,
+			"wall_seconds": 114.65962,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.8178235503637,
+			"last_step_ms": 13.302,
+			"sheep": 236,
+			"simulation_seconds": 115.166666666661,
+			"wall_seconds": 115.668167,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.9241859945886,
+			"last_step_ms": 18.458,
+			"sheep": 236,
+			"simulation_seconds": 116.183333333328,
+			"wall_seconds": 116.684298,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 47.9966272364759,
+			"last_step_ms": 11.061,
+			"sheep": 236,
+			"simulation_seconds": 117.199999999995,
+			"wall_seconds": 117.69577,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 48.1053282590496,
+			"last_step_ms": 11.58,
+			"sheep": 236,
+			"simulation_seconds": 118.199999999995,
+			"wall_seconds": 118.69787,
+			"wolves": 24
+		},
+		{
+			"dogs": 12,
+			"fps_average_so_far": 48.165820736689,
+			"last_step_ms": 10.586,
+			"sheep": 236,
+			"simulation_seconds": 119.216666666661,
+			"wall_seconds": 119.711445,
+			"wolves": 24
+		}
+	],
+	"seed": 1337,
+	"sheep_behavior_switches": 46538,
+	"sheep_distance_total": 995961.169018491,
+	"simulation_seconds_advanced": 119.399999999995,
+	"step_mean_ms": 13.0124881351201,
+	"step_p95_ms": 19.846,
+	"tier": 1,
+	"viewport": "1280x720",
+	"vsync": false,
+	"warmup_wall_seconds": 0.0
+}

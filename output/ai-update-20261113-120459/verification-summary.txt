@@ -1,0 +1,46 @@
+Implementation verification
+
+Godot: 4.7.2 stable official, compatible with the installed LimboAI extension.
+No .vscode/tasks.json is present. No engine rebuild was needed.
+
+Final import and script parsing: passed (import-final.log).
+Automatic behavior regression: 111 checks, 0 failures (verification-final.log).
+Ordinary main scene: 120 headless frames, clean start and shutdown; no errors or resource leak warnings (main-smoke-console.log).
+
+Desktop observation: seed 1337, initial populations 240 sheep / 24 wolves / 12 dogs,
+1280x720, GL Compatibility, VSync off, FPS cap 60, 120 wall-clock seconds.
+First desktop sample advanced 119.4 simulation seconds; final populations 236/24/12;
+4 captures, 395 grass bites, 175 grass depletions, 140 regrowths.
+Average rendered FPS was 48.2 in this instrumented run; no 60 FPS claim is made.
+Second visual sample included UI inspection; advanced 118.2 simulation seconds,
+ended with 236/24/12, and saved frames at 5, 60 and 118 wall-clock seconds.
+The configuration panel was checked for integer hunger values and risk settings.
+An observed duration field rounding issue was fixed and covered by the final regression.
+
+Limits: These runs do not establish long-term population balance or a before/after
+visual speed comparison. Temporary custom desktop sampling entrypoints reported
+configuration GDScript resources still in use at process shutdown. An isolated
+verbose rerun reproduced this only with the custom sampling entrypoint; the ordinary
+main-scene smoke run exited cleanly. This was not treated as proof of a gameplay leak.
+The final duration step correction was checked by regression, not another 120-second run.
+
+Old presets: unversioned presets are explicitly rejected; existing files are not
+converted or overwritten. New saved presets carry version 2.
+
+Modified files:
+  AGENTS.md
+  Prefabs\Runtime\Objects\SCN_Wolf.tscn
+  Resources\AI\BT_Wolf.tres
+  Resources\Gameplay\CFG_Grass.tres
+  Resources\Gameplay\CFG_Sheep.tres
+  Resources\Gameplay\CFG_Wolf.tres
+  Scripts\Core\GameplayEngine.gd
+  Scripts\Core\GrassConfig.gd
+  Scripts\Core\SheepConfig.gd
+  Scripts\Core\SimulationConfig.gd
+  Scripts\Core\WolfConfig.gd
+  Scripts\SheepController.gd
+  Scripts\UI\DebugHUD.gd
+  Scripts\UI\RuntimeConfigPanel.gd
+  Scripts\WolfController.gd
+  Tests\SimulationVerification.gd

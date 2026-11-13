@@ -1,0 +1,190 @@
+{
+	"arena_size": [
+		3445.64428710938,
+		1938.17492675781
+	],
+	"camera_zoom": 0.371483504772186,
+	"captures_during_measurement": 33,
+	"configured_counts": [
+		1739,
+		174,
+		87
+	],
+	"cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+	"decision_mean_ms": 16.8730902777778,
+	"display_driver": "headless",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"entities": 2000,
+	"final_counts": [
+		1706,
+		174,
+		87
+	],
+	"gpu": "",
+	"grass_depletions_total": 11,
+	"grass_meals_total": 11,
+	"grass_patches": 36,
+	"grass_points": 864,
+	"grass_regrowths_total": 0,
+	"headless": true,
+	"initial_counts": [
+		1739,
+		174,
+		87
+	],
+	"layout": "uniform_v1",
+	"layout_version": 1,
+	"limboai": {
+		"binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+		"binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+		"version": "v1.8.1"
+	},
+	"loop_hz": 0.59910822740351,
+	"loop_max_ms": 12615.502,
+	"loop_mean_ms": 1669.1475,
+	"loop_p95_ms": 12615.502,
+	"max_fps": 0,
+	"measured_wall_seconds": 30.044655,
+	"movement_interaction_mean_ms": 5.7710625,
+	"perception_mean_ms": 185.727263888889,
+	"physics_hz": 60,
+	"physics_steps": 144,
+	"process_iterations": 18,
+	"renderer": "gl_compatibility",
+	"samples": [
+		{
+			"dogs": 87,
+			"last_step_ms": 121.298,
+			"loop_hz_average_so_far": 0.997860586901683,
+			"sheep": 1739,
+			"simulation_seconds": 0.366666666666667,
+			"wall_seconds": 2.004288,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 145.593,
+			"loop_hz_average_so_far": 0.944159570520695,
+			"sheep": 1731,
+			"simulation_seconds": 0.633333333333334,
+			"wall_seconds": 4.236572,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 134.021,
+			"loop_hz_average_so_far": 0.947758957601624,
+			"sheep": 1731,
+			"simulation_seconds": 0.766666666666667,
+			"wall_seconds": 5.275603,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 115.69,
+			"loop_hz_average_so_far": 0.93582574924549,
+			"sheep": 1728,
+			"simulation_seconds": 1.03333333333333,
+			"wall_seconds": 7.480025,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 162.425,
+			"loop_hz_average_so_far": 0.940454889670535,
+			"sheep": 1726,
+			"simulation_seconds": 1.3,
+			"wall_seconds": 9.569837,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 124.942,
+			"loop_hz_average_so_far": 0.944816660216718,
+			"sheep": 1723,
+			"simulation_seconds": 1.43333333333333,
+			"wall_seconds": 10.584064,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 112.968,
+			"loop_hz_average_so_far": 0.946186502821571,
+			"sheep": 1720,
+			"simulation_seconds": 1.56666666666667,
+			"wall_seconds": 11.625615,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 117.844,
+			"loop_hz_average_so_far": 0.96242863684199,
+			"sheep": 1717,
+			"simulation_seconds": 1.83333333333333,
+			"wall_seconds": 13.507495,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 148.226,
+			"loop_hz_average_so_far": 0.553100710236622,
+			"sheep": 1715,
+			"simulation_seconds": 2.1,
+			"wall_seconds": 27.119835,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 144.94,
+			"loop_hz_average_so_far": 0.568660696724507,
+			"sheep": 1715,
+			"simulation_seconds": 2.23333333333333,
+			"wall_seconds": 28.136286,
+			"wolves": 174
+		},
+		{
+			"dogs": 87,
+			"last_step_ms": 94.363,
+			"loop_hz_average_so_far": 0.59910822740351,
+			"sheep": 1706,
+			"simulation_seconds": 2.5,
+			"wall_seconds": 30.044655,
+			"wolves": 174
+		}
+	],
+	"scenario": "scaled",
+	"script_profiler_active": false,
+	"seed": 1337,
+	"simulation_seconds_advanced": 2.4,
+	"simulation_seconds_at_measurement_start": 0.1,
+	"simulation_wall_ratio": 0.0798810969871345,
+	"spatial_candidates": 2839400,
+	"spatial_candidates_per_query": 33.0151273792775,
+	"spatial_max_candidates": 190,
+	"spatial_max_occupancy": 25,
+	"spatial_nonempty_cells_mean": 424.1875,
+	"spatial_queries": 86003,
+	"spatial_queries_per_step": 597.243055555556,
+	"stats_enabled": true,
+	"step_max_ms": 11408.043,
+	"step_mean_ms": 208.371416666667,
+	"step_p95_ms": 180.678,
+	"tier": 1,
+	"tiles": 0,
+	"viewport": [
+		1280,
+		720
+	],
+	"vsync": false,
+	"warmup_wall_seconds": 3.0
+}

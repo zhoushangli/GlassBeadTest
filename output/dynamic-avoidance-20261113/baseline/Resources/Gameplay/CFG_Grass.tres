@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="GrassConfig" format=3 uid="uid://babup2rad8mf8"]
+
+[ext_resource type="Script" uid="uid://bfjgg01gaai3o" path="res://Scripts/Core/GrassConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+bites = 1
+positions = PackedVector2Array(340, 240, 940, 240, 340, 510, 940, 510, 640, 375)

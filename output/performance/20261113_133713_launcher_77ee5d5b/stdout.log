@@ -1,0 +1,400 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+BEGIN PROFILING
+BENCHMARK_START layout=uniform_v1 tiles=0 configured=(870, 87, 43) warmup=1.0s measurement=1.0s stats=true
+FRAME: total: 2.567426 script: 2.10897/82 %
+0:res://Scripts/Core/GameplayEngine.gd::191::_physics_process
+	total: 2.277955/88 % 	self: 0.000026/0 % tcalls: 8
+1:res://Scripts/Core/GameplayEngine.gd::210::simulate_step
+	total: 2.277923/88 % 	self: 0.009405/0 % tcalls: 7
+2:res://Scripts/SheepdogController.gd::26::SheepdogController.perceive
+	total: 1.544003/60 % 	self: 0.063564/2 % tcalls: 301
+3:res://Scripts/SheepdogController.gd::86::SheepdogController._choose_protection_anchor
+	total: 1.431112/55 % 	self: 0.019012/0 % tcalls: 43
+4:res://Scripts/SheepdogController.gd::78::SheepdogController._anchor_score
+	total: 1.397927/54 % 	self: 0.643177/25 % tcalls: 37410
+5:res://Scripts/SheepController.gd::58::SheepController.perceive
+	total: 0.439285/17 % 	self: 0.235726/9 % tcalls: 6090
+6:res://Tests/RunBenchmark.gd::108::_start
+	total: 0.281748/10 % 	self: 0.047764/1 % tcalls: 1
+7:res://Scripts/AnimalController.gd::63::AnimalController.perceive
+	total: 0.22751/8 % 	self: 0.004549/0 % tcalls: 7000
+8:res://Tests/RunBenchmark.gd::199::_spawn_exact_layout
+	total: 0.227361/8 % 	self: 0.001194/0 % tcalls: 1
+9:res://Scripts/Core/EntityService.gd::33::EntityService.spawn
+	total: 0.225514/8 % 	self: 0.220262/8 % tcalls: 1000
+10:res://Scripts/AnimalController.gd::60::AnimalController.is_live
+	total: 0.208342/8 % 	self: 0.208342/8 % tcalls: 1624809
+11:res://Scripts/WolfController.gd::22::WolfController.update_hunt
+	total: 0.146898/5 % 	self: 0.01215/0 % tcalls: 609
+12:res://Scripts/WolfController.gd::59::WolfController._choose_prey
+	total: 0.13191/5 % 	self: 0.015084/0 % tcalls: 31
+13:res://Scripts/SheepController.gd::40::SheepController._scan_neighbors
+	total: 0.121924/4 % 	self: 0.103619/4 % tcalls: 1566
+14:res://Scripts/SheepController.gd::139::SheepController._choose_grass
+	total: 0.121437/4 % 	self: 0.00403/0 % tcalls: 108
+15:res://Scripts/SheepController.gd::121::SheepController._grass_unsafe
+	total: 0.117716/4 % 	self: 0.06705/2 % tcalls: 4922
+16:res://Scripts/WolfController.gd::51::WolfController._prey_weight
+	total: 0.098158/3 % 	self: 0.098146/3 % tcalls: 5041
+17:res://Scripts/AnimalController.gd::103::AnimalController.decide
+	total: 0.075429/2 % 	self: 0.072109/2 % tcalls: 7000
+18:res://Scripts/AnimalController.gd::79::AnimalController._scan_separation
+	total: 0.074186/2 % 	self: 0.074186/2 % tcalls: 1800
+19:res://Scripts/SheepController.gd::91::SheepController._update_threat
+	total: 0.050973/1 % 	self: 0.020668/0 % tcalls: 6090
+20:res://Scripts/Core/EntityService.gd::112::EntityService.get_nearby_indices
+	total: 0.035722/1 % 	self: 0.032274/1 % tcalls: 5918
+21:res://Scripts/SheepController.gd::6::SheepController.@avoidance_radius_getter
+	total: 0.030025/1 % 	self: 0.008871/0 % tcalls: 59014
+22:res://Scripts/AI/Tasks/AnimalAction.gd::10::_tick
+	total: 0.027556/1 % 	self: 0.004739/0 % tcalls: 7000
+23:res://Scripts/RootController.gd::10::_ready
+	total: 0.024673/0 % 	self: 0.000002/0 % tcalls: 1
+24:res://Scripts/Core/GameplayEngine.gd::52::start_simulation
+	total: 0.024666/0 % 	self: 0.000012/0 % tcalls: 1
+25:res://Scripts/UI/DebugHUD.gd::11::DebugHUD.initialize
+	total: 0.022994/0 % 	self: 0.000007/0 % tcalls: 1
+26:res://Scripts/UI/RuntimeConfigPanel.gd::77::RuntimeConfigPanel.initialize
+	total: 0.022941/0 % 	self: 0.000002/0 % tcalls: 1
+27:res://Scripts/UI/RuntimeConfigPanel.gd::94::RuntimeConfigPanel.set_draft
+	total: 0.022924/0 % 	self: 0.003182/0 % tcalls: 1
+28:res://Scripts/AnimalController.gd::129::AnimalController.move
+	total: 0.021774/0 % 	self: 0.012548/0 % tcalls: 7000
+29:res://Scripts/SheepdogController.gd::101::SheepdogController._update_protection_center
+	total: 0.020068/0 % 	self: 0.016379/0 % tcalls: 301
+30:res://Scripts/UI/RuntimeConfigPanel.gd::133::RuntimeConfigPanel._add_editor
+	total: 0.018266/0 % 	self: 0.013384/0 % tcalls: 52
+31:res://Scripts/SheepController.gd::168::SheepController.perform_behavior
+	total: 0.016904/0 % 	self: 0.006673/0 % tcalls: 6090
+32:res://Scripts/AnimalController.gd::25::AnimalController.@perception_radius_getter
+	total: 0.015643/0 % 	self: 0.015643/0 % tcalls: 154199
+33:res://Scripts/WolfController.gd::83::WolfController.perceive
+	total: 0.014001/0 % 	self: 0.013247/0 % tcalls: 609
+34:res://Scripts/AI/Tasks/AnimalCondition.gd::10::_tick
+	total: 0.010997/0 % 	self: 0.010997/0 % tcalls: 12969
+35:res://Scripts/Core/EntityService.gd::81::EntityService.rebuild_spatial_index
+	total: 0.0095/0 % 	self: 0.00784/0 % tcalls: 7
+36:res://Scripts/SheepController.gd::133::SheepController._grass_score
+	total: 0.007581/0 % 	self: 0.007093/0 % tcalls: 8428
+37:res://Scripts/SheepController.gd::118::SheepController._grass_available
+	total: 0.006634/0 % 	self: 0.005699/0 % tcalls: 25907
+38:res://Scripts/SheepController.gd::27::SheepController.initialize
+	total: 0.003019/0 % 	self: 0.002765/0 % tcalls: 870
+39:res://Scripts/AnimalController.gd::120::AnimalController.clamp_to_arena
+	total: 0.002929/0 % 	self: 0.00227/0 % tcalls: 7922
+40:res://Scripts/AnimalController.gd::0::AnimalController.@implicit_new
+	total: 0.002349/0 % 	self: 0.002349/0 % tcalls: 1000
+41:res://Scripts/AnimalController.gd::47::AnimalController.initialize
+	total: 0.002175/0 % 	self: 0.000794/0 % tcalls: 1000
+42:res://Scripts/AnimalController.gd::22::AnimalController.@move_speed_getter
+	total: 0.002138/0 % 	self: 0.002138/0 % tcalls: 16284
+43:res://Scripts/WolfController.gd::103::WolfController.perform_behavior
+	total: 0.001961/0 % 	self: 0.000803/0 % tcalls: 609
+44:res://Scripts/AnimalController.gd::140::AnimalController.set_behavior
+	total: 0.001811/0 % 	self: 0.001442/0 % tcalls: 7000
+45:res://Scripts/SheepController.gd::37::SheepController._get_query_radius
+	total: 0.001759/0 % 	self: 0.001759/0 % tcalls: 1566
+46:res://Scripts/Core/GameplayEngine.gd::171::rebuild_grass_claims
+	total: 0.001482/0 % 	self: 0.001482/0 % tcalls: 7
+47:res://Scripts/AnimalController.gd::76::AnimalController._get_query_radius
+	total: 0.001368/0 % 	self: 0.000637/0 % tcalls: 1800
+48:res://Scripts/SheepController.gd::0::SheepController.@implicit_new
+	total: 0.001302/0 % 	self: 0.001302/0 % tcalls: 870
+49:res://Scripts/AnimalController.gd::114::AnimalController._update_wander
+	total: 0.001268/0 % 	self: 0.000862/0 % tcalls: 1987
+50:res://Scripts/Core/SimulationConfig.gd::70::SimulationConfig.validate
+	total: 0.001165/0 % 	self: 0.000376/0 % tcalls: 3
+51:res://Scripts/SheepdogController.gd::118::SheepdogController.perform_behavior
+	total: 0.001145/0 % 	self: 0.00058/0 % tcalls: 301
+52:res://Scripts/Core/EntityService.gd::144::EntityService.remove_expired
+	total: 0.001085/0 % 	self: 0.001085/0 % tcalls: 7
+53:res://Scripts/AnimalController.gd::123::AnimalController._towards
+	total: 0.001016/0 % 	self: 0.001016/0 % tcalls: 2746
+54:res://Scripts/Core/GameplayEngine.gd::83::reset_simulation
+	total: 0.001002/0 % 	self: 0.000003/0 % tcalls: 1
+55:res://Scripts/Core/GameplayEngine.gd::134::reset_grass
+	total: 0.000985/0 % 	self: 0.000103/0 % tcalls: 1
+56:res://Scripts/AnimalController.gd::54::AnimalController._ready
+	total: 0.000908/0 % 	self: 0.000444/0 % tcalls: 1000
+57:res://Scripts/RootController.gd::15::_rebuild_grass
+	total: 0.00088/0 % 	self: 0.000545/0 % tcalls: 1
+58:res://Scripts/SheepController.gd::31::SheepController.refresh_config
+	total: 0.000877/0 % 	self: 0.000877/0 % tcalls: 870
+59:res://Scripts/SheepController.gd::190::SheepController.resolve_interactions
+	total: 0.000751/0 % 	self: 0.000676/0 % tcalls: 6090
+60:res://Scripts/WolfController.gd::121::WolfController.resolve_interactions
+	total: 0.000741/0 % 	self: 0.000645/0 % tcalls: 609
+61:res://Scripts/SheepController.gd::186::SheepController._follow_neighbors
+	total: 0.000687/0 % 	self: 0.000687/0 % tcalls: 2273
+62:res://Scripts/AnimalController.gd::0::AnimalController.@implicit_ready
+	total: 0.000631/0 % 	self: 0.000631/0 % tcalls: 1000
+63:res://Scripts/SheepController.gd::157::SheepController._set_grass_target
+	total: 0.000603/0 % 	self: 0.000597/0 % tcalls: 5580
+64:res://Scripts/AI/Tasks/AnimalAction.gd::0::@implicit_new
+	total: 0.000563/0 % 	self: 0.000563/0 % tcalls: 4012
+65:res://Scripts/Core/EntityService.gd::128::EntityService.get_counts
+	total: 0.00046/0 % 	self: 0.00046/0 % tcalls: 3
+66:res://Scripts/Core/SimulationConfig.gd::51::SimulationConfig.copy_config
+	total: 0.000417/0 % 	self: 0.000417/0 % tcalls: 4
+67:res://Scripts/UI/DebugHUD.gd::29::DebugHUD.refresh
+	total: 0.000406/0 % 	self: 0.000131/0 % tcalls: 2
+68:res://Scripts/AI/Tasks/AnimalCondition.gd::0::@implicit_new
+	total: 0.000398/0 % 	self: 0.000398/0 % tcalls: 3924
+69:res://Scripts/UI/RuntimeConfigPanel.gd::161::RuntimeConfigPanel._update_apply_state
+	total: 0.00038/0 % 	self: 0.00001/0 % tcalls: 1
+70:res://Scripts/Core/GameplayEngine.gd::298::_process
+	total: 0.000377/0 % 	self: 0.0/0 % tcalls: 1
+71:res://Scripts/WolfController.gd::13::WolfController.initialize
+	total: 0.000233/0 % 	self: 0.000233/0 % tcalls: 87
+72:res://Tests/RunBenchmark.gd::228::_process
+	total: 0.000218/0 % 	self: 0.000004/0 % tcalls: 1
+73:res://Scripts/RootController.gd::45::_refresh_grass
+	total: 0.000133/0 % 	self: 0.000133/0 % tcalls: 120
+74:res://Scripts/AI/Tasks/AnimalAction.gd::16::_exit
+	total: 0.000131/0 % 	self: 0.000064/0 % tcalls: 109
+75:res://Scripts/AnimalController.gd::57::AnimalController.refresh_config
+	total: 0.000112/0 % 	self: 0.000112/0 % tcalls: 1000
+76:res://Scripts/SheepdogController.gd::21::SheepdogController.initialize
+	total: 0.000101/0 % 	self: 0.000101/0 % tcalls: 43
+77:res://Scripts/Core/SimulationConfig.gd::0::SimulationConfig.@implicit_new
+	total: 0.000084/0 % 	self: 0.000084/0 % tcalls: 5
+78:res://Scripts/WolfController.gd::17::WolfController.refresh_config
+	total: 0.000084/0 % 	self: 0.000084/0 % tcalls: 87
+79:res://Scripts/WolfController.gd::96::WolfController.leave_hunt
+	total: 0.000083/0 % 	self: 0.000083/0 % tcalls: 450
+80:res://Tests/RunBenchmark.gd::41::_initialize
+	total: 0.000065/0 % 	self: 0.000065/0 % tcalls: 1
+81:res://Scripts/Core/GameplayEngine.gd::248::set_performance_stats_enabled
+	total: 0.000053/0 % 	self: 0.00003/0 % tcalls: 2
+82:res://Scripts/Core/GameplayEngine.gd::161::_update_grass
+	total: 0.00005/0 % 	self: 0.00005/0 % tcalls: 7
+83:res://Scripts/WolfController.gd::0::WolfController.@implicit_new
+	total: 0.00005/0 % 	self: 0.00005/0 % tcalls: 87
+84:res://Scripts/SheepdogController.gd::15::SheepdogController.refresh_config
+	total: 0.000041/0 % 	self: 0.000041/0 % tcalls: 43
+85:res://Scripts/Core/GameplayEngine.gd::0::@implicit_new
+	total: 0.00003/0 % 	self: 0.000018/0 % tcalls: 1
+86:res://Scripts/Core/GameplayEngine.gd::261::reset_performance_stats
+	total: 0.00003/0 % 	self: 0.00002/0 % tcalls: 4
+87:res://Scripts/Core/GameplayEngine.gd::278::_record_performance_step
+	total: 0.000028/0 % 	self: 0.000027/0 % tcalls: 7
+88:res://Tests/RunBenchmark.gd::168::_exact_counts
+	total: 0.000028/0 % 	self: 0.000016/0 % tcalls: 1
+89:res://Scripts/AnimalController.gd::137::AnimalController.resolve_interactions
+	total: 0.000025/0 % 	self: 0.000025/0 % tcalls: 301
+90:res://Scripts/AnimalController.gd::100::AnimalController._scan_neighbors
+	total: 0.00002/0 % 	self: 0.00002/0 % tcalls: 234
+91:res://Scripts/SheepdogController.gd::0::SheepdogController.@implicit_new
+	total: 0.000018/0 % 	self: 0.000018/0 % tcalls: 43
+92:res://Scripts/UI/RuntimeConfigPanel.gd::69::RuntimeConfigPanel._ready
+	total: 0.000018/0 % 	self: 0.00001/0 % tcalls: 1
+93:res://Scripts/Core/GameplayEngine.gd::69::stop_simulation
+	total: 0.000017/0 % 	self: 0.000015/0 % tcalls: 1
+94:res://Scripts/Core/GrassConfig.gd::0::GrassConfig.@implicit_new
+	total: 0.000014/0 % 	self: 0.000014/0 % tcalls: 10
+95:res://Scripts/Core/SheepConfig.gd::0::SheepConfig.@implicit_new
+	total: 0.000012/0 % 	self: 0.000012/0 % tcalls: 10
+96:res://Tests/RunBenchmark.gd::0::@implicit_new
+	total: 0.000011/0 % 	self: 0.000011/0 % tcalls: 1
+97:res://Scripts/Core/SimulationConfig.gd::60::SimulationConfig.get_sections
+	total: 0.000011/0 % 	self: 0.000011/0 % tcalls: 9
+98:res://Scripts/WolfController.gd::90::WolfController.begin_hunt
+	total: 0.000011/0 % 	self: 0.000011/0 % tcalls: 31
+99:res://Scripts/Core/EntityService.gd::0::EntityService.@implicit_new
+	total: 0.00001/0 % 	self: 0.00001/0 % tcalls: 1
+100:res://Scripts/UI/RuntimeConfigPanel.gd::210::RuntimeConfigPanel.refresh
+	total: 0.000009/0 % 	self: 0.000009/0 % tcalls: 3
+101:res://Scripts/SheepController.gd::206::SheepController.finish_behavior
+	total: 0.000009/0 % 	self: 0.000009/0 % tcalls: 82
+102:res://Scripts/Core/EntityService.gd::105::EntityService.reset_spatial_stats
+	total: 0.000007/0 % 	self: 0.000007/0 % tcalls: 12
+103:res://Scripts/Core/DebugService.gd::82::DebugService._draw
+	total: 0.000007/0 % 	self: 0.000007/0 % tcalls: 2
+104:res://Scripts/Core/WolfConfig.gd::0::WolfConfig.@implicit_new
+	total: 0.000007/0 % 	self: 0.000007/0 % tcalls: 10
+105:res://Scripts/Core/GameplayEngine.gd::0::@implicit_ready
+	total: 0.000006/0 % 	self: 0.000006/0 % tcalls: 1
+106:res://Tests/RunBenchmark.gd::263::_record_step
+	total: 0.000006/0 % 	self: 0.000006/0 % tcalls: 7
+107:res://Scripts/Core/DebugService.gd::64::DebugService.refresh
+	total: 0.000006/0 % 	self: 0.000004/0 % tcalls: 1
+108:res://Scripts/Core/EntityService.gd::159::EntityService.clear
+	total: 0.000006/0 % 	self: 0.000005/0 % tcalls: 1
+109:res://Scripts/Core/GameplayEngine.gd::267::_reset_stats_window
+	total: 0.000005/0 % 	self: 0.000005/0 % tcalls: 5
+110:res://Scripts/UI/RuntimeConfigPanel.gd::0::RuntimeConfigPanel.@implicit_ready
+	total: 0.000005/0 % 	self: 0.000005/0 % tcalls: 1
+111:res://Scripts/UI/RuntimeConfigPanel.gd::0::RuntimeConfigPanel.@implicit_new
+	total: 0.000004/0 % 	self: 0.000004/0 % tcalls: 1
+112:res://Scripts/UI/DebugHUD.gd::0::DebugHUD.@implicit_ready
+	total: 0.000003/0 % 	self: 0.000003/0 % tcalls: 1
+113:res://Scripts/Core/SheepdogConfig.gd::0::SheepdogConfig.@implicit_new
+	total: 0.000003/0 % 	self: 0.000003/0 % tcalls: 10
+114:res://Scripts/Core/SimulationConfig.gd::63::SimulationConfig.requires_restart
+	total: 0.000003/0 % 	self: 0.000003/0 % tcalls: 1
+115:res://Scripts/RootController.gd::0::@implicit_new
+	total: 0.000003/0 % 	self: 0.000003/0 % tcalls: 1
+116:res://Scripts/Core/DebugService.gd::68::DebugService.selection_text
+	total: 0.000002/0 % 	self: 0.000002/0 % tcalls: 2
+117:res://Scripts/Core/DebugService.gd::56::DebugService.clear_selection
+	total: 0.000002/0 % 	self: 0.000002/0 % tcalls: 3
+118:res://Scripts/Core/DebugService.gd::60::DebugService.clear_invalid_selection
+	total: 0.000001/0 % 	self: 0.000001/0 % tcalls: 1
+119:res://Scripts/Core/DebugService.gd::9::DebugService.initialize
+	total: 0.000001/0 % 	self: 0.000001/0 % tcalls: 1
+120:res://Tests/RunBenchmark.gd::182::_prepare_exact_settings
+	total: 0.000001/0 % 	self: 0.000001/0 % tcalls: 1
+121:res://Scripts/Core/EntityService.gd::60::EntityService.spawn_initial
+	total: 0.000001/0 % 	self: 0.000001/0 % tcalls: 1
+122:res://Scripts/WolfController.gd::140::WolfController.finish_behavior
+	total: 0.000001/0 % 	self: 0.000001/0 % tcalls: 16
+123:res://Scripts/RootController.gd::0::@implicit_ready
+	total: 0.000001/0 % 	self: 0.000001/0 % tcalls: 1
+124:res://Scripts/UI/DebugHUD.gd::0::DebugHUD.@implicit_new
+	total: 0.0/0 % 	self: 0.0/0 % tcalls: 1
+125:res://Scripts/Core/DebugService.gd::0::DebugService.@implicit_new
+	total: 0.0/0 % 	self: 0.0/0 % tcalls: 1
+126:res://Scripts/AnimalController.gd::111::AnimalController.finish_behavior
+	total: 0.0/0 % 	self: 0.0/0 % tcalls: 11
+127:res://Scripts/Core/EntityService.gd::29::EntityService.initialize
+	total: 0.0/0 % 	self: 0.0/0 % tcalls: 1
+BENCHMARK_SAMPLE tier=1 wall=1.3 loop_hz=1.6 step_ms=86.37 alive=(870, 87, 43) sim=0.4
+BENCHMARK_RESULT res://output/performance/2026-11-13T13-37-14_392772_610520_uniform_v1_1/result.json {"arena_size":[1280.0,720.0],"camera_zoom":1.0,"captures_during_measurement":0,"configured_counts":[870,87,43],"cpu":"Intel(R) Core(TM) Ultra 9 275HX","decision_mean_ms":9.911,"display_driver":"headless","engine":{"build":"official","hash":"ed1daf0bf001b61586d9930840f2f1394092c079","hex":263938,"major":4,"minor":7,"patch":2,"status":"stable","string":"4.7.2-stable (official)","timestamp":0},"entities":1000,"final_counts":[870,87,43],"gpu":"","grass_depletions_total":0,"grass_meals_total":0,"grass_patches":5,"grass_points":120,"grass_regrowths_total":0,"headless":true,"initial_counts":[870,87,43],"layout":"uniform_v1","layout_version":1,"limboai":{"binary":"res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll","binary_sha256":"f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97","version":"v1.8.1"},"loop_hz":1.56327919697474,"loop_max_ms":679.693,"loop_mean_ms":639.681,"loop_p95_ms":679.693,"max_fps":0,"measured_wall_seconds":1.279362,"movement_interaction_mean_ms":4.0123125,"perception_mean_ms":65.2879375,"physics_hz":60,"physics_steps":16,"process_iterations":2,"renderer":"gl_compatibility","samples":[{"dogs":43,"last_step_ms":86.367,"loop_hz_average_so_far":1.56327919697474,"sheep":870,"simulation_seconds":0.383333333333333,"wall_seconds":1.279362,"wolves":87}],"scenario":"fixed","script_profiler_active":true,"seed":1337,"simulation_seconds_advanced":0.266666666666667,"simulation_seconds_at_measurement_start":0.116666666666667,"simulation_wall_ratio":0.208437226263299,"spatial_candidates":816755,"spatial_candidates_per_query":74.2099763765219,"spatial_max_candidates":533,"spatial_max_occupancy":38,"spatial_nonempty_cells_mean":66.0,"spatial_queries":11006,"spatial_queries_per_step":687.875,"stats_enabled":true,"step_max_ms":111.765,"step_mean_ms":79.21125,"step_p95_ms":111.765,"tier":1,"tiles":0,"viewport":[1280,720],"vsync":false,"warmup_wall_seconds":1.0}
+FRAME: total: 0.668686 script: 0.694617/103 %
+0:res://Scripts/Core/GameplayEngine.gd::191::_physics_process
+	total: 0.598968/89 % 	self: 0.000017/0 % tcalls: 8
+1:res://Scripts/Core/GameplayEngine.gd::210::simulate_step
+	total: 0.598938/89 % 	self: 0.010455/1 % tcalls: 8
+2:res://Scripts/SheepController.gd::58::SheepController.perceive
+	total: 0.258032/38 % 	self: 0.160476/23 % tcalls: 6960
+3:res://Scripts/AnimalController.gd::63::AnimalController.perceive
+	total: 0.142975/21 % 	self: 0.003939/0 % tcalls: 8000
+4:res://Scripts/SheepdogController.gd::26::SheepdogController.perceive
+	total: 0.116384/17 % 	self: 0.063819/9 % tcalls: 344
+5:res://Scripts/WolfController.gd::22::WolfController.update_hunt
+	total: 0.082222/12 % 	self: 0.011416/1 % tcalls: 696
+6:res://Scripts/SheepController.gd::40::SheepController._scan_neighbors
+	total: 0.076447/11 % 	self: 0.065009/9 % tcalls: 870
+7:res://Scripts/AnimalController.gd::103::AnimalController.decide
+	total: 0.072984/10 % 	self: 0.069214/10 % tcalls: 8000
+8:res://Scripts/WolfController.gd::59::WolfController._choose_prey
+	total: 0.068258/10 % 	self: 0.006992/1 % tcalls: 16
+9:res://Scripts/SheepController.gd::91::SheepController._update_threat
+	total: 0.061758/9 % 	self: 0.024119/3 % tcalls: 6960
+10:res://Scripts/WolfController.gd::51::WolfController._prey_weight
+	total: 0.052548/7 % 	self: 0.05253/7 % tcalls: 2884
+11:res://Scripts/AnimalController.gd::79::AnimalController._scan_separation
+	total: 0.04714/7 % 	self: 0.04714/7 % tcalls: 1000
+12:res://Tests/RunBenchmark.gd::228::_process
+	total: 0.034523/5 % 	self: 0.000108/0 % tcalls: 1
+13:res://Tests/RunBenchmark.gd::299::_finish
+	total: 0.034244/5 % 	self: 0.001886/0 % tcalls: 1
+14:res://Scripts/Core/EntityService.gd::112::EntityService.get_nearby_indices
+	total: 0.0263/3 % 	self: 0.023659/3 % tcalls: 5460
+15:res://Scripts/AI/Tasks/AnimalAction.gd::10::_tick
+	total: 0.025503/3 % 	self: 0.00515/0 % tcalls: 8000
+16:res://Tests/RunBenchmark.gd::357::_limboai_info
+	total: 0.024075/3 % 	self: 0.024069/3 % tcalls: 1
+17:res://Scripts/AnimalController.gd::129::AnimalController.move
+	total: 0.021296/3 % 	self: 0.012019/1 % tcalls: 8000
+18:res://Scripts/SheepController.gd::121::SheepController._grass_unsafe
+	total: 0.02108/3 % 	self: 0.010848/1 % tcalls: 378
+19:res://Scripts/SheepdogController.gd::101::SheepdogController._update_protection_center
+	total: 0.020242/3 % 	self: 0.017365/2 % tcalls: 344
+20:res://Scripts/SheepController.gd::168::SheepController.perform_behavior
+	total: 0.014149/2 % 	self: 0.007961/1 % tcalls: 6960
+21:res://Scripts/SheepController.gd::6::SheepController.@avoidance_radius_getter
+	total: 0.013665/2 % 	self: 0.004254/0 % tcalls: 22052
+22:res://Scripts/AI/Tasks/AnimalCondition.gd::10::_tick
+	total: 0.010665/1 % 	self: 0.010665/1 % tcalls: 12009
+23:res://Scripts/AnimalController.gd::60::AnimalController.is_live
+	total: 0.010416/1 % 	self: 0.010416/1 % tcalls: 62481
+24:res://Scripts/WolfController.gd::83::WolfController.perceive
+	total: 0.010309/1 % 	self: 0.009352/1 % tcalls: 696
+25:res://Scripts/AnimalController.gd::25::AnimalController.@perception_radius_getter
+	total: 0.009551/1 % 	self: 0.009551/1 % tcalls: 89751
+26:res://Scripts/Core/EntityService.gd::81::EntityService.rebuild_spatial_index
+	total: 0.008536/1 % 	self: 0.006977/1 % tcalls: 8
+27:res://Scripts/Core/GameplayEngine.gd::69::stop_simulation
+	total: 0.008136/1 % 	self: 0.000039/0 % tcalls: 2
+28:res://Scripts/Core/EntityService.gd::159::EntityService.clear
+	total: 0.008083/1 % 	self: 0.008077/1 % tcalls: 2
+29:res://Scripts/SheepController.gd::139::SheepController._choose_grass
+	total: 0.00542/0 % 	self: 0.000225/0 % tcalls: 5
+30:res://Scripts/AnimalController.gd::120::AnimalController.clamp_to_arena
+	total: 0.00287/0 % 	self: 0.002273/0 % tcalls: 8690
+31:res://Scripts/AnimalController.gd::22::AnimalController.@move_speed_getter
+	total: 0.002168/0 % 	self: 0.002168/0 % tcalls: 17175
+32:res://Scripts/WolfController.gd::103::WolfController.perform_behavior
+	total: 0.002104/0 % 	self: 0.000879/0 % tcalls: 696
+33:res://Scripts/SheepController.gd::118::SheepController._grass_available
+	total: 0.001708/0 % 	self: 0.001555/0 % tcalls: 9809
+34:res://Scripts/Core/EntityService.gd::144::EntityService.remove_expired
+	total: 0.001292/0 % 	self: 0.001292/0 % tcalls: 8
+35:res://Scripts/Core/GameplayEngine.gd::171::rebuild_grass_claims
+	total: 0.001287/0 % 	self: 0.001287/0 % tcalls: 8
+36:res://Scripts/SheepdogController.gd::118::SheepdogController.perform_behavior
+	total: 0.001209/0 % 	self: 0.000628/0 % tcalls: 344
+37:res://Scripts/SheepController.gd::37::SheepController._get_query_radius
+	total: 0.001116/0 % 	self: 0.001116/0 % tcalls: 870
+38:res://Scripts/AnimalController.gd::140::AnimalController.set_behavior
+	total: 0.001022/0 % 	self: 0.000947/0 % tcalls: 8000
+39:res://Scripts/AnimalController.gd::76::AnimalController._get_query_radius
+	total: 0.000888/0 % 	self: 0.000394/0 % tcalls: 1000
+40:res://Scripts/SheepController.gd::190::SheepController.resolve_interactions
+	total: 0.000721/0 % 	self: 0.000662/0 % tcalls: 6960
+41:res://Scripts/SheepController.gd::157::SheepController._set_grass_target
+	total: 0.000641/0 % 	self: 0.000638/0 % tcalls: 6574
+42:res://Scripts/AnimalController.gd::123::AnimalController._towards
+	total: 0.000613/0 % 	self: 0.000613/0 % tcalls: 1766
+43:res://Scripts/SheepController.gd::133::SheepController._grass_score
+	total: 0.000602/0 % 	self: 0.000566/0 % tcalls: 450
+44:res://Scripts/WolfController.gd::121::WolfController.resolve_interactions
+	total: 0.000592/0 % 	self: 0.000516/0 % tcalls: 696
+45:res://Scripts/SheepController.gd::186::SheepController._follow_neighbors
+	total: 0.000364/0 % 	self: 0.000364/0 % tcalls: 1171
+46:res://Scripts/AnimalController.gd::114::AnimalController._update_wander
+	total: 0.000324/0 % 	self: 0.000309/0 % tcalls: 955
+47:res://Scripts/Core/EntityService.gd::128::EntityService.get_counts
+	total: 0.000284/0 % 	self: 0.000284/0 % tcalls: 2
+48:res://Scripts/AI/Tasks/AnimalAction.gd::16::_exit
+	total: 0.000095/0 % 	self: 0.000049/0 % tcalls: 84
+49:res://Scripts/WolfController.gd::96::WolfController.leave_hunt
+	total: 0.000075/0 % 	self: 0.000075/0 % tcalls: 450
+50:res://Scripts/AnimalController.gd::137::AnimalController.resolve_interactions
+	total: 0.000062/0 % 	self: 0.000062/0 % tcalls: 344
+51:res://Tests/RunBenchmark.gd::263::_record_step
+	total: 0.000051/0 % 	self: 0.000028/0 % tcalls: 8
+52:res://Scripts/Core/GameplayEngine.gd::161::_update_grass
+	total: 0.00005/0 % 	self: 0.00005/0 % tcalls: 8
+53:res://Scripts/RootController.gd::53::_exit_tree
+	total: 0.000036/0 % 	self: 0.000006/0 % tcalls: 1
+54:res://Scripts/Core/GameplayEngine.gd::278::_record_performance_step
+	total: 0.000031/0 % 	self: 0.00003/0 % tcalls: 8
+55:res://Tests/RunBenchmark.gd::292::_percentile
+	total: 0.000022/0 % 	self: 0.000016/0 % tcalls: 2
+56:res://Scripts/SheepController.gd::206::SheepController.finish_behavior
+	total: 0.000012/0 % 	self: 0.000012/0 % tcalls: 50
+57:res://Scripts/AnimalController.gd::100::AnimalController._scan_neighbors
+	total: 0.000009/0 % 	self: 0.000009/0 % tcalls: 130
+58:res://Scripts/Core/DebugService.gd::82::DebugService._draw
+	total: 0.000009/0 % 	self: 0.000009/0 % tcalls: 2
+59:res://Scripts/Core/DebugService.gd::56::DebugService.clear_selection
+	total: 0.000007/0 % 	self: 0.000007/0 % tcalls: 2
+60:res://Scripts/WolfController.gd::90::WolfController.begin_hunt
+	total: 0.000007/0 % 	self: 0.000007/0 % tcalls: 16
+61:res://Scripts/Core/EntityService.gd::105::EntityService.reset_spatial_stats
+	total: 0.000006/0 % 	self: 0.000006/0 % tcalls: 10
+62:res://Scripts/WolfController.gd::140::WolfController.finish_behavior
+	total: 0.000006/0 % 	self: 0.000006/0 % tcalls: 31
+63:res://Tests/RunBenchmark.gd::286::_mean
+	total: 0.000005/0 % 	self: 0.000005/0 % tcalls: 2
+64:res://Scripts/Core/GameplayEngine.gd::298::_process
+	total: 0.000001/0 % 	self: 0.000001/0 % tcalls: 1
+65:res://Scripts/Core/GameplayEngine.gd::267::_reset_stats_window
+	total: 0.000001/0 % 	self: 0.000001/0 % tcalls: 1
+66:res://Scripts/AnimalController.gd::111::AnimalController.finish_behavior
+	total: 0.0/0 % 	self: 0.0/0 % tcalls: 3
+ACCUMULATED: total: 0.0
+

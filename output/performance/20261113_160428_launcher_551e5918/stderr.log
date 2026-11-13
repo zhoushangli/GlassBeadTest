@@ -1,0 +1,37 @@
+﻿WARNING: Values of the ternary operator are not mutually compatible.
+   at: GDScript::reload (res://Scripts/UI/RuntimeConfigPanel.gd:157)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:229)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:286)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:288)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:296)
+WARNING: The local function parameter "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:316)
+WARNING: The local function parameter "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:320)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:330)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:332)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:335)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:352)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:354)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:357)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:366)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:369)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:388)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:391)
+WARNING: The local "for" iterator variable "name" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://Scripts/Core/GameplayEngine.gd:394)
+

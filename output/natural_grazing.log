@@ -1,0 +1,6 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+NATURAL_GRAZING sim=10.0000000000001 meals=16 depleted=3 regrown=0
+NATURAL_GRAZING sim=20.0000000000001 meals=31 depleted=8 regrown=4
+NATURAL_GRAZING sim=29.9999999999996 meals=50 depleted=9 regrown=8
+NATURAL_GRAZING sim=39.999999999999 meals=54 depleted=10 regrown=10

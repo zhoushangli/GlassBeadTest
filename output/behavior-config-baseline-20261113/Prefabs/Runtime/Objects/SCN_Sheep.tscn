@@ -1,0 +1,30 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/AnimalController.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Art/Placeholder/TEX_WhiteCircle.svg" id="2"]
+[ext_resource type="BehaviorTree" path="res://Resources/AI/BT_Sheep.tres" id="3"]
+
+[node name="Sheep" type="Node2D"]
+script = ExtResource("1")
+kind = 0
+move_speed = 55.0
+urgent_speed = 110.0
+retreat_speed = 110.0
+return_speed = 55.0
+perception_radius = 190.0
+base_color = Color(0.7215686, 0.8509804, 0.2941176, 1)
+behavior_colors = {
+"Flock": Color(0.7215686, 0.8509804, 0.2941176, 1),
+"Seek grass": Color(0.8509804, 0.9019608, 0.4196078, 1),
+"Graze": Color(0.4862745, 0.7019608, 0.2588235, 1),
+"Flee": Color(0.9803922, 0.8000000, 0.0823529, 1)
+}
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+self_modulate = Color(0.7215686, 0.8509804, 0.2941176, 1)
+scale = Vector2(0.4285714, 0.4285714)
+texture = ExtResource("2")
+
+[node name="BTPlayer" type="BTPlayer" parent="."]
+behavior_tree = ExtResource("3")
+update_mode = 2

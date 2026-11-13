@@ -1,0 +1,15 @@
+{
+  "state": "stopped_by_user",
+  "recorded_at_utc": "2026-11-13T19:59:31.293553+00:00",
+  "planned_runs": 58,
+  "completed_runs": 19,
+  "cancelled_run": {
+    "entities": 3000,
+    "scenario": "fixed",
+    "repeat": 2,
+    "launcher": "output/performance/20261113_135815_launcher_0d571468",
+    "note": "Controller interrupted; no result exported. Original launcher status may remain running; owned benchmark processes were checked absent."
+  },
+  "not_started_runs": 38,
+  "report_scope": "Six completed formal headless runs at 1000 initial animals; one preliminary short profiler run is separate supporting evidence."
+}

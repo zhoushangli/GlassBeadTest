@@ -1,0 +1,176 @@
+{
+  "runs": [
+    {
+      "phase": "before",
+      "label": "wolf-spatial-before-1",
+      "result": "2026-11-13T16-15-27_wolf-spatial-before-1_278304_1750079\\result.json",
+      "wolf_call_ms": 3.90070871261378,
+      "wolf_calls": 769,
+      "hunt_ms": 8.85245833333334,
+      "step_ms": 73.0095098039216,
+      "p95_ms": 96.413,
+      "fps": 1.69578828369235,
+      "wall_seconds": 30.074509,
+      "sim_start": 1.05,
+      "sim_advanced": 6.79999999999998,
+      "initial_counts": [
+        868,
+        87,
+        43
+      ],
+      "final_counts": [
+        825,
+        87,
+        43
+      ]
+    },
+    {
+      "phase": "before",
+      "label": "wolf-spatial-before-2",
+      "result": "2026-11-13T16-16-05_wolf-spatial-before-2_164660_1895905\\result.json",
+      "wolf_call_ms": 3.66651526717557,
+      "wolf_calls": 786,
+      "hunt_ms": 8.41034134615384,
+      "step_ms": 71.9867644230769,
+      "p95_ms": 90.874,
+      "fps": 1.7152006890357,
+      "wall_seconds": 30.317152,
+      "sim_start": 0.916666666666668,
+      "sim_advanced": 6.93333333333331,
+      "initial_counts": [
+        868,
+        87,
+        43
+      ],
+      "final_counts": [
+        825,
+        87,
+        43
+      ]
+    },
+    {
+      "phase": "before",
+      "label": "wolf-spatial-before-3",
+      "result": "2026-11-13T16-16-43_wolf-spatial-before-3_55752_1702089\\result.json",
+      "wolf_call_ms": 3.80811639549437,
+      "wolf_calls": 799,
+      "hunt_ms": 8.58694103773584,
+      "step_ms": 70.4745660377359,
+      "p95_ms": 85.359,
+      "fps": 1.75792631562293,
+      "wall_seconds": 30.149159,
+      "sim_start": 0.916666666666668,
+      "sim_advanced": 7.06666666666664,
+      "initial_counts": [
+        868,
+        87,
+        43
+      ],
+      "final_counts": [
+        822,
+        87,
+        43
+      ]
+    },
+    {
+      "phase": "after",
+      "label": "wolf-spatial-after-1",
+      "result": "2026-11-13T16-17-45_wolf-spatial-after-1_297640_1823950\\result.json",
+      "wolf_call_ms": 3.80661118335501,
+      "wolf_calls": 769,
+      "hunt_ms": 8.71373774509804,
+      "step_ms": 74.4464558823529,
+      "p95_ms": 97.885,
+      "fps": 1.66362940130284,
+      "wall_seconds": 30.655866,
+      "sim_start": 1.05,
+      "sim_advanced": 6.79999999999998,
+      "initial_counts": [
+        868,
+        87,
+        43
+      ],
+      "final_counts": [
+        825,
+        87,
+        43
+      ]
+    },
+    {
+      "phase": "after",
+      "label": "wolf-spatial-after-2",
+      "result": "2026-11-13T16-18-24_wolf-spatial-after-2_181016_2049922\\result.json",
+      "wolf_call_ms": 3.53054451612903,
+      "wolf_calls": 775,
+      "hunt_ms": 8.58723039215686,
+      "step_ms": 72.5640661764706,
+      "p95_ms": 96.546,
+      "fps": 1.69813855711831,
+      "wall_seconds": 30.032885,
+      "sim_start": 0.916666666666668,
+      "sim_advanced": 6.79999999999998,
+      "initial_counts": [
+        868,
+        87,
+        43
+      ],
+      "final_counts": [
+        827,
+        87,
+        43
+      ]
+    },
+    {
+      "phase": "after",
+      "label": "wolf-spatial-after-3",
+      "result": "2026-11-13T16-19-01_wolf-spatial-after-3_394300_1756249\\result.json",
+      "wolf_call_ms": 3.46457354758962,
+      "wolf_calls": 809,
+      "hunt_ms": 7.82771064814815,
+      "step_ms": 70.2349444444444,
+      "p95_ms": 83.947,
+      "fps": 1.76392203229428,
+      "wall_seconds": 30.613598,
+      "sim_start": 0.916666666666668,
+      "sim_advanced": 7.19999999999998,
+      "initial_counts": [
+        868,
+        87,
+        43
+      ],
+      "final_counts": [
+        821,
+        87,
+        43
+      ]
+    }
+  ],
+  "medians": {
+    "before": {
+      "wolf_call_ms": 3.80811639549437,
+      "hunt_ms": 8.58694103773584,
+      "step_ms": 71.9867644230769,
+      "p95_ms": 90.874,
+      "fps": 1.7152006890357
+    },
+    "after": {
+      "wolf_call_ms": 3.53054451612903,
+      "hunt_ms": 8.58723039215686,
+      "step_ms": 72.5640661764706,
+      "p95_ms": 96.546,
+      "fps": 1.69813855711831
+    }
+  },
+  "change_percent": {
+    "wolf_call_ms": -7.288954709833806,
+    "hunt_ms": 0.003369703131150814,
+    "step_ms": 0.8019554122488559,
+    "p95_ms": 6.24160926117483,
+    "fps": -0.9947600899683939
+  },
+  "initial_static_search_cost_ms_per_wolf": {
+    "full_collect_usec": 0.647183908045977,
+    "spatial_collect_usec": 0.3368390804597701,
+    "competition_weight_usec": 3.1020344827586204
+  }
+}

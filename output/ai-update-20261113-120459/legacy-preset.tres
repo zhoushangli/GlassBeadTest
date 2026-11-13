@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="SimulationConfig" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Core/GrassConfig.gd" id="1_xph4w"]
+[ext_resource type="Script" path="res://Scripts/Core/SimulationConfig.gd" id="2_1ke2u"]
+[ext_resource type="Script" path="res://Scripts/Core/SheepConfig.gd" id="3_4srxn"]
+[ext_resource type="Script" path="res://Scripts/Core/SheepdogConfig.gd" id="4_orm2t"]
+[ext_resource type="Script" path="res://Scripts/Core/WolfConfig.gd" id="5_6jdtb"]
+
+[sub_resource type="Resource" id="Resource_ojiu8"]
+script = ExtResource("1_xph4w")
+positions = PackedVector2Array(340, 240, 940, 240, 340, 510, 940, 510, 640, 375)
+
+[sub_resource type="Resource" id="Resource_y6bhc"]
+script = ExtResource("3_4srxn")
+move_speed = 31.0
+flee_speed = 0.0
+hunger_per_second = 0
+max_risk_percent = 0
+
+[sub_resource type="Resource" id="Resource_vt6vg"]
+script = ExtResource("4_orm2t")
+move_speed = 0.0
+drive_speed = 0.0
+return_speed = 0.0
+
+[sub_resource type="Resource" id="Resource_xl2ci"]
+script = ExtResource("5_6jdtb")
+move_speed = 0.0
+chase_speed = 0.0
+retreat_speed = 0.0
+
+[resource]
+script = ExtResource("2_1ke2u")
+initial_sheep = 3
+initial_wolves = 0
+initial_sheepdogs = 0
+perception_interval = 0.0
+sheep = SubResource("Resource_y6bhc")
+wolf = SubResource("Resource_xl2ci")
+sheepdog = SubResource("Resource_vt6vg")
+grass = SubResource("Resource_ojiu8")

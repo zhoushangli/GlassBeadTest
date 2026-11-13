@@ -1,0 +1,1238 @@
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -7,9 +7,9 @@
+ 
+ ## 当前代码职责
+ 
+-1. `Scripts/Core/GameplayEngine.gd`：统一模拟步进、随机数、暂停与重置、草的消耗和恢复、狼的猎捕轮次，以及运行时配置应用与预设保存。
++1. `Scripts/Core/GameplayEngine.gd`：统一模拟步进、随机数、暂停与重置、草的消耗和恢复，以及运行时配置应用与预设保存。
+ 2. `Scripts/Core/EntityService.gd`：实体创建与移除、物种注册表、空间索引与捕获结算。
+-3. `Scripts/AnimalController.gd`：共享生命周期、采样感知、软分离、移动与行为树调用。`SheepController.gd` 管理饥饿、觅食和逃跑；`WolfController.gd` 管理单只狼的追捕、捕获、休息和撤退；`SheepdogController.gd` 管理局部羊群保护、拦截、驱赶和返回。物种规则留在对应 Controller 中。
++3. `Scripts/AnimalController.gd`：共享生命周期、采样感知、软分离、移动与行为树调用。`SheepController.gd` 管理整数饥饿、冒险觅食和逃跑；`WolfController.gd` 管理单只狼的搜索、加权选目标、追捕、捕获和避狗；`SheepdogController.gd` 管理局部羊群保护、拦截、驱赶和返回。物种规则留在对应 Controller 中。
+ 4. `Resources/AI/BT_*.tres`：各动物的行为优先级和分支组合。`Scripts/AI/Tasks/` 提供条件读取与动作调用，新增行为优先沿用这条链路。
+ 5. `Scripts/RootController.gd`：场景启动、场地与草的表现。`Scripts/Core/DebugService.gd` 和 `Scripts/UI/DebugHUD.gd`：调试输入、选择与状态显示。`Scripts/UI/RuntimeConfigPanel.gd`：由 CFG 导出范围生成分组表单，编辑草稿并提交给引擎。
+ 6. `Resources/Gameplay/CFG_Simulation.tres` 引用 `CFG_Sheep.tres`、`CFG_Wolf.tres`、`CFG_Sheepdog.tres`、`CFG_Grass.tres`；对应 Resource 类型放在 `Scripts/Core/`。速度、饥饿、觅食、猎捕、保护与草恢复等关键数值集中在 CFG，颜色、形状和行为树引用保留在动物场景中。
+@@ -17,12 +17,12 @@
+ 
+ ## 当前行为与配置约定
+ 
+-1. 羊以连续饥饿值和双阈值控制觅食，按距离、草量和其他羊的占用选择草点；新增目标的预约不超过剩余食物量，没有可用目标时缓慢游走并定时重试，已在吃草的羊不中途换目标。羊以附近同伴形成松散小群，不向全局羊群中心聚集。狗保护局部羊群，狼通过有休息间隔和参与上限的轮次偶尔打断放牧。
++1. 羊以 0～100 的整数饥饿值和双阈值控制觅食，不足一点的增量累计保留；按距离、草量和其他羊的占用选择草点，新增目标的预约不超过剩余食物量，没有可用目标时缓慢游走并定时重试，已在吃草的羊不中途换目标。羊以附近同伴形成松散小群，不向全局羊群中心聚集。高饥饿羊按遭遇抽签决定是否冒险觅食，紧急距离始终逃跑。狗保护局部羊群，狼独立持续搜索和猎捕，已被其他狼追踪的羊选择权重降低；无休息轮次、参与上限或协作侧翼。
+ 2. 保持当前默认规模：240 只羊、24 只狼、12 只狗。暂不加入实体碰撞；现有软分离不等于物理碰撞。
+ 3. 万至百万实体、60 FPS 是长期目标，ECS、Compute Shader、多线程和按区域活动量降低更新频率尚未实现；不能将该目标写成当前性能承诺，也不为此提前添加 PhysicsService 等框架。
+ 4. 运行时配置使用独立副本，UI 草稿、已应用参数和仓库默认资源相互独立。`F2` 或右上角按钮打开面板；普通数值通过 Apply 更新现有及新增动物，即使暂停也可应用。
+-5. 种子、初始数量、场地与草布局变化需要重启模拟，UI 显示 Apply & restart，保留暂停状态。已采样的休息和草恢复倒计时保持原值，新一轮使用新参数；降低猎捕参与上限会退出多余猎手。
+-6. Save applied 将已应用参数保存到 `user://CFG_Runtime.tres`；Load preset 和 Default CFG 只填入草稿，需要 Apply。运行时调参不得自动覆盖仓库中的 CFG 默认文件。
++5. 种子、初始数量、场地与草布局变化需要重启模拟，UI 显示 Apply & restart，保留暂停状态。已经过的追赶时间和已采样的草恢复倒计时保持原值，之后吃空的草使用新恢复参数；冒险参数实际变化会在下一模拟步重新评估本次遭遇。
++6. Save applied 将已应用参数保存到 `user://CFG_Runtime.tres`；Load preset 和 Default CFG 只填入草稿，需要 Apply。运行时调参不得自动覆盖仓库中的 CFG 默认文件。新预设保存版本标记，旧的无版本预设不自动转换，Load preset 提示不兼容并保留原文件。
+ 7. 新增可调参数时同步维护导出范围、跨字段校验、应用语义和必要的 UI 提示；避免在 UI 和行为代码各维护一份默认数值。表单输入数字时不得触发生成动物、重置等模拟快捷键。
+ 
+ ## 文件修改规则
+--- before/Prefabs\Runtime\Objects\SCN_Wolf.tscn
++++ after/Prefabs\Runtime\Objects\SCN_Wolf.tscn
+@@ -9,8 +9,6 @@
+ kind = 1
+ base_color = Color(0.9372549, 0.3254902, 0.3137255, 1)
+ behavior_colors = {
+-"Rest": Color(0.9372549, 0.3254902, 0.3137255, 1),
+-"Retreat": Color(0.9882353, 0.6470588, 0.6470588, 1),
+ "Search": Color(0.9372549, 0.3254902, 0.3137255, 1),
+ "Chase": Color(1.0000000, 0.4392157, 0.2627451, 1),
+ "Capture": Color(0.9568627, 0.2470588, 0.3686275, 1),
+--- before/Resources\AI\BT_Wolf.tres
++++ after/Resources\AI\BT_Wolf.tres
+@@ -41,28 +41,16 @@
+ 
+ [sub_resource type="BTAction" id="Action_3"]
+ script = ExtResource("2")
+-behavior = 12
++behavior = 4
+ 
+ [sub_resource type="BTDynamicSequence" id="Branch_3"]
+-custom_name = "Rest between hunts"
++custom_name = "Search for prey"
+ children = [SubResource("Action_3")]
+-
+-[sub_resource type="BTCondition" id="Condition_retreat"]
+-script = ExtResource("1")
+-fact = &"must_retreat"
+-
+-[sub_resource type="BTAction" id="Action_retreat"]
+-script = ExtResource("2")
+-behavior = 13
+-
+-[sub_resource type="BTDynamicSequence" id="Branch_retreat"]
+-custom_name = "Leave the flock"
+-children = [SubResource("Condition_retreat"), SubResource("Action_retreat")]
+ 
+ [sub_resource type="BTDynamicSelector" id="Root"]
+ custom_name = "Wolf priorities"
+-children = [SubResource("Branch_0"), SubResource("Branch_retreat"), SubResource("Branch_1"), SubResource("Branch_2"), SubResource("Branch_3")]
++children = [SubResource("Branch_0"), SubResource("Branch_1"), SubResource("Branch_2"), SubResource("Branch_3")]
+ 
+ [resource]
+-description = "Avoid dogs, retreat after a hunt, pursue assigned prey, or rest."
++description = "Avoid dogs, capture or pursue selected prey, otherwise search."
+ root_task = SubResource("Root")
+--- before/Resources\Gameplay\CFG_Grass.tres
++++ after/Resources\Gameplay\CFG_Grass.tres
+@@ -6,6 +6,6 @@
+ script = ExtResource("1")
+ patch_radius = 84.0
+ per_patch = 24
+-bites = 3
+-regrow_duration = 45.0
++bites = 2
++regrow_duration = 15.0
+ positions = PackedVector2Array(340, 240, 940, 240, 340, 510, 940, 510, 640, 375)
+--- before/Resources\Gameplay\CFG_Sheep.tres
++++ after/Resources\Gameplay\CFG_Sheep.tres
+@@ -4,23 +4,25 @@
+ 
+ [resource]
+ script = ExtResource("1")
+-move_speed = 55.0
++move_speed = 70.0
+ flee_speed = 110.0
+ perception_radius = 190.0
+ idle_speed_scale = 0.5
+ flock_radius = 120.0
+ foraging_cohesion = 0.2
+ idle_cohesion = 0.3
+-initial_hunger_min = 0.2
+-initial_hunger_max = 0.7
+-hunger_per_second = 0.01
+-hungry_threshold = 0.6
+-full_threshold = 0.2
+-hunger_per_bite = 0.25
+-grazing_duration = 3.0
++initial_hunger_min = 20
++initial_hunger_max = 70
++hunger_per_second = 1
++hungry_threshold = 60
++full_threshold = 20
++hunger_per_bite = 25
++grazing_duration = 2.0
+ grazing_distance = 18.0
+ retarget_interval = 2.0
+ retarget_improvement = 0.2
+ crowd_weight = 2.0
+ emergency_distance = 64.0
+ safety_duration = 1.0
++risk_hunger_threshold = 70
++max_risk_percent = 80
+--- before/Resources\Gameplay\CFG_Wolf.tres
++++ after/Resources\Gameplay\CFG_Wolf.tres
+@@ -9,12 +9,8 @@
+ retreat_speed = 160.0
+ perception_radius = 260.0
+ dog_threat_distance = 160.0
+-retreat_distance = 210.0
+-max_hunters = 3
+-rest_duration_min = 15.0
+-rest_duration_max = 25.0
+ hunt_duration = 10.0
+-cooperation_radius = 160.0
+-flank_offset = 32.0
+ capture_distance = 22.0
+ capture_duration = 0.5
++search_interval = 1.0
++competition_weight = 3.0
+--- before/Scripts\Core\GameplayEngine.gd
++++ after/Scripts\Core\GameplayEngine.gd
+@@ -27,12 +27,6 @@
+ var grass_bites := PackedInt32Array()
+ var grass_claims := PackedInt32Array()
+ var grass_regrow_remaining := PackedFloat32Array()
+-var hunt_active: bool = false
+-var hunt_rounds: int = 0
+-var hunt_elapsed: float = 0.0
+-var hunt_rest_remaining: float = 0.0
+-var hunt_target: SheepController
+-var hunters: Array[WolfController] = []
+ var _pending_spawns: Array[Vector2i] = []
+ var _pending_config: SimulationConfig
+ var _reset_pending: bool = false
+@@ -62,9 +56,6 @@
+ 	_pending_config = null
+ 	_reset_pending = false
+ 	_step_pending = false
+-	hunters.clear()
+-	hunt_target = null
+-	hunt_active = false
+ 	debug_service.clear_selection()
+ 	if is_instance_valid(entity_service.container):
+ 		entity_service.clear()
+@@ -86,7 +77,6 @@
+ 	last_movement_ms = 0.0
+ 	paused = false
+ 	reset_grass()
+-	reset_hunts()
+ 	entity_service.spawn_initial()
+ 
+ 
+@@ -109,25 +99,20 @@
+ 	else:
+ 		for animal in entity_service.entities:
+ 			animal.refresh_config()
+-		# 1) A lower live limit takes effect without replacing the current hunt.
+-		var active_count: int = 0
+-		for wolf in hunters:
+-			if is_instance_valid(wolf) and wolf.hunting:
+-				active_count += 1
+-				if active_count > config.wolf.max_hunters:
+-					wolf.leave_hunt()
+ 	configuration_applied.emit(restart)
+ 
+ 
+ func save_preset(path: String = PRESET_PATH) -> Error:
+-	return ResourceSaver.save(config.copy_config(), path)
++	var preset := config.copy_config()
++	preset.preset_version = SimulationConfig.PRESET_VERSION
++	return ResourceSaver.save(preset, path)
+ 
+ 
+ func load_preset(path: String = PRESET_PATH) -> SimulationConfig:
+ 	if not FileAccess.file_exists(path):
+ 		return null
+ 	var loaded := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as SimulationConfig
+-	if loaded == null or not loaded.validate().is_empty():
++	if loaded == null or loaded.preset_version != SimulationConfig.PRESET_VERSION or not loaded.validate().is_empty():
+ 		return null
+ 	return loaded.copy_config()
+ 
+@@ -179,89 +164,6 @@
+ 			grass_claims[sheep.grass_target_index] += 1
+ 
+ 
+-func reset_hunts() -> void:
+-	hunters.clear()
+-	hunt_target = null
+-	hunt_active = false
+-	hunt_rounds = 0
+-	hunt_elapsed = 0.0
+-	hunt_rest_remaining = rng.randf_range(config.wolf.rest_duration_min, config.wolf.rest_duration_max)
+-
+-
+-func finish_hunt() -> void:
+-	for wolf in hunters:
+-		if is_instance_valid(wolf) and wolf.alive:
+-			wolf.leave_hunt()
+-	hunters.clear()
+-	hunt_target = null
+-	hunt_active = false
+-	hunt_elapsed = 0.0
+-	hunt_rest_remaining = rng.randf_range(config.wolf.rest_duration_min, config.wolf.rest_duration_max)
+-
+-
+-func try_begin_hunt() -> bool:
+-	if hunt_active:
+-		return false
+-
+-	var leader: WolfController
+-	var prey: SheepController
+-	var best_distance: float = INF
+-	for wolf in entity_service.wolves:
+-		if not wolf.alive or wolf.retreating:
+-			continue
+-		for sheep in entity_service.sheep:
+-			if not sheep.alive:
+-				continue
+-			var distance := wolf.global_position.distance_squared_to(sheep.global_position)
+-			if distance < wolf.perception_radius * wolf.perception_radius and distance < best_distance:
+-				leader = wolf
+-				prey = sheep
+-				best_distance = distance
+-
+-	if leader == null:
+-		return false
+-
+-	hunt_target = prey
+-	hunters.assign([leader])
+-	var candidates: Array[WolfController] = []
+-	for wolf in entity_service.wolves:
+-		if wolf != leader and wolf.alive and not wolf.retreating:
+-			if wolf.global_position.distance_to(leader.global_position) <= config.wolf.cooperation_radius \
+-				and wolf.global_position.distance_to(prey.global_position) < wolf.perception_radius:
+-				candidates.append(wolf)
+-	candidates.sort_custom(func(a: WolfController, b: WolfController) -> bool:
+-		var first := a.global_position.distance_squared_to(leader.global_position)
+-		var second := b.global_position.distance_squared_to(leader.global_position)
+-		return first < second if not is_equal_approx(first, second) else a.entity_id < b.entity_id)
+-	for wolf in candidates:
+-		if hunters.size() >= config.wolf.max_hunters:
+-			break
+-		hunters.append(wolf)
+-
+-	for wolf in hunters:
+-		wolf.begin_hunt(prey, wolf != leader)
+-	hunt_active = true
+-	hunt_elapsed = 0.0
+-	hunt_rest_remaining = 0.0
+-	hunt_rounds += 1
+-	return true
+-
+-
+-func _update_hunts(delta: float) -> void:
+-	if hunt_active:
+-		hunt_elapsed += delta
+-		var active_count: int = 0
+-		for wolf in hunters:
+-			if is_instance_valid(wolf) and wolf.alive and wolf.hunting:
+-				active_count += 1
+-		if not is_instance_valid(hunt_target) or not hunt_target.alive or active_count == 0 or hunt_elapsed >= config.wolf.hunt_duration:
+-			finish_hunt()
+-	else:
+-		hunt_rest_remaining = maxf(0.0, hunt_rest_remaining - delta)
+-		if hunt_rest_remaining <= 0.0 and not try_begin_hunt():
+-			hunt_rest_remaining = 1.0
+-
+-
+ func request_spawn(kind: AnimalController.Kind, count: int) -> void:
+ 	_pending_spawns.append(Vector2i(kind, count))
+ 
+@@ -302,11 +204,13 @@
+ 
+ func simulate_step(delta: float) -> void:
+ 	var started := Time.get_ticks_usec()
+-	# 1) Prepare one shared snapshot and hunt roster before animal perception.
++	# 1) Prepare one shared snapshot, then select wolf targets before animal perception.
+ 	_update_grass(delta)
+ 	entity_service.rebuild_spatial_index()
+ 	rebuild_grass_claims()
+-	_update_hunts(delta)
++	for wolf in entity_service.wolves:
++		if wolf.alive:
++			wolf.update_hunt(delta)
+ 	for animal in entity_service.entities:
+ 		if animal.alive:
+ 			animal.perceive(delta)
+--- before/Scripts\Core\GrassConfig.gd
++++ after/Scripts\Core\GrassConfig.gd
+@@ -4,7 +4,7 @@
+ @export_group("Layout - restart required")
+ @export_range(12.0, 200.0, 1.0) var patch_radius: float = 84.0
+ @export_range(1, 100, 1) var per_patch: int = 24
+-@export_range(1, 20, 1) var bites: int = 3
++@export_range(1, 20, 1) var bites: int = 2
+ @export var positions := PackedVector2Array([
+ 	Vector2(340.0, 240.0), Vector2(940.0, 240.0),
+ 	Vector2(340.0, 510.0), Vector2(940.0, 510.0),
+@@ -12,4 +12,4 @@
+ ])
+ 
+ @export_group("Regrowth")
+-@export_range(0.1, 180.0, 0.5) var regrow_duration: float = 45.0
++@export_range(0.1, 180.0, 0.1) var regrow_duration: float = 15.0
+--- before/Scripts\Core\SheepConfig.gd
++++ after/Scripts\Core\SheepConfig.gd
+@@ -2,7 +2,7 @@
+ extends Resource
+ 
+ @export_group("Movement")
+-@export_range(0.0, 300.0, 1.0) var move_speed: float = 55.0
++@export_range(0.0, 300.0, 1.0) var move_speed: float = 70.0
+ @export_range(0.0, 400.0, 1.0) var flee_speed: float = 110.0
+ @export_range(20.0, 600.0, 1.0) var perception_radius: float = 190.0
+ @export_range(0.0, 1.0, 0.05) var idle_speed_scale: float = 0.5
+@@ -11,13 +11,13 @@
+ @export_range(0.0, 2.0, 0.05) var idle_cohesion: float = 0.3
+ 
+ @export_group("Appetite")
+-@export_range(0.0, 1.0, 0.01) var initial_hunger_min: float = 0.2
+-@export_range(0.0, 1.0, 0.01) var initial_hunger_max: float = 0.7
+-@export_range(0.0, 0.1, 0.001) var hunger_per_second: float = 0.01
+-@export_range(0.01, 1.0, 0.01) var hungry_threshold: float = 0.6
+-@export_range(0.0, 0.99, 0.01) var full_threshold: float = 0.2
+-@export_range(0.01, 1.0, 0.01) var hunger_per_bite: float = 0.25
+-@export_range(0.1, 20.0, 0.1) var grazing_duration: float = 3.0
++@export_range(0, 100, 1) var initial_hunger_min: int = 20
++@export_range(0, 100, 1) var initial_hunger_max: int = 70
++@export_range(0, 100, 1) var hunger_per_second: int = 1
++@export_range(1, 100, 1) var hungry_threshold: int = 60
++@export_range(0, 100, 1) var full_threshold: int = 20
++@export_range(1, 100, 1) var hunger_per_bite: int = 25
++@export_range(0.1, 20.0, 0.1) var grazing_duration: float = 2.0
+ @export_range(4.0, 64.0, 1.0) var grazing_distance: float = 18.0
+ 
+ @export_group("Foraging and safety")
+@@ -26,3 +26,7 @@
+ @export_range(0.0, 10.0, 0.1) var crowd_weight: float = 2.0
+ @export_range(8.0, 190.0, 1.0) var emergency_distance: float = 64.0
+ @export_range(0.0, 10.0, 0.1) var safety_duration: float = 1.0
++
++@export_group("Risk taking")
++@export_range(0, 99, 1) var risk_hunger_threshold: int = 70
++@export_range(0, 100, 1) var max_risk_percent: int = 80
+--- before/Scripts\Core\SimulationConfig.gd
++++ after/Scripts\Core\SimulationConfig.gd
+@@ -1,5 +1,9 @@
+ class_name SimulationConfig
+ extends Resource
++
++const PRESET_VERSION: int = 2
++
++@export_storage var preset_version: int = 0
+ 
+ @export_group("World - restart required")
+ @export var arena_size := Vector2(1280.0, 720.0)
+@@ -64,8 +68,6 @@
+ 		return "Initial hunger minimum must not exceed maximum."
+ 	if sheep.emergency_distance > sheep.perception_radius:
+ 		return "Sheep emergency distance must not exceed perception radius."
+-	if wolf.rest_duration_min > wolf.rest_duration_max:
+-		return "Rest duration minimum must not exceed maximum."
+ 
+ 	for point in grass.positions:
+ 		if not point.is_finite():
+--- before/Scripts\Core\WolfConfig.gd
++++ after/Scripts\Core\WolfConfig.gd
+@@ -7,15 +7,11 @@
+ @export_range(0.0, 400.0, 1.0) var retreat_speed: float = 160.0
+ @export_range(20.0, 700.0, 1.0) var perception_radius: float = 260.0
+ @export_range(0.0, 400.0, 1.0) var dog_threat_distance: float = 160.0
+-@export_range(20.0, 400.0, 1.0) var retreat_distance: float = 210.0
+ 
+-@export_group("Hunt rounds")
+-@export_range(1, 24, 1) var max_hunters: int = 3
+-@export_range(0.0, 120.0, 0.5) var rest_duration_min: float = 15.0
+-@export_range(0.0, 120.0, 0.5) var rest_duration_max: float = 25.0
+-@export_range(0.1, 60.0, 0.5) var hunt_duration: float = 10.0
+-@export_range(0.0, 600.0, 1.0) var cooperation_radius: float = 160.0
+-@export_range(0.0, 100.0, 1.0) var flank_offset: float = 32.0
++@export_group("Hunting")
++@export_range(0.1, 60.0, 0.1) var search_interval: float = 1.0
++@export_range(0.1, 60.0, 0.1) var hunt_duration: float = 10.0
++@export_range(0.0, 20.0, 0.5) var competition_weight: float = 3.0
+ 
+ @export_group("Capture")
+ @export_range(1.0, 80.0, 1.0) var capture_distance: float = 22.0
+--- before/Scripts\SheepController.gd
++++ after/Scripts\SheepController.gd
+@@ -2,7 +2,8 @@
+ extends AnimalController
+ 
+ var settings: SheepConfig
+-var hunger: float = 0.0
++var hunger: int = 0
++var taking_risk: bool = false
+ var grazing_progress: float = 0.0
+ var grass_target_index: int = -1
+ var grass_target := Vector2.ZERO
+@@ -12,6 +13,11 @@
+ var threat_memory: float = 0.0
+ var meals_eaten: int = 0
+ var last_meal_patch: int = -1
++var _hunger_fraction: float = 0.0
++var _threat_encounter: bool = false
++var _emergency: bool = false
++var _risk_threshold: int = -1
++var _risk_percent: int = -1
+ var _feeding: bool = false
+ var _retarget_remaining: float = 0.0
+ var _meal_completed: bool = false
+@@ -21,12 +27,17 @@
+ 
+ func initialize(engine: Node, id: int, at_position: Vector2) -> void:
+ 	super.initialize(engine, id, at_position)
+-	hunger = gameplay_engine.rng.randf_range(settings.initial_hunger_min, settings.initial_hunger_max)
++	hunger = gameplay_engine.rng.randi_range(settings.initial_hunger_min, settings.initial_hunger_max)
+ 
+ 
+ func refresh_config() -> void:
+ 	settings = gameplay_engine.config.sheep
+ 	movement_config = settings
++	if _risk_threshold != settings.risk_hunger_threshold or _risk_percent != settings.max_risk_percent:
++		_threat_encounter = false
++		taking_risk = false
++		_risk_threshold = settings.risk_hunger_threshold
++		_risk_percent = settings.max_risk_percent
+ 	_retarget_remaining = 0.0
+ 	super.refresh_config()
+ 
+@@ -55,7 +66,12 @@
+ 
+ 
+ func perceive(delta: float) -> void:
+-	hunger = clampf(hunger + settings.hunger_per_second * delta, 0.0, 1.0)
++	_hunger_fraction += settings.hunger_per_second * delta
++	var gained := floori(_hunger_fraction + 0.000001)
++	_hunger_fraction = maxf(0.0, _hunger_fraction - gained)
++	hunger = clampi(hunger + gained, 0, 100)
++	if hunger == 100:
++		_hunger_fraction = 0.0
+ 	super.perceive(delta)
+ 	_retarget_remaining -= delta
+ 	_update_threat(delta)
+@@ -65,9 +81,17 @@
+ 	elif hunger <= settings.full_threshold:
+ 		_feeding = false
+ 
+-	var threatened := is_live(nearest_threat) or threat_memory > 0.0
++	var encounter := is_live(nearest_threat) or threat_memory > 0.0
++	if encounter and not _threat_encounter:
++		var probability := settings.max_risk_percent * maxf(0.0, float(hunger - settings.risk_hunger_threshold)) / (100 - settings.risk_hunger_threshold)
++		taking_risk = gameplay_engine.rng.randf() < probability / 100.0
++	_threat_encounter = encounter
++	if not encounter or hunger <= settings.risk_hunger_threshold:
++		taking_risk = false
++	var threatened := _emergency or (encounter and not taking_risk)
+ 	if threatened or not _feeding:
+ 		_set_grass_target(-1)
++		_retarget_remaining = 0.0
+ 	else:
+ 		var valid := _grass_available(grass_target_index) and not _grass_unsafe(grass_target_index)
+ 		var lost_target := grass_target_index >= 0 and not valid
+@@ -84,6 +108,7 @@
+ 
+ func _update_threat(delta: float) -> void:
+ 	nearest_threat = null
++	_emergency = false
+ 	var nearest_distance: float = INF
+ 	var away := Vector2.ZERO
+ 	for wolf in _observed_wolves:
+@@ -94,6 +119,9 @@
+ 		var distance := offset.length()
+ 		if distance >= perception_radius or (not wolf.hunting and distance >= settings.emergency_distance):
+ 			continue
++
++		if distance < settings.emergency_distance:
++			_emergency = true
+ 
+ 		away += offset.normalized() / maxf(distance, 1.0)
+ 		if distance < nearest_distance:
+@@ -120,7 +148,7 @@
+ 	var point: Vector2 = gameplay_engine.grass_positions[index]
+ 	for wolf in gameplay_engine.entity_service.wolves:
+ 		if wolf.alive:
+-			var radius: float = perception_radius if wolf.hunting else settings.emergency_distance
++			var radius: float = perception_radius if wolf.hunting and not taking_risk else settings.emergency_distance
+ 			if point.distance_squared_to(wolf.global_position) < radius * radius:
+ 				return true
+ 	return false
+@@ -198,7 +226,7 @@
+ 	grazing_progress += delta
+ 	if grazing_progress + 0.000001 >= settings.grazing_duration:
+ 		if gameplay_engine.consume_grass(grass_target_index):
+-			hunger = maxf(0.0, hunger - settings.hunger_per_bite)
++			hunger = maxi(0, hunger - settings.hunger_per_bite)
+ 			meals_eaten += 1
+ 			last_meal_patch = gameplay_engine.grass_patch_indices[grass_target_index]
+ 		grazing_progress = 0.0
+@@ -211,7 +239,7 @@
+ 
+ 
+ func get_debug_details() -> String:
+-	return "Hunger %d%% | Grass %d | Meals %d" % [roundi(hunger * 100.0), grass_target_index, meals_eaten]
++	return "Hunger %d%% | Risk %s | Grass %d | Meals %d" % [hunger, "YES" if taking_risk else "NO", grass_target_index, meals_eaten]
+ 
+ 
+ func die() -> void:
+--- before/Scripts\UI\DebugHUD.gd
++++ after/Scripts\UI\DebugHUD.gd
+@@ -33,10 +33,14 @@
+ 	metrics.text = "FPS %d    |    Step %.2f ms    |    Alive %d    |    Sheep %d   Wolves %d   Dogs %d" % [
+ 		Engine.get_frames_per_second(), gameplay_engine.last_step_ms,
+ 		counts.x + counts.y + counts.z, counts.x, counts.y, counts.z]
++	var hunters: int = 0
++	for wolf in gameplay_engine.entity_service.wolves:
++		if wolf.alive and wolf.hunting:
++			hunters += 1
+ 	status.text = "%s    |    Seed %d    |    Sim %.1f s    |    Captured %d    |    %s    |    Debug %s" % [
+ 		"PAUSED" if gameplay_engine.paused else "RUNNING", gameplay_engine.config.random_seed,
+ 		gameplay_engine.simulation_time, gameplay_engine.entity_service.capture_count,
+-		"Hunt %d" % gameplay_engine.hunt_rounds if gameplay_engine.hunt_active else "Rest %.1f s" % gameplay_engine.hunt_rest_remaining,
++		"Hunting %d" % hunters,
+ 		"ON" if gameplay_engine.debug_service.show_details else "OFF"]
+ 	selection.text = gameplay_engine.debug_service.selection_text()
+ 	parameters.refresh()
+--- before/Scripts\UI\RuntimeConfigPanel.gd
++++ after/Scripts\UI\RuntimeConfigPanel.gd
+@@ -11,10 +11,13 @@
+ 	"hungry_threshold": "Start seeking food at this hunger. Must exceed full threshold.",
+ 	"full_threshold": "Stop feeding at this hunger. Must be below hungry threshold.",
+ 	"hunger_per_bite": "Hunger removed after one completed bite.",
+-	"rest_duration_min": "Minimum rest before a new hunt. Existing sampled rest keeps its duration.",
+-	"rest_duration_max": "Maximum rest before a new hunt. Existing sampled rest keeps its duration.",
++	"hunger_per_second": "Integer hunger points gained per second; fractional progress is accumulated.",
++	"risk_hunger_threshold": "Above this hunger, risk probability rises linearly. Changing risk settings rerolls the encounter next step.",
++	"max_risk_percent": "Risk probability at hunger 100, in percent. Emergency escape always takes priority.",
++	"search_interval": "Seconds between searches when no prey is available.",
++	"hunt_duration": "Maximum chase time; current elapsed time is preserved when applied.",
++	"competition_weight": "Reduces prey weight by 1 / (1 + other hunters times this value).",
+ 	"regrow_duration": "Seconds before grass regrows. Applies to newly depleted grass.",
+-	"max_hunters": "Maximum simultaneous hunters. Lowering it also releases excess current hunters.",
+ 	"patch_radius": "Grass patch radius. Applying a change restarts the simulation.",
+ 	"per_patch": "Grass points per patch. Applying a change restarts the simulation.",
+ 	"bites": "Food per grass point. Applying a change restarts the simulation."
+@@ -173,7 +176,7 @@
+ func _load() -> void:
+ 	var loaded: SimulationConfig = gameplay_engine.load_preset()
+ 	if loaded == null:
+-		message.text = "No valid saved CFG_Runtime.tres preset was found."
++		message.text = "Preset missing or incompatible. Hunger values must use integer points (0-100); old normalized presets are unsupported."
+ 		return
+ 	set_draft(loaded)
+ 	message.text = "Saved preset loaded into the form. Apply when ready."
+--- before/Scripts\WolfController.gd
++++ after/Scripts\WolfController.gd
+@@ -3,110 +3,117 @@
+ 
+ var settings: WolfConfig
+ var hunting: bool = false
+-var supporting_hunt: bool = false
+ var capture_progress: float = 0.0
+-var retreating: bool = false
++var hunt_elapsed: float = 0.0
+ var nearest_threat: SheepdogController
+-var _rest_point := Vector2.ZERO
+-var _rest_remaining: float = 0.0
++var _search_remaining: float = 0.0
++var _timed_out_target: SheepController
+ 
+ 
+ func initialize(engine: Node, id: int, at_position: Vector2) -> void:
+ 	super.initialize(engine, id, at_position)
+-	current_behavior = Behavior.REST
+-	_rest_point = at_position
++	current_behavior = Behavior.SEARCH
+ 
+ 
+ func refresh_config() -> void:
+ 	settings = gameplay_engine.config.wolf
+ 	movement_config = settings
+-	_rest_remaining = 0.0
+ 	super.refresh_config()
+ 
+ 
+-func _get_query_radius() -> float:
+-	return maxf(super._get_query_radius(), settings.dog_threat_distance)
++func update_hunt(delta: float) -> void:
++	nearest_threat = null
++	var nearest_distance := settings.dog_threat_distance
++	for dog in gameplay_engine.entity_service.dogs:
++		if dog.alive:
++			var distance := global_position.distance_to(dog.global_position)
++			if distance < nearest_distance:
++				nearest_threat = dog
++				nearest_distance = distance
++	if is_live(nearest_threat):
++		leave_hunt()
++		return
++
++	if hunting:
++		hunt_elapsed += delta
++		if not is_live(target) or global_position.distance_to(target.global_position) >= perception_radius:
++			leave_hunt()
++		elif hunt_elapsed + 0.000001 >= settings.hunt_duration:
++			_timed_out_target = target as SheepController
++			leave_hunt()
++			return
++		else:
++			return
++
++	_search_remaining -= delta
++	if _search_remaining <= 0.0:
++		_choose_prey()
++		_search_remaining = settings.search_interval
+ 
+ 
+-func _scan_neighbors(service: EntityService) -> void:
+-	nearest_threat = null
+-	var dog_distance: float = settings.dog_threat_distance * settings.dog_threat_distance
+-	for index in _nearby:
+-		var distance_squared := global_position.distance_squared_to(service.perception_positions[index])
+-		if service.perception_kinds[index] == Kind.SHEEPDOG and distance_squared < dog_distance:
+-			nearest_threat = service.entities[index] as SheepdogController
+-			dog_distance = distance_squared
++func _prey_weight(prey: SheepController) -> float:
++	var competitors: int = 0
++	for wolf in gameplay_engine.entity_service.wolves:
++		if wolf != self and wolf.alive and wolf.hunting and wolf.target == prey:
++			if wolf.hunt_elapsed < wolf.settings.hunt_duration and wolf.global_position.distance_to(prey.global_position) < wolf.perception_radius:
++				competitors += 1
++	return 1.0 / maxf(global_position.distance_to(prey.global_position), 1.0) / (1.0 + competitors * settings.competition_weight)
++
++
++func _choose_prey() -> void:
++	var candidates: Array[SheepController] = []
++	for sheep in gameplay_engine.entity_service.sheep:
++		if sheep.alive and global_position.distance_to(sheep.global_position) < perception_radius:
++			candidates.append(sheep)
++	if candidates.size() > 1:
++		candidates.erase(_timed_out_target)
++	_timed_out_target = null
++	var weights: Array[float] = []
++	var total: float = 0.0
++	for sheep in candidates:
++		var weight := _prey_weight(sheep)
++		weights.append(weight)
++		total += weight
++	if candidates.is_empty():
++		return
++
++	var choice: float = gameplay_engine.rng.randf() * total
++	for index in range(candidates.size()):
++		choice -= weights[index]
++		if choice < 0.0 or index == candidates.size() - 1:
++			begin_hunt(candidates[index])
++			return
+ 
+ 
+ func perceive(delta: float) -> void:
+ 	super.perceive(delta)
+-	_rest_remaining -= delta
+-	if is_live(nearest_threat) and global_position.distance_to(nearest_threat.global_position) >= settings.dog_threat_distance:
+-		nearest_threat = null
+-
+-	if hunting and (is_live(nearest_threat) or not is_live(target) or global_position.distance_to(target.global_position) >= perception_radius):
+-		leave_hunt()
+-
+-	if retreating and not is_live(nearest_threat) and global_position.distance_to(_rest_point) < 24.0:
+-		retreating = false
+-	if not hunting and not retreating and _rest_remaining <= 0.0:
+-		_choose_rest_point()
+-
+ 	bt_player.blackboard.set_var(&"threat", is_live(nearest_threat))
+-	bt_player.blackboard.set_var(&"must_retreat", retreating)
+ 	bt_player.blackboard.set_var(&"has_prey", hunting and is_live(target))
+ 	bt_player.blackboard.set_var(&"can_capture", hunting and is_live(target) and global_position.distance_to(target.global_position) <= settings.capture_distance)
+ 	bt_player.blackboard.set_var(&"target", target)
+ 
+ 
+-func begin_hunt(prey: SheepController, support: bool) -> void:
++func begin_hunt(prey: SheepController) -> void:
+ 	target = prey
+ 	hunting = true
+-	supporting_hunt = support
+-	retreating = false
++	hunt_elapsed = 0.0
+ 	capture_progress = 0.0
+-	_perception_ready = false
+ 
+ 
+ func leave_hunt() -> void:
+ 	hunting = false
+ 	target = null
+-	supporting_hunt = false
+ 	capture_progress = 0.0
+-	retreating = true
+-	_choose_rest_point()
+-
+-
+-func _choose_rest_point() -> void:
+-	var arena: Vector2 = gameplay_engine.config.arena_size
+-	var first := Vector2(24.0, 106.0)
+-	var last := arena - Vector2(24.0, 70.0)
+-	var center := (first + last) * 0.5
+-	var candidates := [first, Vector2(center.x, first.y), Vector2(last.x, first.y),
+-		Vector2(first.x, center.y), Vector2(last.x, center.y),
+-		Vector2(first.x, last.y), Vector2(center.x, last.y), last]
+-	var best_score: float = -INF
+-	for point: Vector2 in candidates:
+-		var clearance: float = settings.retreat_distance
+-		for sheep in gameplay_engine.entity_service.sheep:
+-			if sheep.alive:
+-				clearance = minf(clearance, point.distance_to(sheep.global_position))
+-		var score := clearance - global_position.distance_to(point) * 0.1
+-		if score > best_score:
+-			best_score = score
+-			_rest_point = point
+-
+-	_rest_point = clamp_to_arena(_rest_point + Vector2.from_angle(gameplay_engine.rng.randf_range(-PI, PI)) * 24.0)
+-	_rest_remaining = gameplay_engine.rng.randf_range(2.0, 4.0)
++	hunt_elapsed = 0.0
++	_search_remaining = 0.0
+ 
+ 
+ func perform_behavior(behavior: Behavior, delta: float) -> void:
+ 	set_behavior(behavior)
+ 	match behavior:
+-		Behavior.REST:
+-			_towards(_rest_point, move_speed, delta)
+-		Behavior.RETREAT:
+-			_towards(_rest_point, settings.retreat_speed, delta)
++		Behavior.SEARCH:
++			_update_wander(160.0)
++			_towards(_wander_point, move_speed, delta)
+ 		Behavior.FLEE:
+ 			if is_live(nearest_threat):
+ 				var away := (global_position - nearest_threat.global_position).normalized()
+@@ -116,13 +123,8 @@
+ 				desired_velocity = away * settings.retreat_speed
+ 				movement_goal = global_position + away * 80.0
+ 		Behavior.CHASE, Behavior.CAPTURE:
+-			if not hunting or not is_live(target):
+-				return
+-			var goal := target.global_position
+-			if behavior == Behavior.CHASE and supporting_hunt and global_position.distance_to(goal) > 64.0:
+-				var approach := (goal - global_position).normalized()
+-				goal += approach.orthogonal() * settings.flank_offset * (1.0 if entity_id % 2 == 0 else -1.0)
+-			_towards(goal, settings.chase_speed, delta)
++			if hunting and is_live(target):
++				_towards(target.global_position, settings.chase_speed, delta)
+ 
+ 
+ func resolve_interactions(delta: float) -> void:
+@@ -132,7 +134,7 @@
+ 		capture_progress = 0.0
+ 		return
+ 
+-	# 1) Recheck dogs after movement, including between sampled perception updates.
++	# 1) Recheck dogs at the positions resulting from this step.
+ 	for dog in gameplay_engine.entity_service.dogs:
+ 		if dog.alive and global_position.distance_to(dog.global_position) < settings.dog_threat_distance:
+ 			nearest_threat = dog
+@@ -142,7 +144,7 @@
+ 	capture_progress += delta
+ 	if capture_progress + 0.000001 >= settings.capture_duration:
+ 		if gameplay_engine.entity_service.capture(target):
+-			gameplay_engine.finish_hunt()
++			leave_hunt()
+ 
+ 
+ func finish_behavior(behavior: Behavior) -> void:
+@@ -152,5 +154,5 @@
+ 
+ func get_debug_details() -> String:
+ 	if hunting:
+-		return "%s | Capture %.2f / %.2f s" % ["Supporting" if supporting_hunt else "Leading", capture_progress, settings.capture_duration]
+-	return "Next round %.1f s" % gameplay_engine.hunt_rest_remaining
++		return "Hunting sheep #%d | Chase %.1f s | Capture %.2f / %.2f s" % [target.entity_id, hunt_elapsed, capture_progress, settings.capture_duration] if is_live(target) else "Replacing prey"
++	return "Avoiding dog" if is_live(nearest_threat) else "Searching for prey"
+--- before/Tests\SimulationVerification.gd
++++ after/Tests\SimulationVerification.gd
+@@ -24,7 +24,8 @@
+ 	engine.config.initial_wolves = 0
+ 	engine.config.initial_sheepdogs = 0
+ 	engine.config.perception_interval = 0.0
+-	engine.config.sheep.hunger_per_second = 0.0
++	engine.config.sheep.hunger_per_second = 0
++	engine.config.sheep.max_risk_percent = 0
+ 	if frozen:
+ 		engine.config.sheep.move_speed = 0.0
+ 		engine.config.sheep.flee_speed = 0.0
+@@ -59,6 +60,8 @@
+ 
+ func _two_grass_points() -> void:
+ 	engine.config.grass.per_patch = 1
++	engine.config.grass.bites = 3
++	engine.config.sheep.grazing_duration = 3.0
+ 	engine.config.grass.positions = PackedVector2Array([Vector2(340, 240), Vector2(940, 240)])
+ 	engine.reset_grass()
+ 
+@@ -68,7 +71,7 @@
+ 	var copy: Resource = authored.copy_config()
+ 	copy.sheep.move_speed = 19.0
+ 	copy.grass.positions[0] = Vector2(100, 200)
+-	_check(authored.sheep.move_speed == 55.0 and authored.grass.positions[0] == Vector2(340, 240), "deep runtime copies preserve authored resources")
++	_check(authored.sheep.move_speed == 70.0 and authored.grass.positions[0] == Vector2(340, 240), "deep runtime copies preserve authored resources")
+ 
+ 	_empty()
+ 	var sheep := _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+@@ -102,11 +105,11 @@
+ 	_empty()
+ 	_two_grass_points()
+ 	var sheep := _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+-	sheep.hunger = 0.8
++	sheep.hunger = 80
+ 	_step(179)
+ 	_check(engine.grass_bites[0] == 3 and sheep.grazing_progress > 0.0, "unfinished grazing keeps food")
+ 	_step(1)
+-	_check(engine.grass_bites[0] == 2 and is_equal_approx(sheep.hunger, 0.55), "one completed bite lowers hunger")
++	_check(engine.grass_bites[0] == 2 and sheep.hunger == 55, "one completed bite lowers hunger")
+ 	_step(1)
+ 	_check(sheep.current_behavior == AnimalController.Behavior.GRAZE, "feeding continues below hungry threshold")
+ 	_step(359)
+@@ -128,22 +131,22 @@
+ 	_empty()
+ 	_two_grass_points()
+ 	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+-	sheep.hunger = 0.59
+-	engine.config.sheep.hunger_per_second = 0.01
++	sheep.hunger = 59
++	engine.config.sheep.hunger_per_second = 01
+ 	_step(61)
+-	_check(sheep.hunger >= 0.6 and sheep.current_behavior == AnimalController.Behavior.GRAZE, "hunger increases and starts feeding")
+-	sheep.hunger = 0.999
+-	engine.config.sheep.hunger_per_second = 0.1
+-	_step(1)
+-	_check(sheep.hunger <= 1.0, "hunger stays normalized")
++	_check(sheep.hunger >= 60 and sheep.current_behavior == AnimalController.Behavior.GRAZE, "hunger increases and starts feeding")
++	sheep.hunger = 99
++	engine.config.sheep.hunger_per_second = 100
++	_step(1)
++	_check(sheep.hunger <= 100, "hunger stays within 0-100")
+ 
+ 	_empty()
+ 	_two_grass_points()
+ 	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+-	sheep.hunger = 1.0
++	sheep.hunger = 100
+ 	_step(1)
+ 	var other := _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+-	other.hunger = 1.0
++	other.hunger = 100
+ 	other._set_grass_target(0)
+ 	other._retarget_remaining = 100.0
+ 	sheep._retarget_remaining = 100.0
+@@ -159,8 +162,8 @@
+ 	engine.reset_grass()
+ 	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(400, 240)) as SheepController
+ 	other = _animal(AnimalController.Kind.SHEEP, Vector2(400, 240)) as SheepController
+-	sheep.hunger = 1.0
+-	other.hunger = 1.0
++	sheep.hunger = 100
++	other.hunger = 100
+ 	_step(1)
+ 	_check(sheep.grass_target_index != other.grass_target_index, "target claims spread equal-distance foragers")
+ 	_check(not sheep.separation.is_zero_approx(), "existing soft separation handles coincident animals")
+@@ -177,52 +180,101 @@
+ 	engine.grass_bites[0] = 1
+ 	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(300, 240)) as SheepController
+ 	other = _animal(AnimalController.Kind.SHEEP, Vector2(300, 250)) as SheepController
+-	sheep.hunger = 1.0
+-	other.hunger = 1.0
++	sheep.hunger = 100
++	other.hunger = 100
+ 	_step(1)
+ 	_check(sheep.grass_target_index == 0 and other.grass_target_index == -1, "new foragers cannot overbook the remaining food")
+ 	_check(other.current_behavior == AnimalController.Behavior.FLOCK, "unserved hungry sheep wander until the next search")
+ 
++	_empty()
++	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(100, 100)) as SheepController
++	sheep.hunger = 30
++	engine.config.sheep.hunger_per_second = 1
++	_step(59)
++	_check(sheep.hunger == 30, "sub-point hunger is retained until a whole point accrues")
++	engine._physics_process(10.0)
++	_check(sheep.hunger == 30, "pause freezes hunger accumulation")
++	_step(1)
++	_check(sheep.hunger == 31, "sixty small steps add one hunger point")
++	sheep.hunger = 100
++	_step(30)
++	sheep.hunger = 99
++	_step(30)
++	_check(sheep.hunger == 99, "maximum hunger discards excess fractional progress")
++	sheep.hunger = 1
++	sheep._set_grass_target(0)
++	sheep.set_behavior(AnimalController.Behavior.GRAZE)
++	sheep.position = engine.grass_positions[0]
++	sheep.grass_target = engine.grass_positions[0]
++	engine.grass_bites[0] = 1
++	sheep.resolve_interactions(engine.config.sheep.grazing_duration)
++	_check(sheep.hunger == 0, "eating clamps integer hunger at zero")
++
+ 
+ func _verify_threats() -> void:
+ 	_empty()
+ 	_two_grass_points()
+ 	var sheep := _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+-	sheep.hunger = 1.0
++	sheep.hunger = 100
+ 	var wolf := _animal(AnimalController.Kind.WOLF, Vector2(420, 240)) as WolfController
+-	_step(90)
+-	_check(sheep.current_behavior == AnimalController.Behavior.GRAZE, "distant resting wolf permits grazing")
+-	_check(engine.try_begin_hunt(), "a visible prey can start an explicit hunt")
+-	_step(1)
+-	_check(sheep.current_behavior == AnimalController.Behavior.FLEE and sheep.grazing_progress == 0.0, "hunting wolf interrupts a meal")
+-	_check(engine.grass_bites[0] == 3, "interrupted grazing does not consume grass")
+-	engine.finish_hunt()
++	_step(1)
++	_check(sheep.current_behavior == AnimalController.Behavior.FLEE and not sheep.taking_risk, "zero risk always flees hunting wolves")
++	_check(engine.grass_bites[0] == 3, "escaping does not consume grass")
++	wolf.position = Vector2(1100, 600)
+ 	_step(30)
+ 	_check(sheep.current_behavior == AnimalController.Behavior.FLEE, "safety memory delays feeding")
+ 	_step(32)
+ 	_check(sheep.current_behavior == AnimalController.Behavior.GRAZE, "sheep resume feeding after danger")
++
++	_empty()
++	_two_grass_points()
++	engine.config.sheep.max_risk_percent = 100
++	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
++	sheep.hunger = 100
++	wolf = _animal(AnimalController.Kind.WOLF, Vector2(420, 240)) as WolfController
++	_step(1)
++	_check(sheep.taking_risk and sheep.current_behavior == AnimalController.Behavior.GRAZE, "certain risk permits grazing in a hunting wolf's normal threat radius")
++	var state: int = engine.rng.state
++	_step(15)
++	_check(engine.rng.state == state and sheep.taking_risk, "ongoing encounter does not reroll risk")
+ 	wolf.position = Vector2(360, 240)
+ 	_step(1)
+-	_check(sheep.current_behavior == AnimalController.Behavior.FLEE, "nearby resting wolves still trigger emergency escape")
++	_check(sheep.current_behavior == AnimalController.Behavior.FLEE and sheep.grass_target_index == -1, "emergency distance overrides certain risk")
++	wolf.position = Vector2(420, 240)
++	_step(1)
++	_check(sheep.taking_risk and sheep.current_behavior == AnimalController.Behavior.GRAZE, "risk decision survives emergency interruption")
++	sheep.hunger = 70
++	_step(1)
++	_check(not sheep.taking_risk and sheep.current_behavior == AnimalController.Behavior.FLEE, "hunger falling to risk threshold ends risk")
++	sheep.hunger = 100
++	_step(1)
++	_check(not sheep.taking_risk, "rising hunger does not reroll an existing encounter")
++	wolf.position = Vector2(1100, 600)
++	_step(62)
++	wolf.position = Vector2(420, 240)
++	wolf.begin_hunt(sheep)
++	_step(1)
++	_check(sheep.taking_risk, "new encounter gets a new risk decision")
++	sheep.position = Vector2(300, 240)
++	_step(1)
++	_check(sheep.current_behavior == AnimalController.Behavior.SEEK_FOOD and sheep.grass_target_index == 0, "risk also permits seeking unsafe food")
+ 
+ 
+ func _verify_wolves() -> void:
+ 	_empty()
+ 	var sheep := _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+ 	var wolf := _animal(AnimalController.Kind.WOLF, Vector2(350, 240)) as WolfController
+-	_step(30)
+-	_check(sheep.alive and not wolf.hunting, "rest period forbids opportunistic captures")
+-	engine.try_begin_hunt()
+ 	_step(29)
+-	_check(sheep.alive, "capture requires a continuous full interval")
+-	_step(1)
+-	_check(not sheep.alive and engine.entity_service.capture_count == 1, "continuous capture succeeds")
+-	_check(not engine.hunt_active and engine.hunt_rest_remaining >= 15.0 and not wolf.hunting, "successful capture ends the round and starts rest")
++	_check(sheep.alive and wolf.hunting, "wolves hunt immediately but capture requires a full interval")
++	_step(1)
++	_check(not sheep.alive and engine.entity_service.capture_count == 1 and not wolf.hunting, "capture succeeds without a rest round")
++	var replacement := _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
++	_step(1)
++	_check(wolf.hunting and wolf.target == replacement, "capture is followed by immediate independent hunting")
+ 
+ 	_empty()
+ 	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+ 	wolf = _animal(AnimalController.Kind.WOLF, Vector2(350, 240)) as WolfController
+-	engine.try_begin_hunt()
+ 	_step(15)
+ 	sheep.position = Vector2(500, 240)
+ 	_step(1)
+@@ -235,39 +287,66 @@
+ 
+ 	_empty()
+ 	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
++	for index in range(5):
++		_animal(AnimalController.Kind.WOLF, Vector2(350, 240))
++	_step(1)
++	var active: int = 0
++	for hunter in engine.entity_service.wolves:
++		active += 1 if hunter.hunting else 0
++	_check(active == 5, "independent wolves have no participation cap")
++	_step(29)
++	_check(engine.entity_service.capture_count == 1, "multiple wolves cannot capture the same sheep twice")
++
++	_empty()
++	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(500, 240)) as SheepController
++	var other := _animal(AnimalController.Kind.SHEEP, Vector2(300, 240)) as SheepController
++	wolf = _animal(AnimalController.Kind.WOLF, Vector2(400, 240)) as WolfController
++	var competitor := _animal(AnimalController.Kind.WOLF, Vector2(400, 250)) as WolfController
++	var unclaimed := wolf._prey_weight(sheep)
++	competitor.begin_hunt(sheep)
++	_check(is_equal_approx(wolf._prey_weight(sheep), unclaimed / 4.0) and is_equal_approx(wolf._prey_weight(other), unclaimed), "claimed prey weight drops while equal-distance alternatives retain weight")
++	engine.rng.seed = 1337
++	var first_choices: Array[int] = []
++	var claimed_count: int = 0
++	for index in range(1000):
++		wolf._choose_prey()
++		first_choices.append(wolf.target.entity_id)
++		if wolf.target == sheep:
++			claimed_count += 1
++	_check(claimed_count > 100 and claimed_count < 300, "weighted selection favors unclaimed prey without forbidding overlap")
++	engine.rng.seed = 1337
++	var repeated: Array[int] = []
++	for index in range(1000):
++		wolf._choose_prey()
++		repeated.append(wolf.target.entity_id)
++	_check(first_choices == repeated, "weighted choices reproduce with a fixed seed")
++	wolf.begin_hunt(sheep)
++	engine.config.wolf.hunt_duration = 0.1
++	_step(8)
++	_check(wolf.hunting and wolf.target == other, "timeout skips previous prey once when an alternative exists")
++	other.position = Vector2(1100, 600)
++	_step(1)
++	_check(wolf.target == sheep, "out-of-range target is replaced")
++
++	_empty()
++	engine.config.perception_interval = 0.125
++	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+ 	wolf = _animal(AnimalController.Kind.WOLF, Vector2(350, 240)) as WolfController
+-	_animal(AnimalController.Kind.WOLF, Vector2(345, 240))
+-	engine.try_begin_hunt()
+-	_step(30)
+-	_check(engine.entity_service.capture_count == 1, "cooperating wolves capture only once")
+-
+-	_empty()
+-	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(500, 240)) as SheepController
+-	for index in range(5):
+-		_animal(AnimalController.Kind.WOLF, Vector2(380 + index * 5, 240))
+-	engine.config.wolf.hunt_duration = 0.1
+-	engine.try_begin_hunt()
+-	_check(engine.hunters.size() == 3, "hunt roster respects the cap")
+-	var supported: WolfController = engine.hunters[1]
+-	_step(1)
+-	_check(supported.target == sheep and supported.supporting_hunt and supported.movement_goal != sheep.position, "supporters share prey and approach the flank")
+-	_step(7)
+-	_check(not engine.hunt_active and engine.hunt_rest_remaining > 0.0, "timeout finishes a round")
+-	var rounds: int = engine.hunt_rounds
+-	_step(60)
+-	_check(engine.hunt_rounds == rounds, "no replacement hunters enter during rest")
+-
+-	_empty()
+-	engine.config.perception_interval = 0.125
+-	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
+-	wolf = _animal(AnimalController.Kind.WOLF, Vector2(350, 240)) as WolfController
+-	engine.try_begin_hunt()
+ 	_step(29)
+-	_animal(AnimalController.Kind.SHEEPDOG, Vector2(410, 240))
+-	_step(1)
+-	_check(sheep.alive and wolf.capture_progress == 0.0 and not wolf.hunting, "new dog interrupts capture between perception scans")
+-	_step(1)
+-	_check(not engine.hunt_active, "all hunters leaving ends the round")
++	var dog := _animal(AnimalController.Kind.SHEEPDOG, Vector2(800, 240)) as SheepdogController
++	# 1) Move a dog after decisions to exercise post-movement capture protection.
++	engine.entity_service.rebuild_spatial_index()
++	wolf.update_hunt(1.0 / 60.0)
++	wolf.perceive(1.0 / 60.0)
++	wolf.decide(1.0 / 60.0)
++	dog.position = Vector2(410, 240)
++	wolf.resolve_interactions(1.0 / 60.0)
++	_check(sheep.alive and wolf.capture_progress == 0.0 and not wolf.hunting, "dog arriving after perception interrupts capture")
++	_step(1)
++	_check(wolf.current_behavior == AnimalController.Behavior.FLEE, "near dog takes priority over searching")
++	dog.position = Vector2(1100, 600)
++	_step(1)
++	_check(wolf.hunting, "wolf resumes hunting as soon as dog leaves")
+ 
+ 
+ func _verify_dogs() -> void:
+@@ -287,7 +366,6 @@
+ 	var sheep := _animal(AnimalController.Kind.SHEEP, Vector2(640, 360)) as SheepController
+ 	var wolf := _animal(AnimalController.Kind.WOLF, Vector2(860, 360)) as WolfController
+ 	var dog := _animal(AnimalController.Kind.SHEEPDOG, Vector2(640, 360)) as SheepdogController
+-	engine.try_begin_hunt()
+ 	_step(1)
+ 	_check(dog.current_behavior == AnimalController.Behavior.INTERCEPT, "dog intercepts a hunting threat")
+ 	dog.position = dog.intercept_point
+@@ -313,7 +391,8 @@
+ 	var panel: RuntimeConfigPanel = scene.hud.parameters
+ 	panel.show()
+ 	panel.set_draft(engine.config)
+-	_check(panel.editors.has("Sheep.hungry_threshold") and panel.editors.has("Wolves.max_hunters"), "CFG metadata generates species controls")
++	_check(panel.editors.has("Sheep.hungry_threshold") and panel.editors.has("Wolves.competition_weight"), "CFG metadata generates species controls")
++	_check(is_equal_approx(panel.editors["Wolves.hunt_duration"].value, engine.config.wolf.hunt_duration) and is_equal_approx(panel.editors["Grass.regrow_duration"].value, engine.config.grass.regrow_duration), "form steps preserve applied duration values exactly")
+ 	panel.editors["Sheep.move_speed"].value = 31.0
+ 	panel.editors["Sheep.move_speed"].get_line_edit().text = "31"
+ 	_check(engine.config.sheep.move_speed == 0.0, "editing the form leaves live parameters unchanged")
+@@ -322,17 +401,17 @@
+ 	_check(sheep.move_speed == 31.0 and engine.paused and engine.step_count == 0, "apply updates existing animals while paused without stepping")
+ 	var second := _animal(AnimalController.Kind.SHEEP, Vector2(500, 200)) as SheepController
+ 	_check(second.move_speed == 31.0, "new animals use applied parameters")
+-	_check(authored.sheep.move_speed == 55.0, "runtime changes do not overwrite authored CFG")
+-	sheep.hunger = 1.0
++	_check(authored.sheep.move_speed == 70.0, "runtime changes do not overwrite authored CFG")
++	sheep.hunger = 100
+ 	_step(1)
+ 	_check(sheep.velocity.length() > 0.0 and sheep.velocity.length() <= 31.001, "live speed change affects actual movement")
+ 
+ 	panel.set_draft(engine.config)
+-	panel.editors["Sheep.full_threshold"].value = 0.8
++	panel.editors["Sheep.full_threshold"].value = 80
+ 	_check(panel.apply_button.disabled, "invalid hunger thresholds disable Apply")
+ 	var invalid: Resource = engine.config.copy_config()
+-	invalid.sheep.full_threshold = 0.8
+-	_check(not engine.request_config_apply(invalid).is_empty() and engine.config.sheep.full_threshold == 0.2, "invalid config is rejected atomically")
++	invalid.sheep.full_threshold = 80
++	_check(not engine.request_config_apply(invalid).is_empty() and engine.config.sheep.full_threshold == 20, "invalid config is rejected atomically")
+ 
+ 	var changed: Resource = engine.config.copy_config()
+ 	changed.initial_sheep = 3
+@@ -343,29 +422,55 @@
+ 	_check(engine.entity_service.get_counts() == Vector3i(3, 0, 0) and not engine.entity_service.entities.has(sheep), "population change recreates the simulation")
+ 	_check(engine.paused and engine.step_count == 0, "restart preserves pause state")
+ 
+-	var path := "res://output/runtime-config-verification.tres"
++	var path := "res://output/verification/runtime-config.tres"
+ 	_check(engine.save_preset(path) == OK, "runtime preset saves")
+ 	var loaded: Resource = engine.load_preset(path)
+ 	_check(loaded != null and loaded.sheep.move_speed == 31.0 and loaded.initial_sheep == 3, "saved nested CFG round-trips")
++	var legacy_path := "res://output/verification/legacy-preset.tres"
++	var legacy: SimulationConfig = engine.config.copy_config()
++	legacy.preset_version = 0
++	ResourceSaver.save(legacy, legacy_path)
++	_check(engine.load_preset(legacy_path) == null, "unversioned legacy presets are rejected even if omitted fields acquire new defaults")
+ 	loaded.sheep.move_speed = 47.0
+ 	_check(engine.config.sheep.move_speed == 31.0, "loaded preset is detached from live settings")
+ 	panel._restore_defaults()
+-	_check(panel.draft.sheep.move_speed == 55.0 and engine.config.sheep.move_speed == 31.0, "defaults stage changes without applying")
++	_check(panel.draft.sheep.move_speed == 70.0 and engine.config.sheep.move_speed == 31.0, "defaults stage changes without applying")
+ 	panel.close()
+ 
+ 	_empty()
+-	_animal(AnimalController.Kind.SHEEP, Vector2(500, 240))
+-	for index in range(4):
+-		_animal(AnimalController.Kind.WOLF, Vector2(380 + 4 * index, 240))
+-	engine.try_begin_hunt()
+-	var limited: Resource = engine.config.copy_config()
+-	limited.wolf.max_hunters = 1
+-	engine.request_config_apply(limited)
+-	engine._physics_process(0.0)
+-	var active: int = 0
+-	for wolf in engine.entity_service.wolves:
+-		active += 1 if wolf.hunting else 0
+-	_check(active == 1, "lowering the live hunt cap releases excess hunters")
++	_two_grass_points()
++	sheep = _animal(AnimalController.Kind.SHEEP, Vector2(340, 240)) as SheepController
++	sheep.hunger = 100
++	var wolf := _animal(AnimalController.Kind.WOLF, Vector2(420, 240)) as WolfController
++	_step(3)
++	var chase_before: float = wolf.hunt_elapsed
++	var changed_risk: Resource = engine.config.copy_config()
++	changed_risk.sheep.max_risk_percent = 100
++	engine.request_config_apply(changed_risk)
++	engine._physics_process(0.0)
++	_check(sheep.hunger == 100 and wolf.hunt_elapsed == chase_before, "paused apply preserves hunger and elapsed chase")
++	_step(1)
++	_check(sheep.taking_risk, "risk setting change reevaluates the encounter")
++	var same_risk: Resource = engine.config.copy_config()
++	same_risk.sheep.move_speed = 1.0
++	engine.request_config_apply(same_risk)
++	engine._physics_process(0.0)
++	_check(sheep.taking_risk and sheep._threat_encounter, "unrelated apply preserves the risk decision")
++	var invalid_risk: Resource = engine.config.copy_config()
++	invalid_risk.sheep.risk_hunger_threshold = 100
++	_check(not engine.request_config_apply(invalid_risk).is_empty(), "risk threshold cannot cause division by zero")
++	engine.grass_regrow_remaining[0] = 8.0
++	engine.grass_bites[0] = 0
++	var regrowth: Resource = engine.config.copy_config()
++	regrowth.grass.regrow_duration = 1.0
++	engine.request_config_apply(regrowth)
++	engine._physics_process(0.0)
++	_check(engine.grass_regrow_remaining[0] == 8.0, "apply preserves already sampled grass recovery")
++	var bite_change: Resource = engine.config.copy_config()
++	bite_change.grass.bites += 1
++	panel.set_draft(bite_change)
++	_check(panel.apply_button.text == "Apply & restart", "grass food capacity changes require restart")
++	panel.close()
+ 
+ 
+ func _verify_controls() -> void:
+@@ -410,11 +515,12 @@
+ 	for animal in engine.entity_service.entities:
+ 		repeated.append(animal.position)
+ 	_check(positions == repeated, "reset reproduces seeded populations")
+-	_check(engine.hunt_rounds == 0 and not engine.hunt_active and engine.step_count == 0, "reset clears round state and counters")
++	_check(engine.step_count == 0 and engine.entity_service.capture_count == 0, "reset clears simulation counters")
+ 	_check(engine.entity_service.get_counts() == Vector3i(240, 24, 12), "default population remains unchanged")
+ 
+ 
+ func _run() -> void:
++	DirAccess.make_dir_recursive_absolute("res://output/verification")
+ 	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+ 	authored = scene.simulation_config
+ 	root.add_child(scene)
+@@ -437,3 +543,4 @@
+ 	engine = null
+ 	print("SIMULATION_VERIFICATION checks=%d failures=%d" % [checks, failures])
+ 	quit(0 if failures == 0 else 1)
++

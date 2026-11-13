@@ -1,0 +1,184 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/DebugHUD.gd" id="1"]
+
+[ext_resource type="Script" path="res://Scripts/UI/RuntimeConfigPanel.gd" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="PanelStyle"]
+bg_color = Color(0.047, 0.075, 0.059, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.34, 0.45, 0.3, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_left = 5
+corner_radius_bottom_right = 5
+
+[node name="DebugHUD" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1")
+
+[node name="Screen" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Header" type="ColorRect" parent="Screen"]
+layout_mode = 0
+anchor_right = 1.0
+offset_bottom = 86.0
+mouse_filter = 2
+color = Color(0.047, 0.075, 0.059, 0.96)
+
+[node name="Title" type="Label" parent="Screen/Header"]
+offset_left = 20.0
+offset_top = 8.0
+offset_right = 900.0
+offset_bottom = 28.0
+theme_override_colors/font_color = Color(0.68, 0.76, 0.7, 1)
+theme_override_font_sizes/font_size = 15
+text = "GLASS BEAD  /  GRAZING SIMULATION"
+
+[node name="Metrics" type="Label" parent="Screen/Header"]
+offset_left = 20.0
+offset_top = 30.0
+offset_right = 1260.0
+offset_bottom = 54.0
+theme_override_font_sizes/font_size = 19
+text = "FPS 0  |  Step 0.00 ms"
+
+[node name="Status" type="Label" parent="Screen/Header"]
+offset_left = 20.0
+offset_top = 58.0
+offset_right = 1260.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(0.68, 0.76, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="Footer" type="ColorRect" parent="Screen"]
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -58.0
+mouse_filter = 2
+color = Color(0.047, 0.075, 0.059, 0.96)
+
+[node name="Controls" type="Label" parent="Screen/Footer"]
+offset_left = 20.0
+offset_top = 5.0
+offset_right = 1260.0
+offset_bottom = 29.0
+theme_override_font_sizes/font_size = 15
+text = "1 Sheep   2 Wolf   3 Dog   |   Shift: +10   |   Space Pause   N Step   R Reset   F1 Debug"
+
+[node name="Selection" type="Label" parent="Screen/Footer"]
+offset_left = 20.0
+offset_top = 30.0
+offset_right = 1260.0
+offset_bottom = 53.0
+theme_override_colors/font_color = Color(0.68, 0.76, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="ParametersButton" type="Button" parent="Screen/Header"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -205.0
+offset_top = 6.0
+offset_right = -20.0
+offset_bottom = 30.0
+theme_override_font_sizes/font_size = 14
+text = "Parameters [F2]"
+
+[node name="Parameters" type="PanelContainer" parent="Screen"]
+visible = false
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -472.0
+offset_top = 92.0
+offset_right = -12.0
+offset_bottom = -64.0
+mouse_filter = 0
+theme_override_styles/panel = SubResource("PanelStyle")
+script = ExtResource("2")
+
+[node name="Margin" type="MarginContainer" parent="Screen/Parameters"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Column" type="VBoxContainer" parent="Screen/Parameters/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="Screen/Parameters/Margin/Column"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Screen/Parameters/Margin/Column/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 19
+text = "Simulation parameters"
+
+[node name="Pause" type="Button" parent="Screen/Parameters/Margin/Column/Header"]
+layout_mode = 2
+text = "Pause"
+
+[node name="Close" type="Button" parent="Screen/Parameters/Margin/Column/Header"]
+layout_mode = 2
+text = "X"
+tooltip_text = "Close [Esc]"
+
+[node name="Tabs" type="TabContainer" parent="Screen/Parameters/Margin/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 14
+
+[node name="Message" type="Label" parent="Screen/Parameters/Margin/Column"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.74, 0.82, 0.7, 1)
+autowrap_mode = 2
+text = "Edit a value, then Apply."
+
+[node name="Actions" type="HBoxContainer" parent="Screen/Parameters/Margin/Column"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Apply" type="Button" parent="Screen/Parameters/Margin/Column/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Apply"
+
+[node name="Defaults" type="Button" parent="Screen/Parameters/Margin/Column/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Default CFG"
+
+[node name="Presets" type="HBoxContainer" parent="Screen/Parameters/Margin/Column"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Save" type="Button" parent="Screen/Parameters/Margin/Column/Presets"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Save applied"
+tooltip_text = "Save currently applied parameters to user://CFG_Runtime.tres."
+
+[node name="Load" type="Button" parent="Screen/Parameters/Margin/Column/Presets"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Load preset"
+tooltip_text = "Load the saved preset into the form, then Apply."

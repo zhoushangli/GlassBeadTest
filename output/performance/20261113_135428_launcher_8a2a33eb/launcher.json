@@ -1,0 +1,10 @@
+﻿{
+    "pid":  140660,
+    "executable":  "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+    "arguments":  "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd --headless -- --entities=2000 --scenario=fixed --stats=on --duration=30 --warmup=3 --max-fps=0",
+    "timeout_seconds":  90,
+    "state":  "exited",
+    "exit_code":  0,
+    "wall_seconds":  53.2429998,
+    "has_result":  true
+}

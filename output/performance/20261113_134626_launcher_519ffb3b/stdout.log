@@ -1,0 +1,18 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+BENCHMARK_START layout=uniform_v1 tiles=0 configured=(2609, 261, 130) warmup=3.0s measurement=30.0s stats=true
+BENCHMARK_SAMPLE tier=1 wall=1.7 loop_hz=0.6 step_ms=203.44 alive=(2609, 261, 130) sim=0.2
+BENCHMARK_SAMPLE tier=1 wall=3.6 loop_hz=0.6 step_ms=205.06 alive=(2609, 261, 130) sim=0.4
+BENCHMARK_SAMPLE tier=1 wall=5.3 loop_hz=0.6 step_ms=265.14 alive=(2598, 261, 130) sim=0.5
+BENCHMARK_SAMPLE tier=1 wall=7.6 loop_hz=0.5 step_ms=285.67 alive=(2594, 261, 130) sim=0.7
+BENCHMARK_SAMPLE tier=1 wall=9.8 loop_hz=0.5 step_ms=233.70 alive=(2591, 261, 130) sim=0.8
+BENCHMARK_SAMPLE tier=1 wall=11.6 loop_hz=0.5 step_ms=252.10 alive=(2591, 261, 130) sim=0.9
+BENCHMARK_SAMPLE tier=1 wall=14.3 loop_hz=0.5 step_ms=299.05 alive=(2590, 261, 130) sim=1.1
+BENCHMARK_SAMPLE tier=1 wall=16.5 loop_hz=0.5 step_ms=316.24 alive=(2586, 261, 130) sim=1.2
+BENCHMARK_SAMPLE tier=1 wall=18.6 loop_hz=0.5 step_ms=242.46 alive=(2585, 261, 130) sim=1.3
+BENCHMARK_SAMPLE tier=1 wall=20.9 loop_hz=0.5 step_ms=281.73 alive=(2582, 261, 130) sim=1.4
+BENCHMARK_SAMPLE tier=1 wall=23.2 loop_hz=0.5 step_ms=345.49 alive=(2578, 261, 130) sim=1.6
+BENCHMARK_SAMPLE tier=1 wall=25.2 loop_hz=0.5 step_ms=175.47 alive=(2573, 261, 130) sim=1.7
+BENCHMARK_SAMPLE tier=1 wall=27.4 loop_hz=0.5 step_ms=218.43 alive=(2569, 261, 130) sim=1.8
+BENCHMARK_SAMPLE tier=1 wall=29.6 loop_hz=0.5 step_ms=232.82 alive=(2564, 261, 130) sim=2.0
+

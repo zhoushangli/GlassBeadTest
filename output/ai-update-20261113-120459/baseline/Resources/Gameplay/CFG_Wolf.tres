@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="WolfConfig" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Core/WolfConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+move_speed = 70.0
+chase_speed = 135.0
+retreat_speed = 160.0
+perception_radius = 260.0
+dog_threat_distance = 160.0
+retreat_distance = 210.0
+max_hunters = 3
+rest_duration_min = 15.0
+rest_duration_max = 25.0
+hunt_duration = 10.0
+cooperation_radius = 160.0
+flank_offset = 32.0
+capture_distance = 22.0
+capture_duration = 0.5

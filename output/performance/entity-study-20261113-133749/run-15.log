@@ -1,0 +1,2 @@
+﻿BENCHMARK_LAUNCH pid=163920 timeout=90s logs=C:\Users\Shangli Zhou\Documents\glass-bead-test\output\performance\20261113_135353_launcher_51719f9b
+BENCHMARK_EXIT state=exited code=0 result=True logs=C:\Users\Shangli Zhou\Documents\glass-bead-test\output\performance\20261113_135353_launcher_51719f9b

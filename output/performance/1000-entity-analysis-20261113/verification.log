@@ -1,0 +1,4 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+BENCHMARK_START layout=spread tiles=2 configured=(960, 96, 48) warmup=3.0s measurement=30.0s stats=true
+PERFORMANCE_VERIFICATION checks=85 failures=0

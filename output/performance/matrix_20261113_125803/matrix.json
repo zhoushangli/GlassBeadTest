@@ -1,0 +1,62 @@
+[
+  {
+    "case": "desktop_1_spread_on",
+    "exit": 0,
+    "wall_seconds": 35.82553000000189,
+    "command": [
+      "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "--path",
+      "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test",
+      "--script",
+      "res://Tests/RunBenchmark.gd",
+      "--",
+      "--tiles=1",
+      "--layout=spread",
+      "--stats=on",
+      "--warmup=3",
+      "--duration=30"
+    ]
+  },
+  {
+    "case": "desktop_2_spread_on",
+    "exit": 0,
+    "wall_seconds": 38.259130199992796,
+    "command": [
+      "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "--path",
+      "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test",
+      "--script",
+      "res://Tests/RunBenchmark.gd",
+      "--",
+      "--tiles=2",
+      "--layout=spread",
+      "--stats=on",
+      "--warmup=3",
+      "--duration=30"
+    ]
+  },
+  {
+    "case": "desktop_4_spread_on",
+    "exit": 0,
+    "wall_seconds": 147.2462200000009,
+    "command": [
+      "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "--path",
+      "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test",
+      "--script",
+      "res://Tests/RunBenchmark.gd",
+      "--",
+      "--tiles=4",
+      "--layout=spread",
+      "--stats=on",
+      "--warmup=3",
+      "--duration=30"
+    ]
+  },
+  {
+    "case": "desktop_6_spread_on",
+    "exit": "interrupted_unresponsive",
+    "has_result": false,
+    "note": "Stopped after user reported frozen window; no measurement samples. Remaining desktop cases deferred."
+  }
+]

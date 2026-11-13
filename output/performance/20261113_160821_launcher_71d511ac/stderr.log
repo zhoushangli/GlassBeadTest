@@ -1,0 +1,3 @@
+﻿WARNING: Values of the ternary operator are not mutually compatible.
+   at: GDScript::reload (res://Scripts/UI/RuntimeConfigPanel.gd:157)
+

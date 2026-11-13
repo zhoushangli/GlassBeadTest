@@ -1,0 +1,1253 @@
+[
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::208::_physics_process",
+    "inclusive_seconds": 40.236977,
+    "self_seconds": 0.000941,
+    "calls": 344,
+    "median_self_ms": 0.022,
+    "max_self_ms": 0.026,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::227::simulate_step",
+    "inclusive_seconds": 40.235534,
+    "self_seconds": 0.386985,
+    "calls": 343,
+    "median_self_ms": 9.112,
+    "max_self_ms": 10.807,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepdogController.gd::26::SheepdogController.perceive",
+    "inclusive_seconds": 17.3328,
+    "self_seconds": 2.371695,
+    "calls": 14749,
+    "median_self_ms": 53.126,
+    "max_self_ms": 85.76,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepdogController.gd::86::SheepdogController._choose_protection_anchor",
+    "inclusive_seconds": 12.840071,
+    "self_seconds": 0.112223,
+    "calls": 253,
+    "median_self_ms": 0.0,
+    "max_self_ms": 22.553,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepdogController.gd::78::SheepdogController._anchor_score",
+    "inclusive_seconds": 12.621661,
+    "self_seconds": 6.414723,
+    "calls": 213186,
+    "median_self_ms": 0.0,
+    "max_self_ms": 1356.969,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::58::SheepController.perceive",
+    "inclusive_seconds": 13.04431,
+    "self_seconds": 6.822644,
+    "calls": 287939,
+    "median_self_ms": 155.912,
+    "max_self_ms": 287.929,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::60::AnimalController.is_live",
+    "inclusive_seconds": 2.028535,
+    "self_seconds": 2.028535,
+    "calls": 11223210,
+    "median_self_ms": 9.072999999999999,
+    "max_self_ms": 347.96700000000004,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::63::AnimalController.perceive",
+    "inclusive_seconds": 6.085428,
+    "self_seconds": 0.16767,
+    "calls": 332529,
+    "median_self_ms": 3.899,
+    "max_self_ms": 5.757,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::156::_start",
+    "inclusive_seconds": 0.275882,
+    "self_seconds": 0.048683,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 48.683,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::265::_spawn_exact_layout",
+    "inclusive_seconds": 0.219394,
+    "self_seconds": 0.000842,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.842,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::33::EntityService.spawn",
+    "inclusive_seconds": 0.217962,
+    "self_seconds": 0.212923,
+    "calls": 1000,
+    "median_self_ms": 0.0,
+    "max_self_ms": 212.923,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::22::WolfController.update_hunt",
+    "inclusive_seconds": 3.909028,
+    "self_seconds": 0.539288,
+    "calls": 29841,
+    "median_self_ms": 12.337000000000002,
+    "max_self_ms": 16.705000000000002,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::139::SheepController._choose_grass",
+    "inclusive_seconds": 1.836063,
+    "self_seconds": 0.078053,
+    "calls": 1629,
+    "median_self_ms": 1.718,
+    "max_self_ms": 5.05,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::40::SheepController._scan_neighbors",
+    "inclusive_seconds": 3.269075,
+    "self_seconds": 2.840867,
+    "calls": 36796,
+    "median_self_ms": 64.721,
+    "max_self_ms": 127.97,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::121::SheepController._grass_unsafe",
+    "inclusive_seconds": 3.12558,
+    "self_seconds": 1.6588910000000001,
+    "calls": 72821,
+    "median_self_ms": 38.101000000000006,
+    "max_self_ms": 83.356,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::59::WolfController._choose_prey",
+    "inclusive_seconds": 3.248421,
+    "self_seconds": 0.324805,
+    "calls": 713,
+    "median_self_ms": 6.846,
+    "max_self_ms": 15.238,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::51::WolfController._prey_weight",
+    "inclusive_seconds": 2.512822,
+    "self_seconds": 2.512345,
+    "calls": 119175,
+    "median_self_ms": 51.708,
+    "max_self_ms": 125.42200000000001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::85::AnimalController._scan_separation",
+    "inclusive_seconds": 2.045549,
+    "self_seconds": 2.045549,
+    "calls": 42490,
+    "median_self_ms": 46.690000000000005,
+    "max_self_ms": 91.793,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::109::AnimalController.decide",
+    "inclusive_seconds": 3.223606,
+    "self_seconds": 3.078269,
+    "calls": 332529,
+    "median_self_ms": 70.508,
+    "max_self_ms": 90.004,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::91::SheepController._update_threat",
+    "inclusive_seconds": 2.149409,
+    "self_seconds": 0.84042,
+    "calls": 287939,
+    "median_self_ms": 19.502,
+    "max_self_ms": 25.55,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::112::EntityService.get_nearby_indices",
+    "inclusive_seconds": 0.991952,
+    "self_seconds": 0.887868,
+    "calls": 222922,
+    "median_self_ms": 20.294,
+    "max_self_ms": 40.131,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::6::SheepController.@avoidance_radius_getter",
+    "inclusive_seconds": 1.027688,
+    "self_seconds": 0.305981,
+    "calls": 1652663,
+    "median_self_ms": 6.685,
+    "max_self_ms": 14.873000000000001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AI/Tasks/AnimalAction.gd::10::_tick",
+    "inclusive_seconds": 1.132261,
+    "self_seconds": 0.208449,
+    "calls": 332529,
+    "median_self_ms": 4.767,
+    "max_self_ms": 7.034999999999999,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/RootController.gd::10::_ready",
+    "inclusive_seconds": 0.028385,
+    "self_seconds": 4e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.004,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::69::start_simulation",
+    "inclusive_seconds": 0.028377,
+    "self_seconds": 1.4e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.014,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepdogController.gd::104::SheepdogController._update_protection_center",
+    "inclusive_seconds": 0.861125,
+    "self_seconds": 0.734464,
+    "calls": 14749,
+    "median_self_ms": 16.576,
+    "max_self_ms": 22.966,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/DebugHUD.gd::11::DebugHUD.initialize",
+    "inclusive_seconds": 0.026482,
+    "self_seconds": 7e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.007,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/RuntimeConfigPanel.gd::77::RuntimeConfigPanel.initialize",
+    "inclusive_seconds": 0.026425,
+    "self_seconds": 4e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.004,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/RuntimeConfigPanel.gd::94::RuntimeConfigPanel.set_draft",
+    "inclusive_seconds": 0.026405,
+    "self_seconds": 0.00413,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 4.13,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::135::AnimalController.move",
+    "inclusive_seconds": 0.830886,
+    "self_seconds": 0.47997,
+    "calls": 333089,
+    "median_self_ms": 11.169,
+    "max_self_ms": 12.489,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/RuntimeConfigPanel.gd::133::RuntimeConfigPanel._add_editor",
+    "inclusive_seconds": 0.020429,
+    "self_seconds": 0.014885,
+    "calls": 52,
+    "median_self_ms": 0.0,
+    "max_self_ms": 14.885,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::171::SheepController.perform_behavior",
+    "inclusive_seconds": 0.666705,
+    "self_seconds": 0.29409,
+    "calls": 287939,
+    "median_self_ms": 6.758,
+    "max_self_ms": 8.236,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::25::AnimalController.@perception_radius_getter",
+    "inclusive_seconds": 0.487229,
+    "self_seconds": 0.487229,
+    "calls": 4438347,
+    "median_self_ms": 10.934,
+    "max_self_ms": 18.712,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::90::WolfController.perceive",
+    "inclusive_seconds": 0.398603,
+    "self_seconds": 0.362442,
+    "calls": 29841,
+    "median_self_ms": 8.354000000000001,
+    "max_self_ms": 14.985,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AI/Tasks/AnimalCondition.gd::10::_tick",
+    "inclusive_seconds": 0.484826,
+    "self_seconds": 0.484826,
+    "calls": 608067,
+    "median_self_ms": 10.995,
+    "max_self_ms": 15.128,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::133::SheepController._grass_score",
+    "inclusive_seconds": 0.095231,
+    "self_seconds": 0.08991,
+    "calls": 79734,
+    "median_self_ms": 1.881,
+    "max_self_ms": 8.71,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::81::EntityService.rebuild_spatial_index",
+    "inclusive_seconds": 0.363702,
+    "self_seconds": 0.301346,
+    "calls": 343,
+    "median_self_ms": 6.97,
+    "max_self_ms": 8.475,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::118::SheepController._grass_available",
+    "inclusive_seconds": 0.175233,
+    "self_seconds": 0.15273,
+    "calls": 688233,
+    "median_self_ms": 3.469,
+    "max_self_ms": 6.744,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::27::SheepController.initialize",
+    "inclusive_seconds": 0.003025,
+    "self_seconds": 0.002746,
+    "calls": 870,
+    "median_self_ms": 0.0,
+    "max_self_ms": 2.746,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::126::AnimalController.clamp_to_arena",
+    "inclusive_seconds": 0.106396,
+    "self_seconds": 0.083031,
+    "calls": 362927,
+    "median_self_ms": 1.936,
+    "max_self_ms": 2.385,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::22::AnimalController.@move_speed_getter",
+    "inclusive_seconds": 0.088913,
+    "self_seconds": 0.088913,
+    "calls": 764129,
+    "median_self_ms": 2.048,
+    "max_self_ms": 2.5860000000000003,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::0::AnimalController.@implicit_new",
+    "inclusive_seconds": 0.002196,
+    "self_seconds": 0.002196,
+    "calls": 1000,
+    "median_self_ms": 0.0,
+    "max_self_ms": 2.196,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::110::WolfController.perform_behavior",
+    "inclusive_seconds": 0.08548,
+    "self_seconds": 0.037742,
+    "calls": 29841,
+    "median_self_ms": 0.8630000000000001,
+    "max_self_ms": 1.367,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::47::AnimalController.initialize",
+    "inclusive_seconds": 0.002103,
+    "self_seconds": 0.000777,
+    "calls": 1000,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.777,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::37::SheepController._get_query_radius",
+    "inclusive_seconds": 0.046533,
+    "self_seconds": 0.046533,
+    "calls": 36796,
+    "median_self_ms": 1.055,
+    "max_self_ms": 2.1,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::146::AnimalController.set_behavior",
+    "inclusive_seconds": 0.044978000000000004,
+    "self_seconds": 0.040873,
+    "calls": 332529,
+    "median_self_ms": 0.911,
+    "max_self_ms": 1.5859999999999999,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::82::AnimalController._get_query_radius",
+    "inclusive_seconds": 0.035615,
+    "self_seconds": 0.016122,
+    "calls": 42490,
+    "median_self_ms": 0.358,
+    "max_self_ms": 0.75,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::120::AnimalController._update_wander",
+    "inclusive_seconds": 0.031053,
+    "self_seconds": 0.026784,
+    "calls": 77396,
+    "median_self_ms": 0.5910000000000001,
+    "max_self_ms": 1.053,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/SimulationConfig.gd::70::SimulationConfig.validate",
+    "inclusive_seconds": 0.001475,
+    "self_seconds": 0.000436,
+    "calls": 3,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.43600000000000005,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::0::SheepController.@implicit_new",
+    "inclusive_seconds": 0.001338,
+    "self_seconds": 0.001338,
+    "calls": 870,
+    "median_self_ms": 0.0,
+    "max_self_ms": 1.338,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::188::rebuild_grass_claims",
+    "inclusive_seconds": 0.05974,
+    "self_seconds": 0.05974,
+    "calls": 343,
+    "median_self_ms": 1.382,
+    "max_self_ms": 2.297,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepdogController.gd::121::SheepdogController.perform_behavior",
+    "inclusive_seconds": 0.049808,
+    "self_seconds": 0.025908,
+    "calls": 14749,
+    "median_self_ms": 0.599,
+    "max_self_ms": 0.759,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::100::reset_simulation",
+    "inclusive_seconds": 0.001149,
+    "self_seconds": 3e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.003,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::151::reset_grass",
+    "inclusive_seconds": 0.001121,
+    "self_seconds": 0.000125,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.125,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::129::AnimalController._towards",
+    "inclusive_seconds": 0.040129,
+    "self_seconds": 0.040129,
+    "calls": 123396,
+    "median_self_ms": 0.95,
+    "max_self_ms": 1.451,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::147::EntityService.remove_expired",
+    "inclusive_seconds": 0.045317,
+    "self_seconds": 0.044863,
+    "calls": 343,
+    "median_self_ms": 1.0219999999999998,
+    "max_self_ms": 1.522,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/RootController.gd::15::_rebuild_grass",
+    "inclusive_seconds": 0.000994,
+    "self_seconds": 0.000555,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.555,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::31::SheepController.refresh_config",
+    "inclusive_seconds": 0.000856,
+    "self_seconds": 0.000856,
+    "calls": 870,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.856,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::193::SheepController.resolve_interactions",
+    "inclusive_seconds": 0.031968,
+    "self_seconds": 0.027703,
+    "calls": 287939,
+    "median_self_ms": 0.6449999999999999,
+    "max_self_ms": 0.761,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::189::SheepController._follow_neighbors",
+    "inclusive_seconds": 0.030162,
+    "self_seconds": 0.030162,
+    "calls": 97239,
+    "median_self_ms": 0.69,
+    "max_self_ms": 1.555,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::160::SheepController._set_grass_target",
+    "inclusive_seconds": 0.026092999999999998,
+    "self_seconds": 0.025998,
+    "calls": 249364,
+    "median_self_ms": 0.608,
+    "max_self_ms": 0.7789999999999999,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::54::AnimalController._ready",
+    "inclusive_seconds": 0.000756,
+    "self_seconds": 0.000427,
+    "calls": 1000,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.42700000000000005,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::128::WolfController.resolve_interactions",
+    "inclusive_seconds": 0.037504,
+    "self_seconds": 0.030836,
+    "calls": 29841,
+    "median_self_ms": 0.598,
+    "max_self_ms": 2.145,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::0::AnimalController.@implicit_ready",
+    "inclusive_seconds": 0.000677,
+    "self_seconds": 0.000677,
+    "calls": 1000,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.6769999999999999,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/RuntimeConfigPanel.gd::161::RuntimeConfigPanel._update_apply_state",
+    "inclusive_seconds": 0.000631,
+    "self_seconds": 1e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.01,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AI/Tasks/AnimalAction.gd::0::@implicit_new",
+    "inclusive_seconds": 0.000559,
+    "self_seconds": 0.000559,
+    "calls": 4012,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.559,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/SimulationConfig.gd::51::SimulationConfig.copy_config",
+    "inclusive_seconds": 0.000454,
+    "self_seconds": 0.000454,
+    "calls": 4,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.45399999999999996,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::131::EntityService.get_counts",
+    "inclusive_seconds": 0.020717,
+    "self_seconds": 0.020717,
+    "calls": 151,
+    "median_self_ms": 0.479,
+    "max_self_ms": 0.805,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AI/Tasks/AnimalCondition.gd::0::@implicit_new",
+    "inclusive_seconds": 0.000393,
+    "self_seconds": 0.000393,
+    "calls": 3924,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.393,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/DebugHUD.gd::29::DebugHUD.refresh",
+    "inclusive_seconds": 0.008994,
+    "self_seconds": 0.002414,
+    "calls": 44,
+    "median_self_ms": 0.05,
+    "max_self_ms": 0.12999999999999998,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::362::_record_performance_step",
+    "inclusive_seconds": 0.008374,
+    "self_seconds": 0.002298,
+    "calls": 343,
+    "median_self_ms": 0.053,
+    "max_self_ms": 0.068,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::404::_process",
+    "inclusive_seconds": 0.009638,
+    "self_seconds": 7.4e-05,
+    "calls": 43,
+    "median_self_ms": 0.002,
+    "max_self_ms": 0.004,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::380::_publish_performance_stats",
+    "inclusive_seconds": 0.004845,
+    "self_seconds": 0.0008810000000000001,
+    "calls": 386,
+    "median_self_ms": 0.026,
+    "max_self_ms": 0.041,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::283::set_performance_stats_enabled",
+    "inclusive_seconds": 0.00023,
+    "self_seconds": 0.000127,
+    "calls": 2,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.127,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::13::WolfController.initialize",
+    "inclusive_seconds": 0.000173,
+    "self_seconds": 0.000173,
+    "calls": 87,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.17300000000000001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AI/Tasks/AnimalAction.gd::16::_exit",
+    "inclusive_seconds": 0.006418,
+    "self_seconds": 0.002799,
+    "calls": 5959,
+    "median_self_ms": 0.060000000000000005,
+    "max_self_ms": 0.103,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/RootController.gd::45::_refresh_grass",
+    "inclusive_seconds": 0.000152,
+    "self_seconds": 0.000152,
+    "calls": 121,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.136,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::58::_initialize",
+    "inclusive_seconds": 0.000132,
+    "self_seconds": 0.000132,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.132,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::57::AnimalController.refresh_config",
+    "inclusive_seconds": 0.000101,
+    "self_seconds": 0.000101,
+    "calls": 1000,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.101,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::103::WolfController.leave_hunt",
+    "inclusive_seconds": 0.003437,
+    "self_seconds": 0.003437,
+    "calls": 20270,
+    "median_self_ms": 0.079,
+    "max_self_ms": 0.106,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/SimulationConfig.gd::0::SimulationConfig.@implicit_new",
+    "inclusive_seconds": 8.7e-05,
+    "self_seconds": 8.7e-05,
+    "calls": 5,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.087,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepdogController.gd::21::SheepdogController.initialize",
+    "inclusive_seconds": 7.8e-05,
+    "self_seconds": 7.8e-05,
+    "calls": 43,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.078,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::178::_update_grass",
+    "inclusive_seconds": 0.002906,
+    "self_seconds": 0.002906,
+    "calls": 343,
+    "median_self_ms": 0.067,
+    "max_self_ms": 0.088,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::328::reset_performance_stats",
+    "inclusive_seconds": 8e-05,
+    "self_seconds": 4.9e-05,
+    "calls": 4,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.032,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::17::WolfController.refresh_config",
+    "inclusive_seconds": 5.3e-05,
+    "self_seconds": 5.3e-05,
+    "calls": 87,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.053,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::143::AnimalController.resolve_interactions",
+    "inclusive_seconds": 0.001211,
+    "self_seconds": 0.001211,
+    "calls": 14749,
+    "median_self_ms": 0.026,
+    "max_self_ms": 0.093,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::0::@implicit_new",
+    "inclusive_seconds": 3.4e-05,
+    "self_seconds": 2e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.02,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::234::_exact_counts",
+    "inclusive_seconds": 3.3e-05,
+    "self_seconds": 1.9e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.019,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepdogController.gd::15::SheepdogController.refresh_config",
+    "inclusive_seconds": 3.2e-05,
+    "self_seconds": 3.2e-05,
+    "calls": 43,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.032,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::0::WolfController.@implicit_new",
+    "inclusive_seconds": 2.6e-05,
+    "self_seconds": 2.6e-05,
+    "calls": 87,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.026,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::342::_reset_stats_window",
+    "inclusive_seconds": 0.000184,
+    "self_seconds": 0.000184,
+    "calls": 30,
+    "median_self_ms": 0.006,
+    "max_self_ms": 0.024,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/DebugService.gd::82::DebugService._draw",
+    "inclusive_seconds": 0.000211,
+    "self_seconds": 0.000119,
+    "calls": 44,
+    "median_self_ms": 0.003,
+    "max_self_ms": 0.011,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/RuntimeConfigPanel.gd::69::RuntimeConfigPanel._ready",
+    "inclusive_seconds": 2.2e-05,
+    "self_seconds": 1.1e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.011,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepdogController.gd::0::SheepdogController.@implicit_new",
+    "inclusive_seconds": 2.1e-05,
+    "self_seconds": 2.1e-05,
+    "calls": 43,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.020999999999999998,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::0::@implicit_new",
+    "inclusive_seconds": 1.8e-05,
+    "self_seconds": 1.8e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.018000000000000002,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/SimulationConfig.gd::60::SimulationConfig.get_sections",
+    "inclusive_seconds": 1.8e-05,
+    "self_seconds": 1.8e-05,
+    "calls": 9,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.018000000000000002,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::106::AnimalController._scan_neighbors",
+    "inclusive_seconds": 0.00045599999999999997,
+    "self_seconds": 0.00045599999999999997,
+    "calls": 5694,
+    "median_self_ms": 0.009000000000000001,
+    "max_self_ms": 0.018000000000000002,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::309::_is_time_monitor",
+    "inclusive_seconds": 1.8e-05,
+    "self_seconds": 1.8e-05,
+    "calls": 38,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.018000000000000002,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::86::stop_simulation",
+    "inclusive_seconds": 1.8e-05,
+    "self_seconds": 1.6e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.016,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GrassConfig.gd::0::GrassConfig.@implicit_new",
+    "inclusive_seconds": 1.7e-05,
+    "self_seconds": 1.7e-05,
+    "calls": 10,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.017,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::321::record_debug_time",
+    "inclusive_seconds": 0.000182,
+    "self_seconds": 0.000182,
+    "calls": 87,
+    "median_self_ms": 0.004,
+    "max_self_ms": 0.014,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::209::SheepController.finish_behavior",
+    "inclusive_seconds": 0.000652,
+    "self_seconds": 0.000652,
+    "calls": 4340,
+    "median_self_ms": 0.014,
+    "max_self_ms": 0.054,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/SheepConfig.gd::0::SheepConfig.@implicit_new",
+    "inclusive_seconds": 1.2e-05,
+    "self_seconds": 1.2e-05,
+    "calls": 10,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.012,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::0::EntityService.@implicit_new",
+    "inclusive_seconds": 1e-05,
+    "self_seconds": 1e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.01,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::97::WolfController.begin_hunt",
+    "inclusive_seconds": 0.000275,
+    "self_seconds": 0.000275,
+    "calls": 713,
+    "median_self_ms": 0.006,
+    "max_self_ms": 0.015000000000000001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::0::@implicit_ready",
+    "inclusive_seconds": 1e-05,
+    "self_seconds": 1e-05,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.01,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/RuntimeConfigPanel.gd::210::RuntimeConfigPanel.refresh",
+    "inclusive_seconds": 0.00018,
+    "self_seconds": 0.00018,
+    "calls": 45,
+    "median_self_ms": 0.004,
+    "max_self_ms": 0.009000000000000001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/WolfConfig.gd::0::WolfConfig.@implicit_new",
+    "inclusive_seconds": 9e-06,
+    "self_seconds": 9e-06,
+    "calls": 10,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.009000000000000001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/SheepdogConfig.gd::0::SheepdogConfig.@implicit_new",
+    "inclusive_seconds": 9e-06,
+    "self_seconds": 9e-06,
+    "calls": 10,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.009000000000000001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/DebugService.gd::64::DebugService.refresh",
+    "inclusive_seconds": 0.00025100000000000003,
+    "self_seconds": 0.000161,
+    "calls": 43,
+    "median_self_ms": 0.004,
+    "max_self_ms": 0.012,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::162::EntityService.clear",
+    "inclusive_seconds": 6e-06,
+    "self_seconds": 6e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.006,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/RuntimeConfigPanel.gd::0::RuntimeConfigPanel.@implicit_ready",
+    "inclusive_seconds": 5e-06,
+    "self_seconds": 5e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.005,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::105::EntityService.reset_spatial_stats",
+    "inclusive_seconds": 0.000139,
+    "self_seconds": 0.000139,
+    "calls": 348,
+    "median_self_ms": 0.003,
+    "max_self_ms": 0.007,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/WolfController.gd::147::WolfController.finish_behavior",
+    "inclusive_seconds": 0.000195,
+    "self_seconds": 0.000195,
+    "calls": 1363,
+    "median_self_ms": 0.004,
+    "max_self_ms": 0.012,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/RuntimeConfigPanel.gd::0::RuntimeConfigPanel.@implicit_new",
+    "inclusive_seconds": 4e-06,
+    "self_seconds": 4e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.004,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/RootController.gd::0::@implicit_new",
+    "inclusive_seconds": 4e-06,
+    "self_seconds": 4e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.004,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/SimulationConfig.gd::63::SimulationConfig.requires_restart",
+    "inclusive_seconds": 3e-06,
+    "self_seconds": 3e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.003,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::327::_record_step",
+    "inclusive_seconds": 0.005879,
+    "self_seconds": 0.005678,
+    "calls": 343,
+    "median_self_ms": 0.13999999999999999,
+    "max_self_ms": 0.162,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/DebugHUD.gd::0::DebugHUD.@implicit_ready",
+    "inclusive_seconds": 2e-06,
+    "self_seconds": 2e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.002,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/DebugService.gd::68::DebugService.selection_text",
+    "inclusive_seconds": 3.9999999999999996e-05,
+    "self_seconds": 3.9999999999999996e-05,
+    "calls": 44,
+    "median_self_ms": 0.001,
+    "max_self_ms": 0.002,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::117::AnimalController.finish_behavior",
+    "inclusive_seconds": 9.1e-05,
+    "self_seconds": 9.1e-05,
+    "calls": 256,
+    "median_self_ms": 0.001,
+    "max_self_ms": 0.054,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::294::_process",
+    "inclusive_seconds": 0.017942,
+    "self_seconds": 0.004,
+    "calls": 43,
+    "median_self_ms": 0.095,
+    "max_self_ms": 0.232,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/RootController.gd::0::@implicit_ready",
+    "inclusive_seconds": 1e-06,
+    "self_seconds": 1e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::248::_prepare_exact_settings",
+    "inclusive_seconds": 1e-06,
+    "self_seconds": 1e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/DebugService.gd::60::DebugService.clear_invalid_selection",
+    "inclusive_seconds": 7.3e-05,
+    "self_seconds": 7.3e-05,
+    "calls": 75,
+    "median_self_ms": 0.001,
+    "max_self_ms": 0.004,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/DebugService.gd::56::DebugService.clear_selection",
+    "inclusive_seconds": 1e-06,
+    "self_seconds": 1e-06,
+    "calls": 3,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/DebugService.gd::9::DebugService.initialize",
+    "inclusive_seconds": 1e-06,
+    "self_seconds": 0.0,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.0,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::60::EntityService.spawn_initial",
+    "inclusive_seconds": 1e-06,
+    "self_seconds": 1e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.001,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/UI/DebugHUD.gd::0::DebugHUD.@implicit_new",
+    "inclusive_seconds": 0.0,
+    "self_seconds": 0.0,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.0,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/DebugService.gd::0::DebugService.@implicit_new",
+    "inclusive_seconds": 0.0,
+    "self_seconds": 0.0,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.0,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::29::EntityService.initialize",
+    "inclusive_seconds": 0.0,
+    "self_seconds": 0.0,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.0,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::345::_record_sample",
+    "inclusive_seconds": 0.008162,
+    "self_seconds": 0.002112,
+    "calls": 40,
+    "median_self_ms": 0.049,
+    "max_self_ms": 0.088,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::398::_percentile",
+    "inclusive_seconds": 0.000423,
+    "self_seconds": 0.000345,
+    "calls": 80,
+    "median_self_ms": 0.006,
+    "max_self_ms": 0.089,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::392::_mean",
+    "inclusive_seconds": 6.1e-05,
+    "self_seconds": 6.1e-05,
+    "calls": 40,
+    "median_self_ms": 0.001,
+    "max_self_ms": 0.003,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/EntityService.gd::138::EntityService.capture",
+    "inclusive_seconds": 0.001487,
+    "self_seconds": 7.3e-05,
+    "calls": 32,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.01,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/SheepController.gd::216::SheepController.die",
+    "inclusive_seconds": 0.001315,
+    "self_seconds": 0.001277,
+    "calls": 32,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.203,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/AnimalController.gd::156::AnimalController.die",
+    "inclusive_seconds": 0.001233,
+    "self_seconds": 0.001233,
+    "calls": 32,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.199,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Scripts/Core/GameplayEngine.gd::169::consume_grass",
+    "inclusive_seconds": 3e-05,
+    "self_seconds": 5e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.005,
+    "frame_samples": 43
+  },
+  {
+    "signature": "res://Tests/RunBenchmark.gd::382::_record_grass",
+    "inclusive_seconds": 2e-06,
+    "self_seconds": 2e-06,
+    "calls": 1,
+    "median_self_ms": 0.0,
+    "max_self_ms": 0.002,
+    "frame_samples": 43
+  }
+]

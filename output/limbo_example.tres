@@ -1,0 +1,12 @@
+[gd_resource type="BehaviorTree" format=3]
+
+[sub_resource type="BTAction" id="BTAction_70hjf"]
+
+[sub_resource type="BTDynamicSequence" id="BTDynamicSequence_ge5my"]
+children = [SubResource("BTAction_70hjf")]
+
+[sub_resource type="BTDynamicSelector" id="BTDynamicSelector_5cwxb"]
+children = [SubResource("BTDynamicSequence_ge5my")]
+
+[resource]
+root_task = SubResource("BTDynamicSelector_5cwxb")

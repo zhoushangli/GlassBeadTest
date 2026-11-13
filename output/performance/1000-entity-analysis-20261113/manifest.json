@@ -1,0 +1,354 @@
+[
+  {
+    "label": "fixed-stages-1",
+    "exit_code": 0,
+    "options": {
+      "Scenario": "fixed",
+      "Label": "fixed-stages-1"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_154723_launcher_56dfac1f\\launcher.json",
+    "status": {
+      "pid": 318304,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=fixed-stages-1",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 68.40998909999999,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-47-25_fixed-stages-1_380792_2486288/result.json"
+    }
+  },
+  {
+    "label": "scaled-stages-1",
+    "exit_code": 0,
+    "options": {
+      "Scenario": "scaled",
+      "Label": "scaled-stages-1"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_154831_launcher_6efb891b\\launcher.json",
+    "status": {
+      "pid": 184060,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=scaled --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=scaled-stages-1",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.5269249,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-48-33_scaled-stages-1_282180_1677353/result.json"
+    }
+  },
+  {
+    "label": "fixed-stages-2",
+    "exit_code": 0,
+    "options": {
+      "Scenario": "fixed",
+      "Label": "fixed-stages-2"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_154939_launcher_0e09d0f9\\launcher.json",
+    "status": {
+      "pid": 253932,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=fixed-stages-2",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.9953867,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-49-41_fixed-stages-2_242440_1859649/result.json"
+    }
+  },
+  {
+    "label": "scaled-stages-2",
+    "exit_code": 0,
+    "options": {
+      "Scenario": "scaled",
+      "Label": "scaled-stages-2"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155048_launcher_bb6d4426\\launcher.json",
+    "status": {
+      "pid": 39528,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=scaled --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=scaled-stages-2",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.8212688,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-50-50_scaled-stages-2_71008_1778651/result.json"
+    }
+  },
+  {
+    "label": "fixed-stages-3",
+    "exit_code": 0,
+    "options": {
+      "Scenario": "fixed",
+      "Label": "fixed-stages-3"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155156_launcher_a7d36b84\\launcher.json",
+    "status": {
+      "pid": 77600,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=fixed-stages-3",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.85829009999999,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-51-58_fixed-stages-3_71960_1875278/result.json"
+    }
+  },
+  {
+    "label": "scaled-stages-3",
+    "exit_code": 0,
+    "options": {
+      "Scenario": "scaled",
+      "Label": "scaled-stages-3"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155304_launcher_70bc8fc1\\launcher.json",
+    "status": {
+      "pid": 189872,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=scaled --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=scaled-stages-3",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.55091829999999,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-53-06_scaled-stages-3_122456_1756725/result.json"
+    }
+  },
+  {
+    "label": "fixed-off",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-off",
+      "Sampling": "off",
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155413_launcher_b2e54289\\launcher.json",
+    "status": {
+      "pid": 129368,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=off --hud=on --overlay=on --animals=on --grass=on --label=fixed-off",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.6873301,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-54-14_fixed-off_263604_1631181/result.json"
+    }
+  },
+  {
+    "label": "fixed-detailed",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-detailed",
+      "Sampling": "detailed",
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155521_launcher_0b4eb7bd\\launcher.json",
+    "status": {
+      "pid": 416532,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=detailed --hud=on --overlay=on --animals=on --grass=on --label=fixed-detailed",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.76206859999999,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-55-23_fixed-detailed_67028_1860187/result.json"
+    }
+  },
+  {
+    "label": "fixed-headless",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-headless",
+      "Headless": true,
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155629_launcher_b89963ac\\launcher.json",
+    "status": {
+      "pid": 126100,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd --headless -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=fixed-headless",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 66.4019083,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-56-30_fixed-headless_293744_503687/result.json"
+    }
+  },
+  {
+    "label": "fixed-no-debug",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-no-debug",
+      "Overlay": "off",
+      "Hud": "off",
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155736_launcher_d4de7329\\launcher.json",
+    "status": {
+      "pid": 419760,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=off --overlay=off --animals=on --grass=on --label=fixed-no-debug",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.87350889999999,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-57-38_fixed-no-debug_124272_2173280/result.json"
+    }
+  },
+  {
+    "label": "fixed-lines",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-lines",
+      "Overlay": "details",
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155844_launcher_ac08c2a0\\launcher.json",
+    "status": {
+      "pid": 289412,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=details --animals=on --grass=on --label=fixed-lines",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.9857272,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-58-46_fixed-lines_212428_2061963/result.json"
+    }
+  },
+  {
+    "label": "fixed-hide-animals",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-hide-animals",
+      "Animals": "off",
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_155953_launcher_1a1704f4\\launcher.json",
+    "status": {
+      "pid": 379448,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=off --grass=on --label=fixed-hide-animals",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.8851184,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T15-59-55_fixed-hide-animals_114956_1998529/result.json"
+    }
+  },
+  {
+    "label": "fixed-hide-grass",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-hide-grass",
+      "Grass": "off",
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_160101_launcher_72f3acf1\\launcher.json",
+    "status": {
+      "pid": 69116,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=off --label=fixed-hide-grass",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 69.2114325,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T16-01-03_fixed-hide-grass_256112_2196635/result.json"
+    }
+  },
+  {
+    "label": "fixed-hide-both",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-hide-both",
+      "Animals": "off",
+      "Grass": "off",
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_160211_launcher_5aa86b18\\launcher.json",
+    "status": {
+      "pid": 226384,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=off --grass=off --label=fixed-hide-both",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.9326433,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T16-02-13_fixed-hide-both_113836_2192766/result.json"
+    }
+  },
+  {
+    "label": "fixed-cap60",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-cap60",
+      "MaxFps": 60,
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_160319_launcher_3a2822c7\\launcher.json",
+    "status": {
+      "pid": 192864,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=60 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=fixed-cap60",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 67.94999349999999,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T16-03-21_fixed-cap60_233436_1986229/result.json"
+    }
+  },
+  {
+    "label": "fixed-profiler",
+    "exit_code": 0,
+    "options": {
+      "Label": "fixed-profiler",
+      "Profile": true,
+      "Scenario": "fixed"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_160428_launcher_551e5918\\launcher.json",
+    "status": {
+      "pid": 107360,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd --debug --profiling -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=fixed-profiler",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 68.2317655,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T16-04-30_fixed-profiler_355120_1823058/result.json"
+    }
+  },
+  {
+    "label": "fixed-closing",
+    "exit_code": 0,
+    "options": {
+      "Scenario": "fixed",
+      "Label": "fixed-closing"
+    },
+    "launcher": "C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\\output\\performance\\20261113_160558_launcher_2cef9a4a\\launcher.json",
+    "status": {
+      "pid": 412816,
+      "executable": "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+      "arguments": "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=on --animals=on --grass=on --label=fixed-closing",
+      "timeout_seconds": 120,
+      "state": "exited",
+      "exit_code": 0,
+      "wall_seconds": 68.1855348,
+      "has_result": true,
+      "result_path": "res://output/performance/2026-11-13T16-06-00_fixed-closing_282588_1833281/result.json"
+    }
+  }
+]

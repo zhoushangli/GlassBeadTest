@@ -1,0 +1,22 @@
+{
+  "Scripts\\AnimalController.gd": "d4400701194fd6a8f1bac9ac089390a1a96e19c5de1de80ec4294154b9a23aae",
+  "Scripts\\RootController.gd": "1a340a99db9ab15349dc8b853c60303408633985e2c653b8457adfcb8cb1f947",
+  "Scripts\\SheepController.gd": "77789181eb2c0dbeb842738571468ea290b480c17cc3cef7b5c12409b0f95607",
+  "Scripts\\SheepdogController.gd": "4011a7cf0ac8997ef781eac151b4e7ac18d8c7626962aa60942cddb5b2b43fc1",
+  "Scripts\\WolfController.gd": "16523f4839887de283bce4d41b043991a881c6af70c459265337012a770d24e6",
+  "Scripts\\Core\\DebugService.gd": "268da8a53f65a807469acfb898fac2ccfbacc296a977eeb005b98a0bd428b5ce",
+  "Scripts\\Core\\EntityService.gd": "c23e039f30bd252173cece3ce046a3c85f072c3ab8c06ace45801e39e8494204",
+  "Scripts\\Core\\GameplayEngine.gd": "ccbbca67a7c7bda1b29ec5651eceacb005b7f28f71d00bcf7254e8abc5715fef",
+  "Scripts\\Core\\GrassConfig.gd": "b9e2215bc478d5b752d67be68da8de5fcf7cbd55c8da19a12ee1b8cc497947b2",
+  "Scripts\\Core\\SheepConfig.gd": "f3434bab435655cb5a2311dfb4384f43f1d1ee3e393b1e9e15ddbbebe995f631",
+  "Scripts\\Core\\SheepdogConfig.gd": "7b2bc1b3837bba8110a550c19d140e2f14708497c2a8b2075b9d56062092b638",
+  "Scripts\\Core\\SimulationConfig.gd": "cd741ca00e313d9ea2a759c1d5cd3623d3647fb3e8ed47f2bb7d3919657ae510",
+  "Scripts\\Core\\WolfConfig.gd": "73ed4badb2aeef09240560b24974a7a5c068450999fc710a4a4b0b3951e689a9",
+  "Scripts\\UI\\DebugHUD.gd": "9865e5549a0639d5414f6ce779086a509555497b8e4dc83e2610a0ba4deaaafb",
+  "Scripts\\UI\\RuntimeConfigPanel.gd": "c3b91407580dab3de4dc7d59b0b4f5b78c96183730fb54169ef217eb43a87f23",
+  "Scripts\\AI\\Tasks\\AnimalAction.gd": "448b62d6510ea340c2cf52179fad3af9695df57331854c68e886ed769a70b65a",
+  "Scripts\\AI\\Tasks\\AnimalCondition.gd": "dd370566ad0a265cbe643bc003e0b484d36912df28b1cfc26e35373a3066fe8a",
+  "Tests\\RunBenchmark.gd": "55d705466ec82a363fac51633671e1a7d3eee7431b90889f8f73ce202c1cb22c",
+  "Tests\\RunBenchmark.ps1": "e578d48b8ac0db93c5b1be82279087c470681b1f0976940a6d6fea71ec55447b",
+  "Tests\\PerformanceVerification.gd": "eab72457281e8dd0bd4f5bc12b69965d65ddc2e7977c501ab53ea82196550aac"
+}

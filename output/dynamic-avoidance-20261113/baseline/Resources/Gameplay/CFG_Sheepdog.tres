@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SheepdogConfig" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Core/SheepdogConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+move_speed = 80.0
+drive_speed = 185.0
+return_speed = 100.0
+perception_radius = 300.0
+local_flock_radius = 120.0
+protection_radius = 280.0
+leash_distance = 300.0
+guard_distance = 75.0
+reassignment_interval = 2.0
+reassignment_improvement = 0.25
+coverage_weight = 2.0

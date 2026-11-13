@@ -1,0 +1,17 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 621.01 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070 Ti Laptop GPU
+
+OBSERVATION {"behaviors":{"0":184,"1":49,"2":7},"captures":0,"fps":1.0,"hunt_seconds":0.0,"hunts":0,"meals":0,"mean_distance_to_center":265.221294577916,"patch_switches_after_meal":0,"seconds":0.0166666666666667,"sheep":240,"step_ms":67.138}
+OBSERVATION {"behaviors":{"0":150,"1":15,"2":75},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":97,"mean_distance_to_center":253.377046859264,"patch_switches_after_meal":0,"seconds":10.0000000000001,"sheep":240,"step_ms":7.809}
+OBSERVATION {"behaviors":{"0":155,"1":14,"2":71},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":220,"mean_distance_to_center":264.047559070587,"patch_switches_after_meal":0,"seconds":20.0000000000001,"sheep":240,"step_ms":7.37}
+OBSERVATION {"behaviors":{"0":138,"1":38,"2":64},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":319,"mean_distance_to_center":278.984302306175,"patch_switches_after_meal":0,"seconds":30.0166666666662,"sheep":240,"step_ms":6.377}
+OBSERVATION {"behaviors":{"0":101,"1":105,"2":34},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":353,"mean_distance_to_center":292.123578508695,"patch_switches_after_meal":1,"seconds":40.0166666666657,"sheep":240,"step_ms":4.73}
+OBSERVATION {"behaviors":{"0":240},"captures":0,"fps":59.0,"hunt_seconds":0.0,"hunts":0,"meals":360,"mean_distance_to_center":279.026145422459,"patch_switches_after_meal":1,"seconds":50.0166666666651,"sheep":240,"step_ms":5.854}
+OBSERVATION {"behaviors":{"0":73,"1":144,"2":23},"captures":0,"fps":59.0,"hunt_seconds":0.0,"hunts":0,"meals":362,"mean_distance_to_center":227.650839893023,"patch_switches_after_meal":2,"seconds":60.0166666666645,"sheep":240,"step_ms":7.221}
+OBSERVATION {"behaviors":{"0":46,"1":79,"2":115},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":402,"mean_distance_to_center":233.846576205889,"patch_switches_after_meal":10,"seconds":70.016666666664,"sheep":240,"step_ms":7.522}
+OBSERVATION {"behaviors":{"0":27,"1":69,"2":144},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":517,"mean_distance_to_center":279.046357440949,"patch_switches_after_meal":40,"seconds":80.0166666666634,"sheep":240,"step_ms":5.763}
+OBSERVATION {"behaviors":{"0":27,"1":87,"2":126},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":633,"mean_distance_to_center":289.046210700273,"patch_switches_after_meal":73,"seconds":90.0166666666628,"sheep":240,"step_ms":6.377}
+OBSERVATION {"behaviors":{"0":38,"1":151,"2":51},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":704,"mean_distance_to_center":256.905132087072,"patch_switches_after_meal":81,"seconds":100.016666666662,"sheep":240,"step_ms":6.51}
+OBSERVATION {"behaviors":{"0":40,"1":194,"2":6},"captures":0,"fps":59.0,"hunt_seconds":0.0,"hunts":0,"meals":720,"mean_distance_to_center":165.256541903814,"patch_switches_after_meal":84,"seconds":110.016666666662,"sheep":240,"step_ms":6.562}
+OBSERVATION {"behaviors":{"0":37,"1":181,"2":22},"captures":0,"fps":60.0,"hunt_seconds":0.0,"hunts":0,"meals":725,"mean_distance_to_center":123.415418040752,"patch_switches_after_meal":87,"seconds":120.016666666661,"sheep":240,"step_ms":6.103}
+OBSERVATION_COMPLETE no_wolves

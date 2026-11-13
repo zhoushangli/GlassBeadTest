@@ -1,0 +1,11 @@
+﻿{
+    "pid":  419760,
+    "executable":  "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+    "arguments":  "--path \"C:\\Users\\Shangli Zhou\\Documents\\glass-bead-test\" --script res://Tests/RunBenchmark.gd  -- --entities=1000 --scenario=fixed --stats=on --duration=60 --warmup=5 --max-fps=0 --sampling=stages --hud=off --overlay=off --animals=on --grass=on --label=fixed-no-debug",
+    "timeout_seconds":  120,
+    "state":  "exited",
+    "exit_code":  0,
+    "wall_seconds":  67.87350889999999,
+    "has_result":  true,
+    "result_path":  "res://output/performance/2026-11-13T15-57-38_fixed-no-debug_124272_2173280/result.json"
+}
