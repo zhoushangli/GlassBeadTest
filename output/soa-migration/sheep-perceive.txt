@@ -1,0 +1,51 @@
+func perceive(animal: AnimalEntity, delta: float) -> void:
+	var row := animal.row
+	var settings: SheepConfig = data.settings[row]
+	var common: AnimalSystem = g_gameplayEngine.animal_system
+	common.perceive(animal, delta)
+	var position := data.motion_position[row]
+	var threatened := false
+	var threat_direction := Vector2.ZERO
+	var dog_pressure := Vector2.ZERO
+	var service: EntityService = g_gameplayEngine.entity_service
+	var positions := service.perception_positions
+	var kinds := service.perception_kinds
+	for index in service.get_nearby_indices(position, maxf(settings.perception_radius, settings.herding_distance)):
+		var kind: int = kinds[index]
+		if kind != AnimalEntity.Kind.WOLF and kind != AnimalEntity.Kind.SHEEPDOG:
+			continue
+		var point := positions[index]
+		var offset := position - point
+		var distance := offset.length()
+		match kind:
+			AnimalEntity.Kind.WOLF:
+				if distance <= settings.emergency_distance or common.can_see(animal, point):
+					threatened = true
+					threat_direction += offset.normalized() / maxf(distance, 1.0)
+			AnimalEntity.Kind.SHEEPDOG:
+				if distance < settings.herding_distance:
+					dog_pressure += offset.normalized() * (1.0 - distance / settings.herding_distance)
+	var panic_elapsed := data.sheep_panic_elapsed[row]
+	var has_panic: bool = data.sheep_has_panic[row] != 0
+	if has_panic:
+		panic_elapsed += delta
+		has_panic = panic_elapsed < settings.panic_duration
+		if has_panic:
+			threat_direction += (position - data.sheep_panic_source[row]).normalized()
+	var alert_elapsed := data.sheep_alert_elapsed[row]
+	var has_alert: bool = data.sheep_has_alert[row] != 0
+	if threatened or has_panic:
+		has_alert = true
+		alert_elapsed = 0.0
+	else:
+		alert_elapsed += delta
+		has_alert = has_alert and alert_elapsed < settings.alert_duration
+	if (threatened or has_panic) and threat_direction.is_zero_approx():
+		threat_direction = Vector2.from_angle(data.identity_entity_id[row] * 2.399963)
+	data.sheep_threatened[row] = int(threatened)
+	data.sheep_threat_direction[row] = threat_direction
+	data.sheep_dog_pressure[row] = dog_pressure
+	data.sheep_panic_elapsed[row] = panic_elapsed
+	data.sheep_has_panic[row] = int(has_panic)
+	data.sheep_alert_elapsed[row] = alert_elapsed
+	data.sheep_has_alert[row] = int(has_alert)

@@ -60,7 +60,7 @@ const FIELD_HELP := {
 	"World.initial_sheepdogs": "模拟开始时的牧羊犬数量；应用修改需要重启模拟并保留暂停状态。\n例如：12 表示初始生成 12 只牧羊犬。",
 	"World.perception_interval": "动物采样附近实体和软分离的间隔，单位为模拟秒；不是全部 AI 决策的更新间隔。\n例如：0.125 表示约每 0.125 秒更新一次邻居采样。",
 	"World.separation_distance": "同物种动物之间软分离的作用距离，单位为像素；不等同于物理碰撞。\n例如：24 表示同类靠近到 24 像素内时产生分离移动。",
-	"World.death_duration": "动物死亡后保留表现多久再移除，单位为模拟秒。\n例如：0.3 表示死亡表现保留 0.3 秒。",
+	"World.death_duration": "死亡立即退出模拟；尸体显示结束后隐藏并回收，单位为模拟秒。\n例如：0.3 表示尸体显示 0.3 秒。",
 }
 
 @onready var tabs: TabContainer = $Margin/Column/Tabs

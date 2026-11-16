@@ -16,21 +16,23 @@ func _check(condition: bool, label: String) -> void:
 		push_error("FAIL: " + label)
 
 func _state() -> Array:
+	var data: AnimalData = g_gameplayEngine.entity_service.data
 	var values: Array = [engine.rng.state, engine.entity_service.capture_count]
 	for animal in engine.entity_service.entities:
-		var target_id: int = animal.target.entity_id if animal.is_live(animal.target) else 0
-		values.append([animal.entity_id, animal.position, animal.velocity, animal.current_behavior, target_id, animal.alive, animal.facing, animal.last_seen_position, animal.last_seen_velocity, animal.unseen_elapsed])
-		if animal is SheepController:
-			values.append([animal.has_alert, animal.alert_elapsed, animal.has_panic, animal.panic_elapsed])
-		elif animal is WolfController:
-			values.append([animal.hunting, animal.hunt_elapsed, animal.charging, animal.strategy, animal.strategy_failures.duplicate(), animal.rest_elapsed, animal.howl_elapsed, animal.howled, animal.retreating])
-		elif animal is SheepdogController:
-			var anchor_id: int = animal.protected_sheep.entity_id if animal.is_live(animal.protected_sheep) else 0
-			var stray_id: int = animal.collected_sheep.entity_id if animal.is_live(animal.collected_sheep) else 0
-			values.append([anchor_id, stray_id, animal.protection_center, animal.guard_point, animal.patrol_angle, animal._returning])
+		var target_id: int = data.identity_entity_id[data.live(data.memory_target[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.memory_target[animal.row])) else 0
+		values.append([data.identity_entity_id[animal.row], data.motion_position[animal.row], data.motion_velocity[animal.row], data.brain_current_behavior[animal.row], target_id, data.identity_alive[animal.row], data.motion_facing[animal.row], data.memory_last_seen_position[animal.row], data.memory_last_seen_velocity[animal.row], data.memory_unseen_elapsed[animal.row]])
+		if data.identity_kind[animal.row] == AnimalEntity.Kind.SHEEP:
+			values.append([data.sheep_has_alert[animal.row], data.sheep_alert_elapsed[animal.row], data.sheep_has_panic[animal.row], data.sheep_panic_elapsed[animal.row]])
+		elif data.identity_kind[animal.row] == AnimalEntity.Kind.WOLF:
+			values.append([data.wolf_hunting[animal.row], data.wolf_hunt_elapsed[animal.row], data.wolf_charging[animal.row], data.wolf_strategy[animal.row], data.wolf_strategy_failures[animal.row], data.wolf_rest_elapsed[animal.row], data.wolf_howl_elapsed[animal.row], data.wolf_howled[animal.row], data.wolf_retreating[animal.row]])
+		elif data.identity_kind[animal.row] == AnimalEntity.Kind.SHEEPDOG:
+			var anchor_id: int = data.identity_entity_id[data.live(data.dog_protected_sheep[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.dog_protected_sheep[animal.row])) else 0
+			var stray_id: int = data.identity_entity_id[data.live(data.dog_collected_sheep[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.dog_collected_sheep[animal.row])) else 0
+			values.append([anchor_id, stray_id, data.dog_protection_center[animal.row], data.dog_guard_point[animal.row], data.dog_patrol_angle[animal.row], data.dog_returning[animal.row]])
 	return values
 
 func _verify() -> void:
+	var data: AnimalData = g_gameplayEngine.entity_service.data
 	var defaults := load("res://Resources/Gameplay/CFG_Simulation.tres") as SimulationConfig
 	for total in [1000, 2000, 3000, 4000]:
 		var counts := _exact_counts(total, Vector3i(240, 24, 12))
@@ -69,15 +71,15 @@ func _verify() -> void:
 	var bounds := Rect2(Vector2.ZERO, engine.config.arena_size)
 	var in_bounds := true
 	for animal in engine.entity_service.entities:
-		positions.append(animal.position)
-		in_bounds = in_bounds and bounds.has_point(animal.position)
+		positions.append(data.motion_position[animal.row])
+		in_bounds = in_bounds and bounds.has_point(data.motion_position[animal.row])
 	_check(in_bounds, "spawned animals stay inside arena")
 	engine.entity_service.clear()
 	engine.rng.seed = engine.config.random_seed
 	_spawn_layout(Vector3i(240, 24, 12), Vector2(1280, 720))
 	var repeated: Array[Vector2] = []
 	for animal in engine.entity_service.entities:
-		repeated.append(animal.position)
+		repeated.append(data.motion_position[animal.row])
 	_check(positions == repeated, "layout positions reproduce with fixed seed")
 	engine.entity_service.clear()
 	layout = "cluster"
@@ -85,7 +87,7 @@ func _verify() -> void:
 	var central := Rect2((engine.config.arena_size - Vector2(1280, 720)) * 0.5, Vector2(1280, 720))
 	var clustered := true
 	for animal in engine.entity_service.entities:
-		clustered = clustered and central.has_point(animal.position)
+		clustered = clustered and central.has_point(data.motion_position[animal.row])
 	_check(clustered and engine.entity_service.entities.size() == 1104, "cluster preserves population in one central region")
 	engine.entity_service.clear()
 	var old_counts := configured_counts
@@ -96,21 +98,21 @@ func _verify() -> void:
 	var exact_bounds := Rect2(Vector2(12, 94), engine.config.arena_size - Vector2(24, 152))
 	var exact_inside := true
 	for animal in engine.entity_service.entities:
-		exact_positions.append(animal.position)
-		exact_inside = exact_inside and exact_bounds.has_point(animal.position)
+		exact_positions.append(data.motion_position[animal.row])
+		exact_inside = exact_inside and exact_bounds.has_point(data.motion_position[animal.row])
 	_check(exact_inside, "uniform animal positions inside movement boundaries")
 	engine.entity_service.clear()
 	_spawn_exact_layout()
 	var exact_repeated: Array[Vector2] = []
 	for animal in engine.entity_service.entities:
-		exact_repeated.append(animal.position)
+		exact_repeated.append(data.motion_position[animal.row])
 	_check(exact_positions == exact_repeated, "uniform layout independent of animal initialization RNG")
 	engine.entity_service.clear()
 	configured_counts = old_counts
 	var service: EntityService = engine.entity_service
-	service.spawn(AnimalController.Kind.SHEEP, 1, Vector2(119, 110))
-	service.spawn(AnimalController.Kind.SHEEP, 1, Vector2(120, 110))
-	service.spawn(AnimalController.Kind.WOLF, 1, Vector2(400, 110))
+	service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(119, 110))
+	service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(120, 110))
+	service.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(400, 110))
 	service.rebuild_spatial_index()
 	var nearby := service.get_nearby_indices(Vector2(120, 110), 2.0)
 	_check(nearby.size() == 2 and service.spatial_candidate_count == 2, "cell boundary query counts broad-phase candidates")

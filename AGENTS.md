@@ -7,11 +7,11 @@
 
 ## 当前代码职责
 
-1. `Scripts/Core/GameplayEngine.gd`：统一模拟步进、随机数、暂停与重置、统一交互结算，以及运行时配置应用与预设保存。
-2. `Scripts/Core/EntityService.gd`：实体创建与移除、物种注册表、位置/速度空间快照、多狗任务认领与捕获结算。
-3. `Scripts/AnimalController.gd`：共享生命周期、朝向、扇形感知、目标记忆、软分离、移动与行为树调用。`SheepController.gd` 管理局部 BOID、游走、警戒、逃跑和避狗压力；`WolfController.gd` 管理猎捕策略、最后位置搜索、冲刺、即时捕获、嚎叫、撤退和休息；`SheepdogController.gd` 管理局部羊群保护、持续巡逻、离群羊收拢、驱狼和返回。物种规则留在对应 Controller 中。
-4. `Resources/AI/BT_*.tres`：各动物的行为优先级和分支组合。`Scripts/AI/Tasks/` 提供条件读取与动作调用，新增行为优先沿用这条链路。
-5. `Scripts/RootController.gd`：场景启动、场地与相机更新。`Scripts/Core/DebugService.gd` 和 `Scripts/UI/DebugHUD.gd`：调试输入、选择与状态显示。`Scripts/UI/RuntimeConfigPanel.gd`：由 CFG 导出范围生成分组表单，编辑草稿并提交给引擎。
+1. `Scripts/Core/GameplayEngine.gd`：创建业务 System 并按固定阶段直接调用，维护统一模拟步进、随机数、暂停与重置，以及运行时配置应用与预设保存；没有额外 ECS Autoload。
+2. `Scripts/Core/EntityService.gd`：持有唯一 `AnimalData`，管理 Entity slot、递增生命标识 uid、表现节点、空间快照和捕获生命周期。所有数据列共用 row，保持活动区、尸体区、可复用区；停用交换完整数据行，正常死亡不释放表现节点。
+3. `Scripts/ECS/AnimalData.gd` 按职责分组保存紧凑 Packed 数值列，`AnimalEntity` 只保存 slot、uid 和由存储维护的当前 row，不持有组件对象。长期引用必须校验 uid 与活动状态；外部不得跨结构修改缓存 row。`Scripts/ECS/Systems/` 保留感知、运动、羊 BOID 与避险、狼猎捕与交互、狗局部保护和统一任务认领。
+4. `Resources/AI/BT_*.tres` 保留各动物行为优先级。`Scripts/AI/Tasks/` 通过 `agent.entity` 定位共享数据行、调用系统辅助函数并写入意图；`AnimalView` 只关联生命句柄、重置 BTPlayer 和同步表现。旧 Controller、逐实体组件类及 GECS 已移除。
+5. `Scripts/RootController.gd`：场景启动、场地与相机更新。`DebugService` 和 `DebugHUD`：调试输入、带生命编号的选择、辅助视觉绘制与状态显示；`Scripts/UI/DebugPanel.gd` 集中控制辅助视觉。`RuntimeConfigPanel.gd` 继续管理 CFG 草稿与应用。
 6. `Resources/Gameplay/CFG_Simulation.tres` 引用 `CFG_Sheep.tres`、`CFG_Wolf.tres`、`CFG_Sheepdog.tres`；对应 Resource 类型放在 `Scripts/Core/`。速度、扇形视觉、BOID、猎捕策略与局部保护等关键数值集中在 CFG，颜色、形状和行为树引用保留在动物场景中。
 7. 以上是当前实现的职责划分；讨论中的设计目标与已经实现的行为应分开表述，不将提议写成既有功能。
 
@@ -19,11 +19,13 @@
 
 1. 羊没有饥饿、吃草或草系统。羊用局部分离、对齐、聚合和游走方向移动；行为树优先级为逃跑、警戒、受驱赶、游走。狗的全向距离压力推动羊，不设置羊圈或全局移动目的地。狗围绕局部羊群持续巡逻，收拢附近离群羊并追赶可见威胁狼；目标按距离与 ID 统一认领，避免多狗重复追赶。狼选择视野内最近的羊，使用正面、侧面、后方或嚎叫策略接近，然后冲刺；冲刺进入攻击距离立即捕获，结算前检查狗的威慑。失败次数影响策略权重，猎捕结束和撤退后休息。三种动物均使用行为树，不另建 FSM。羊近距离警戒和避狗、狼避狗绕过视觉夹角；狼和狗失去视野后最多搜索最后可见位置 3 秒，不能读取隐藏目标的实时位置。嚎叫只产生恐慌刺激，无声音系统，交互结算后下一模拟步影响羊。
 2. 保持当前默认规模：240 只羊、24 只狼、12 只狗。暂不加入实体碰撞；现有软分离不等于物理碰撞。
-3. 万至百万实体、60 FPS 是长期目标，ECS、Compute Shader、多线程和按区域活动量降低更新频率尚未实现；不能将该目标写成当前性能承诺，也不为此提前添加 PhysicsService 等框架。
+3. 当前使用自写 GDScript SoA ECS 与固定阶段单线程循环；万至百万实体、60 FPS 仍是长期目标，Compute Shader、多线程、Grid 共享感知预处理和按区域活动量降低更新频率尚未实现；不能将紧凑数据布局本身当成性能提升证明，也不为此提前添加 PhysicsService 等框架。
 4. 运行时配置使用独立副本，UI 草稿、已应用参数和仓库默认资源相互独立。`F2` 或右上角按钮打开面板；普通数值通过 Apply 更新现有及新增动物，即使暂停也可应用。
 5. 种子、初始数量和场地变化需要重启模拟，UI 显示 Apply & restart，保留暂停状态。普通参数热应用保留已累计时间及策略反馈，下一模拟步使用新阈值；重置模拟清空记忆、策略反馈和任务认领。
 6. Save applied 将已应用参数保存到 `user://CFG_Runtime.tres`；Load preset 和 Default CFG 只填入草稿，需要 Apply。运行时调参不得自动覆盖仓库中的 CFG 默认文件。新预设使用版本 3，其他版本及无版本预设不自动转换，Load preset 提示不兼容并保留原文件。
 7. 新增可调参数时同步维护导出范围、跨字段校验、应用语义和必要的 UI 提示；避免在 UI 和行为代码各维护一份默认数值。表单输入数字时不得触发生成动物、重置等模拟快捷键。
+8. `F3` 或 Debug 按钮打开辅助视觉面板，`F1` 切换辅助视觉总开关；默认关闭、范围默认仅选中，可切全部。参数面板与 DebugPanel 互斥，Esc 关闭面板不清除已选视觉。视觉样式留在动物 Prefab，范围和角度读取已应用 CFG，开关不写入模拟预设。
+9. 尸体时长、嚎叫脉冲等表现使用模拟时间，暂停冻结、单步推进。嚎叫视觉记录结算时的原点和半径，关闭不补播；视觉不得改变模拟 RNG 或读取隐藏目标的实时位置。
 
 ## 文件修改规则
 
@@ -73,7 +75,7 @@
 ## 运行与验证
 
 1. 修改 GDScript、场景或资源后，执行相关解析、导入或最小运行验证；普通项目修改无需重新编译 Godot 引擎。仅修改文档、注释时无需运行模拟。
-2. 优先使用已有局部验证入口。`Tests/SimulationVerification.gd` 是现有整体行为验证脚本，`Tests/RunBenchmark.gd` 是性能采样脚本；可通过 Godot 的 `--path <项目目录> --script res://Tests/<脚本名>.gd` 运行，无窗口行为验证可加 `--headless`。
+2. 优先使用已有局部验证入口。`SimulationVerification.gd` 覆盖整体行为、复用和面板契约，`PerformanceVerification.gd` 检查统计与确定性，`RunBenchmark.gd` 负责采样；通过 `--script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/<脚本名>.gd` 延迟加载入口，无窗口时加 `--headless`。`DebugVisualVerification.gd` 注入应用内 UI 输入，窗口模式还会导出渲染截图；这不等同于人工桌面验收。
 3. 缺少独立入口时，采用可行的最小验证并说明覆盖限制，不自动执行整套验证或顺带重构验证体系。完整回归用于阶段收尾、用户明确要求，或实际影响范围需要的情况。
 4. 同一版本验证通过后，仅在新增修改、出现失败或存在具体未解决问题时重复或扩大验证；复用当前兼容的 Godot 和已导入资源。
 5. 修改统一步进、空间查询、实体生命周期或行为优先级等公共机制时，按实际影响覆盖相关动物和交互。新增检查优先覆盖修复过的 bug、重要边界和跨模块连接。

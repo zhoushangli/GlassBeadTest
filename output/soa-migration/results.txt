@@ -1,0 +1,59 @@
+SoA ECS implementation and verification
+
+Implementation: GDScript + Packed numerical columns; shared rows across component groups.
+Lifecycle: active prefix / corpse segment / reusable suffix; full row swaps update slot mappings and cached handle rows.
+Identity: slot + increasing life uid; old handles remain invalid after reuse, reset and clear.
+Removed: GECS dependency/Autoload, per-entity components, stage adapter and obsolete single-animal movement wrappers.
+Retained: LimboAI priority, CFG semantics, DebugPanel, fixed simulation clock and existing spatial-grid rules.
+
+Verification:
+SimulationVerification: 153 checks, 0 failures; tests use production batch movement.
+PerformanceVerification: 80 checks, 0 failures.
+DebugVisualVerification: 14 window rendering/input checks, 0 failures.
+Import/runtime logs: no errors.
+RunBenchmark.ps1 -Headless -Steps 2 -WarmupSteps 1: exit 0, has_result=true.
+Automatic screenshots inspected: default appearance and selected-wolf DebugPanel.
+Human desktop interaction acceptance remains unverified.
+
+Sampling conditions:
+Godot 4.7.2 official ed1daf0bf; LimboAI v1.8.1; Intel Core Ultra 9 275HX.
+Headless, GL Compatibility project, max_fps=0, stage statistics enabled, HUD/overlays off.
+Seed 1337, simulation_hz=60; warmup 180 steps (3 simulated seconds), measure 600 steps (10 simulated seconds).
+Runs are serial. Default legacy layout: 240 sheep/24 wolves/12 dogs.
+1000 configured: 870 sheep/87 wolves/43 dogs, scenario=scaled, uniform_v1 layout.
+Captures remain enabled; active populations decline.
+Original GECS working source archive: source-before-soa.zip.
+
+Results: medians of three per-run means and three per-run P95 values, in milliseconds.
+
+default: GECS 12.636 -> SoA 13.473 ms (+6.6%).
+  gecs: per-run means=12.525, 13.692, 12.636; median P95=17.465
+    captures=[6, 6, 6]; initial=[239, 24, 12]; final=(233, 24, 12)
+    stage medians: Cleanup=0.909, Decision=2.956, Interaction=0.068, Movement=0.690, Perception=7.573, SpatialBuild=0.296, TaskAssignment=0.139
+  soa: per-run means=13.319, 13.473, 15.098; median P95=19.619
+    captures=[5, 5, 5]; initial=[239, 24, 12]; final=[234, 24, 12]
+    stage medians: Cleanup=0.975, Decision=3.893, Interaction=0.053, Movement=0.171, Perception=7.901, SpatialBuild=0.223, TaskAssignment=0.240
+
+1000: GECS 55.180 -> SoA 60.473 ms (+9.6%).
+  gecs: per-run means=43.877, 84.531, 55.180; median P95=72.693
+    captures=[45, 45, 45]; initial=[817, 87, 43]; final=(772, 87, 43)
+    stage medians: Cleanup=4.896, Decision=13.829, Interaction=0.382, Movement=3.491, Perception=30.094, SpatialBuild=1.846, TaskAssignment=0.589
+  soa: per-run means=59.123, 63.450, 60.473; median P95=82.730
+    captures=[49, 49, 49]; initial=[817, 87, 43]; final=[768, 87, 43]
+    stage medians: Cleanup=4.620, Decision=16.833, Interaction=0.367, Movement=0.730, Perception=35.990, SpatialBuild=1.040, TaskAssignment=0.852
+
+Conclusion: structural rewrite complete; performance target NOT achieved.
+Movement and spatial snapshots improved; perception, decisions and task assignment still dominate.
+Large run-to-run variance, especially GECS 1000 baseline (43.877-84.531 ms).
+Row compaction changes traversal order and subsequent seeded trajectories; captures differ between implementations.
+Within each implementation all three runs have matching captures and final populations.
+Historical pre-ECS 11.4/35.7 ms use a different wall-time protocol and are reference only.
+Headless step times do not establish rendered FPS. No multithreading, GPU compute or grid preprocessing added.
+
+Evidence:
+simulation-final.log, performance-final.log, visual-final.log, import-final.log
+gecs-fixed-{default,1000}-{1,2,3}.log; soa-fixed-{default,1000}-{1,2,3}.log
+../ecs-visuals/2026-11-15T22-51-41_55240/ contains four PNG captures.
+Earlier initial/cached-row/accumulate/local-columns/bound logs are intermediate versions.
+Sampling preceded removal of unused test helpers and an unused perception-index column; active formulas are unchanged.
+Launcher result marker formatting was fixed after sampling and verified by the short smoke run.

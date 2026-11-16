@@ -2,11 +2,13 @@
 extends "res://Scripts/AI/Tasks/AnimalAction.gd"
 
 func _init() -> void:
-	behavior = AnimalController.Behavior.COLLECT
+	behavior = AnimalEntity.Behavior.COLLECT
 
 func _execute(delta: float) -> void:
-	var dog := agent as SheepdogController
-	if dog.is_live(dog.collected_sheep):
-		var away := (dog.collected_sheep.global_position - dog.protection_center).normalized()
-		var point := dog.clamp_to_arena(dog.collected_sheep.global_position + away * dog.settings.collect_distance)
-		dog.move_towards(point, dog.move_speed, delta)
+	var dog := agent.entity as AnimalEntity
+	var settings: SheepdogConfig = data.settings[dog.row]
+	var common: AnimalSystem = g_gameplayEngine.animal_system
+	if common.is_live(dog, data.live(data.dog_collected_sheep[dog.row])):
+		var away := (data.motion_position[data.live(data.dog_collected_sheep[dog.row]).row] - data.dog_protection_center[dog.row]).normalized()
+		var point: Vector2 = common.clamp_to_arena(dog, data.motion_position[data.live(data.dog_collected_sheep[dog.row]).row] + away * settings.collect_distance)
+		common.move_towards(dog, point, settings.move_speed, delta)

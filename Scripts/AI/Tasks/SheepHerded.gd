@@ -2,10 +2,12 @@
 extends "res://Scripts/AI/Tasks/AnimalAction.gd"
 
 func _init() -> void:
-	behavior = AnimalController.Behavior.HERDED
+	behavior = AnimalEntity.Behavior.HERDED
 
 func _execute(delta: float) -> void:
-	var sheep := agent as SheepController
-	var flock := sheep.get_flock_velocity()
-	var steering := sheep.dog_pressure * sheep.move_speed * sheep.settings.dog_pressure_weight
-	sheep.apply_steering(steering, flock, sheep.move_speed, delta)
+	var sheep := agent.entity as AnimalEntity
+	var settings: SheepConfig = data.settings[sheep.row]
+	var sheep_system: SheepSystem = g_gameplayEngine.sheep_system
+	var flock: Vector2 = sheep_system.get_flock_velocity(sheep)
+	var steering: Vector2 = data.sheep_dog_pressure[sheep.row] * settings.move_speed * settings.dog_pressure_weight
+	sheep_system.apply_steering(sheep, steering, flock, settings.move_speed, delta)

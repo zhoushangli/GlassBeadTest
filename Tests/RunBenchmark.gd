@@ -49,6 +49,8 @@ var decision_total: float = 0.0
 var movement_total: float = 0.0
 var samples: Array[Dictionary] = []
 var done: bool = false
+var fixed_steps: int = 0
+var warmup_steps: int = 180
 
 func _initialize() -> void:
 	var has_sampling := false
@@ -65,6 +67,14 @@ func _initialize() -> void:
 			return
 		var value := parts[1]
 		match parts[0]:
+			"--steps", "--warmup-steps":
+				if not value.is_valid_int() or value.to_int() < 0:
+					_fail("Expected nonnegative step count: " + argument)
+					return
+				if parts[0] == "--steps":
+					fixed_steps = value.to_int()
+				else:
+					warmup_steps = value.to_int()
 			"--entities", "--tier", "--tiles", "--max-fps":
 				if not value.is_valid_int():
 					_fail("Expected integer: " + argument)
@@ -215,8 +225,56 @@ func _start() -> void:
 	run_directory = "res://output/performance/%s_%s_%d_%d" % [stamp, label, OS.get_process_id(), Time.get_ticks_usec()]
 	DirAccess.make_dir_recursive_absolute(run_directory)
 	ready_time = Time.get_ticks_usec()
-	print("BENCHMARK_START layout=%s tiles=%d configured=%s warmup=%.1fs measurement=%.1fs stats=%s" % [
-		layout, tiles, configured_counts, warmup, duration, stats_enabled])
+	if fixed_steps > 0:
+		print("BENCHMARK_START layout=%s configured=%s warmup_steps=%d measured_steps=%d stats=%s" % [
+			layout, configured_counts, warmup_steps, fixed_steps, stats_enabled])
+		engine.set_process(false)
+		engine.paused = true
+		call_deferred("_run_fixed_steps")
+	else:
+		print("BENCHMARK_START layout=%s tiles=%d configured=%s warmup=%.1fs measurement=%.1fs stats=%s" % [
+			layout, tiles, configured_counts, warmup, duration, stats_enabled])
+
+func _run_fixed_steps() -> void:
+	var interval: float = 1.0 / engine.simulation_hz
+	for index in range(warmup_steps):
+		engine.simulate_step(interval)
+	initial_counts = engine.entity_service.get_counts()
+	capture_started = engine.entity_service.capture_count
+	var times: Array[float] = []
+	for index in range(fixed_steps):
+		var before := Time.get_ticks_usec()
+		engine.simulate_step(interval)
+		times.append((Time.get_ticks_usec() - before) / 1000.0)
+		for stage in stage_totals:
+			stage_totals[stage] += engine.profile_service.last_stages_ms.get(stage, 0.0)
+	times.sort()
+	var total: float = 0.0
+	for value in times:
+		total += value
+	for stage in stage_totals:
+		stage_totals[stage] /= fixed_steps
+	var result := {
+		"label": label, "mode": "fixed_steps", "warmup_steps": warmup_steps,
+		"measured_steps": fixed_steps, "simulation_hz": engine.simulation_hz,
+		"step_mean_ms": total / fixed_steps, "step_p95_ms": times[mini(times.size() - 1, ceili(times.size() * 0.95) - 1)],
+		"stages_mean_ms": stage_totals, "configured_counts": [configured_counts.x, configured_counts.y, configured_counts.z],
+		"initial_counts": [initial_counts.x, initial_counts.y, initial_counts.z],
+		"final_counts": [engine.entity_service.get_counts().x, engine.entity_service.get_counts().y, engine.entity_service.get_counts().z],
+		"captures": engine.entity_service.capture_count - capture_started,
+		"engine": Engine.get_version_info(), "headless": DisplayServer.get_name() == "headless",
+		"renderer": ProjectSettings.get_setting("rendering/renderer/rendering_method"),
+		"arena_size": [engine.config.arena_size.x, engine.config.arena_size.y], "seed": engine.config.random_seed,
+		"layout": layout, "scenario": scenario, "sampling": sampling, "max_fps": max_fps,
+		"cpu": OS.get_processor_name(), "limboai": _limboai_info(),
+	}
+	var file := FileAccess.open(run_directory.path_join("result.json"), FileAccess.WRITE)
+	file.store_string(JSON.stringify(result, "\t"))
+	file.close()
+	print("BENCHMARK_RESULT ", run_directory.path_join("result.json"), " ", JSON.stringify(result))
+	done = true
+	engine.stop_simulation()
+	quit()
 
 func _exact_counts(total: int, weights: Vector3i) -> Vector3i:
 	var weight_sum := weights.x + weights.y + weights.z
@@ -260,15 +318,17 @@ func _spawn_layout(base_counts: Vector3i, base_size: Vector2) -> void:
 			for index in range(base_counts[kind]):
 				var point := base_size * 0.5
 				match kind:
-					AnimalController.Kind.SHEEP:
+					AnimalEntity.Kind.SHEEP:
 						point += Vector2(positions_rng.randf_range(-440.0, 440.0), positions_rng.randf_range(-220.0, 220.0))
-					AnimalController.Kind.WOLF:
+					AnimalEntity.Kind.WOLF:
 						point = Vector2(40.0 if index % 2 == 0 else base_size.x - 40.0, positions_rng.randf_range(100.0, base_size.y - 65.0))
-					AnimalController.Kind.SHEEPDOG:
+					AnimalEntity.Kind.SHEEPDOG:
 						point += Vector2.from_angle(TAU * float(index) / maxi(1, base_counts.z)) * 100.0
 				engine.entity_service.spawn(kind, 1, point + offset)
 
 func _process(_delta: float) -> bool:
+	if fixed_steps > 0:
+		return false
 	if ready_time == 0 or done:
 		return false
 
@@ -422,6 +482,9 @@ func _finish(elapsed: float) -> void:
 		"simulation_seconds_advanced": engine.simulation_time - sim_started,
 		"initial_counts": [initial_counts.x, initial_counts.y, initial_counts.z],
 		"final_counts": [counts.x, counts.y, counts.z],
+		"retained_entities": engine.entity_service.data.row_to_slot.size(),
+		"pooled_entities": engine.entity_service.data.row_to_slot.size() - engine.entity_service.data.retained_count,
+		"corpse_entities": engine.entity_service.data.retained_count - engine.entity_service.data.active_count,
 		"captures_during_measurement": engine.entity_service.capture_count - capture_started,
 		"samples": samples
 	}

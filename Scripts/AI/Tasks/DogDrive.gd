@@ -2,8 +2,10 @@
 extends "res://Scripts/AI/Tasks/AnimalAction.gd"
 
 func _init() -> void:
-	behavior = AnimalController.Behavior.DRIVE
+	behavior = AnimalEntity.Behavior.DRIVE
 
 func _execute(delta: float) -> void:
-	var dog := agent as SheepdogController
-	dog.move_towards(dog.last_seen_position, dog.settings.drive_speed, delta)
+	var dog := agent.entity as AnimalEntity
+	var settings: SheepdogConfig = data.settings[dog.row]
+	var common: AnimalSystem = g_gameplayEngine.animal_system
+	common.move_towards(dog, data.memory_last_seen_position[dog.row], settings.drive_speed, delta)

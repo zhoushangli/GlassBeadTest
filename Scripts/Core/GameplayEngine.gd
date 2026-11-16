@@ -29,6 +29,10 @@ var _reset_pending: bool = false
 var _step_pending: bool = false
 var _accumulator: float = 0.0
 var _clock_error_reported: bool = false
+var animal_system: AnimalSystem
+var sheep_system: SheepSystem
+var wolf_system: WolfSystem
+var dog_system: SheepdogSystem
 
 func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationConfig) -> void:
 	stop_simulation()
@@ -41,6 +45,7 @@ func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationCo
 	config = settings.copy_config()
 	entity_service.container = world.get_node("Animals")
 	debug_service.hud = debug_hud
+	_create_systems()
 	running = true
 	entity_service.startup()
 	profile_service.startup()
@@ -90,7 +95,7 @@ func _apply_pending_config() -> void:
 		paused = was_paused
 	else:
 		for animal in entity_service.entities:
-			animal.refresh_config()
+			g_gameplayEngine.refresh_animal_config(animal)
 	configuration_applied.emit(restart)
 
 func save_preset(path: String = PRESET_PATH) -> Error:
@@ -106,7 +111,7 @@ func load_preset(path: String = PRESET_PATH) -> SimulationConfig:
 		return null
 	return loaded.copy_config()
 
-func request_spawn(kind: AnimalController.Kind, count: int) -> void:
+func request_spawn(kind: AnimalEntity.Kind, count: int) -> void:
 	_pending_spawns.append(Vector2i(kind, count))
 
 func request_reset() -> void:
@@ -159,32 +164,58 @@ func _process(delta: float) -> void:
 
 func simulate_step(delta: float) -> void:
 	profile_service.begin_step()
+	entity_service.remove_expired()
 	# 1) Sample one shared position/velocity snapshot, then resolve dog claims.
 	entity_service.rebuild_spatial_index()
 	profile_service.end_stage("SpatialBuild")
-	for animal in entity_service.entities:
-		if animal.alive:
-			animal.perceive(delta)
+	for row in entity_service.sheep_rows:
+		sheep_system.perceive(entity_service.data.handles[row], delta)
+	for row in entity_service.wolf_rows:
+		wolf_system.perceive(entity_service.data.handles[row], delta)
+	for row in entity_service.dog_rows:
+		dog_system.perceive(entity_service.data.handles[row], delta)
 	profile_service.end_stage("Perception")
-	entity_service.assign_dog_tasks()
+	dog_system.assign_tasks()
 	profile_service.end_stage("TaskAssignment")
 
 	# 2) Produce movement intent, then move every animal.
-	for animal in entity_service.entities:
-		if animal.alive:
-			animal.decide(delta)
+	for row in range(entity_service.data.active_count):
+		animal_system.decide(entity_service.data.handles[row], delta)
 	profile_service.end_stage("Decision")
-	for animal in entity_service.entities:
-		animal.move(delta)
+	animal_system.update_movement(delta)
 	profile_service.end_stage("Movement")
 
 	# 3) Resolve howls and captures at the resulting positions.
-	for animal in entity_service.entities:
-		if animal.alive:
-			animal.resolve_interactions(delta)
+	for row in entity_service.wolf_rows:
+		wolf_system.resolve_interactions(entity_service.data.handles[row], delta)
 	profile_service.end_stage("Interaction")
-	entity_service.remove_expired()
+	entity_service.remove_expired(delta)
+	for row in range(entity_service.data.active_count):
+		entity_service.data.brain_view[row].sync()
+	debug_service.advance_visuals(delta)
 	simulation_time += delta
 	step_count += 1
 	profile_service.end_step()
 	simulation_stepped.emit()
+
+func _create_systems() -> void:
+	animal_system = AnimalSystem.new(entity_service.data)
+	sheep_system = SheepSystem.new(entity_service.data)
+	wolf_system = WolfSystem.new(entity_service.data)
+	dog_system = SheepdogSystem.new(entity_service.data)
+
+func refresh_animal_config(animal: AnimalEntity) -> void:
+	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var row := animal.row
+	data.settings[row] = [config.sheep, config.wolf, config.sheepdog][data.identity_kind[row]]
+	data.memory_perception_ready[row] = false
+	data.memory_vision_radius_squared[row] = data.settings[row].perception_radius * data.settings[row].perception_radius
+	data.memory_vision_cos[row] = cos(deg_to_rad(data.settings[row].vision_angle * 0.5))
+	if data.identity_kind[row] == AnimalEntity.Kind.SHEEPDOG:
+		data.dog_assignment_remaining[row] = 0.0
+
+func debug_details(animal: AnimalEntity) -> String:
+	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var row := animal.row
+	var system: RefCounted = [sheep_system, wolf_system, dog_system][data.identity_kind[row]]
+	return system.call("get_debug_details", animal)

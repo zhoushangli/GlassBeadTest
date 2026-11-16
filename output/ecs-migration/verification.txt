@@ -1,0 +1,57 @@
+ECS 重构与调试视觉交付记录
+
+实现
+- 从参考项目复制 GECS 9.3.4 的 30 个运行脚本及必要图标、许可证；逐文件校验与上游一致，未启用编辑器插件或复制网络模块。
+- AnimalEntity 关联身份、运动、感知记忆、行为树和物种状态组件；共享与物种 System 接管模拟，LimboAI 保留行为优先级。
+- 原四个 Controller 已移除；AnimalView 负责 Entity/BTPlayer 接入及表现同步。
+- 死亡立即退出交互，在阶段边界停用；灰色尸体按 death_duration 隐藏后进入物种池。生成和重置复用 Entity、组件及表现节点，停止模拟释放。
+- 目标、保护锚点与调试选择携带生命编号，复用不继承旧追踪；重置行为树及黑板。
+- F3 打开 DebugPanel，F1 开关辅助视觉，F2 参数面板；默认辅助视觉关闭、作用范围仅选中。视野、嚎叫、追踪、记忆、移动目标、狗保护/收拢均有独立选项。
+- Prefab 保留样式，实际范围来自已应用 CFG；视觉不影响 RNG，暂停冻结脉冲和尸体时间。
+- 保留默认 240 羊、24 狼、12 狗与现有造型、颜色；没有加入碰撞、声音、并行模拟或 GPU 模拟。
+
+验证
+Godot 4.7.2 stable，现有 LimboAI，Compatibility 渲染；无需重编译引擎。
+最终解析/导入：无脚本错误；项目设置已将 LimboAI 用户任务目录指向 Scripts/AI/Tasks。
+SimulationVerification：145 checks，0 failures。
+PerformanceVerification：80 checks，0 failures。
+DebugVisualVerification：无窗口 10 checks、窗口渲染 14 checks，均 0 failures。
+窗口测试通过 Godot Input 注入点击及快捷键，覆盖不穿透选择、面板切换、范围开关、单步死亡与回收。
+已实际检查输出图像：默认外观、选中狼、全体动物视野、嚎叫与记忆提示，面板完整且文字可读。
+人工桌面操作未验收：Windows Computer Use 截图授权超时；应用内输入测试和实际渲染不能替代人工操作验收。
+
+渲染截图
+output/ecs-visuals/2026-11-15T22-03-56_23380/default.png
+output/ecs-visuals/2026-11-15T22-03-56_23380/selected-wolf.png
+output/ecs-visuals/2026-11-15T22-03-56_23380/all-animals.png
+output/ecs-visuals/2026-11-15T22-03-56_23380/recycled.png
+
+性能采样与限制
+同种子 1337、headless、GL Compatibility、帧率上限 0、simulation_hz=60、max_steps_per_frame=4。
+HUD/辅助绘制关闭，阶段统计开启，无脚本 Profiler；预热 3 墙钟秒，采样 10 墙钟秒。
+下列为本次各场景单次采样，不是统计置信区间；ecs-release 只是采样标签，不表示导出 Shipping/Release 构建。
+
+配置初始规模          平均步耗时 ms    P95 ms    采样内推进模拟秒
+迁移前 276            11.368          13.004    10.000
+迁移后 276            24.072          28.854     6.933
+迁移前 1000 scaled    35.727          35.717     4.667
+迁移后 1000 scaled    58.795          81.483     2.867
+
+测量起止实际存活数（羊/狼/狗）：
+迁移前 276：240/24/12 -> 236/24/12。
+迁移后 276：240/24/12 -> 237/24/12；保留 276、空闲池 3、尸体 0。
+迁移前 1000：817/87/43 -> 802/87/43；配置初始数量为 870/87/43，预热期间发生捕获。
+迁移后 1000：819/87/43 -> 815/87/43；保留 1000、空闲池 53、尸体 2。
+
+结论：本轮功能迁移完成，但未取得整体加速，最终采样比迁移前慢，1000 实体尚不具备实时 60 Hz 能力。
+已减少重复组件访问、无用查询列和视野三角计算，保护评分复用当前狗的锚点位置；仍存在 GDScript 对象访问、查询调度、行为树及表现同步开销。
+运行环境和实测耗时有波动；实际推进时长和存活数也不同，因此不能把上述比值表述为严格等模拟时间的性能结论。
+无窗口模拟步耗时不是桌面渲染 FPS，也不代表万至百万实体性能。
+
+原始结果
+output/performance/2026-11-15T21-20-09_before-ecs-default_50468_370092/result.json
+output/performance/2026-11-15T21-20-38_before-ecs-1000_65228_642655/result.json
+output/performance/2026-11-15T22-06-39_ecs-release-default_38664_1231733/result.json
+output/performance/2026-11-15T22-07-26_ecs-release-1000_62204_1447208/result.json
+
+项目说明与命令已同步至 AGENTS.md 和 Tests/PerformanceGuide.txt；未提交 Git。

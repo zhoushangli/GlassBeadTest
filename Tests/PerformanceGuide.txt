@@ -109,7 +109,23 @@ GameplayEngine 在 _process 中累计时间，默认 simulation_hz=60、max_step
 暂停切换、重置和重新启动清空累计值；单步使用当前 simulation_hz 对应的固定间隔。
 严重卡顿时模拟时间可能落后于墙钟时间；渲染帧数、模拟步数和模拟时长应分别报告。
 Service 统一提供无参数 startup/reset/shutdown；直接访问 g_gameplayEngine，不保存引擎引用。
-Controller 负责感知与公共运动能力，条件 Task 查询 Controller，动作 Task 组织具体行为。
+AnimalData 的 Packed 数值列保存模拟数据，所有列共享 row；System 直接遍历活动区，条件 Task 读取列，动作 Task 写入意图。
+AnimalEntity 是 slot、生命 uid 和当前 row 的轻量句柄；行交换更新映射与句柄 row，长期引用校验 uid，复用不创建组件对象。
+AnimalView 仅衔接生命句柄、BTPlayer 与表现；活动、尸体和可复用数据保留在同一存储，没有通用查询与额外 ECS Autoload。
 命令行 --script 在 Autoload 注册前编译入口，验证和基准通过 RunWithAutoload 延迟加载。
 RunBenchmark.ps1 已自动使用该入口，其他基准参数不变。
 JSON 增加 simulation_hz、max_steps_per_frame、simulation_steps；physics_steps 保留为 simulation_steps 的兼容别名，不再代表物理回调次数。
+
+ECS、对象池与辅助视觉
+F3 打开 DebugPanel，F1 开关辅助视觉，F2 保留运行参数；默认外观和初始数量不变。
+死亡立即退出交互，在安全阶段边界移出活动区；death_duration 后隐藏尸体，槽位可被相同物种复用；重置保留已分配数据和表现，停止模拟释放。
+结果 JSON 新增 retained_entities、pooled_entities、corpse_entities，区分保留对象、空闲对象和尸体。
+迁移前后采样应保持相同种子、场景、运行方式与统计档位；报告测量期间实际推进的模拟秒数。
+固定步数对照使用 -Steps 600 -WarmupSteps 180；它关闭自动步进，预热 3 模拟秒后测量 10 模拟秒，墙钟时间不限于 10 秒。
+例如：.\Tests\RunBenchmark.ps1 -Headless -Steps 600 -WarmupSteps 180 -Hud off -Overlay off -Label soa-default
+1000 实体追加 -Entities 1000 -Scenario scaled；两种规模各重复三次，比较平均步耗时的中位数并报告 P95、分阶段耗时和捕获数量。
+固定步数结果与旧墙钟时长采样分别报告；无窗口步耗时不是窗口渲染 FPS。
+辅助视觉不写入 CFG 预设；Prefab 保存颜色、线宽和嚎叫动画时长，范围读取已应用 CFG。
+窗口渲染与应用内输入检查：
+& $godotExe --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/DebugVisualVerification.gd
+相同入口加 --headless 可检查输入路由与生命周期，不导出图片；截图保存在 output/ecs-visuals/。

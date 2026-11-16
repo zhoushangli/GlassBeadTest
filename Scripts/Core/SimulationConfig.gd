@@ -29,8 +29,8 @@ const PRESET_VERSION: int = 3
 ## 同物种动物之间软分离的作用距离，单位为像素；不等同于物理碰撞。
 ## 例如：24 表示同类靠近到 24 像素内时产生分离移动。
 @export_range(0.0, 80.0, 1.0) var separation_distance: float = 24.0
-## 动物死亡后保留表现多久再移除，单位为模拟秒。
-## 例如：0.3 表示死亡表现保留 0.3 秒。
+## 动物死亡后保留尸体表现多久再隐藏并回收，单位为模拟秒。
+## 例如：0.3 表示尸体显示 0.3 秒，死亡立即退出模拟。
 @export_range(0.0, 3.0, 0.05) var death_duration: float = 0.3
 
 @export_group("Behavior resources")
