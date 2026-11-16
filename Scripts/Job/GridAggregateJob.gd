@@ -1,8 +1,20 @@
 class_name GridAggregateJob
 extends Job
 
+var flock_counts := PackedInt32Array()
+var flock_sums := PackedVector2Array()
+var alignment_counts := PackedInt32Array()
+var alignment_sums := PackedVector2Array()
+var nodes := PackedInt32Array()
+var grid: Dictionary = {}
+
 func execute() -> void:
-	var output := result
+	if context.has("version"):
+		var started := Time.get_ticks_usec()
+		grid = GridService.build_snapshot(context, not context.get("gpu", false))
+		execute_ms = (Time.get_ticks_usec() - started) / 1000.0
+		return
+
 	var cells := rows
 	var counts: PackedInt32Array = context.counts
 	var position_sums: PackedVector2Array = context.position_sums
@@ -12,16 +24,12 @@ func execute() -> void:
 	var columns: int = context.width
 	var height: int = context.height
 
-	var local_counts: PackedInt32Array = output.get("flock_counts", PackedInt32Array())
-	var local_sums: PackedVector2Array = output.get("flock_sums", PackedVector2Array())
-	var aligned_counts: PackedInt32Array = output.get("alignment_counts", PackedInt32Array())
-	var aligned_sums: PackedVector2Array = output.get("alignment_sums", PackedVector2Array())
-	local_counts.resize(cells.size())
-	local_sums.resize(cells.size())
-	aligned_counts.resize(cells.size())
-	aligned_sums.resize(cells.size())
+	flock_counts.resize(cells.size())
+	flock_sums.resize(cells.size())
+	alignment_counts.resize(cells.size())
+	alignment_sums.resize(cells.size())
 
-	var nodes := PackedInt32Array()
+	nodes.clear()
 	for index in range(cells.size()):
 		var cell := cells[index]
 		var x := cell % columns
@@ -40,8 +48,8 @@ func execute() -> void:
 				var neighbor := ny * columns + nx
 				count += counts[neighbor * 3 + AnimalEntity.Kind.SHEEP]
 				sum += position_sums[neighbor]
-		local_counts[index] = count
-		local_sums[index] = sum
+		flock_counts[index] = count
+		flock_sums[index] = sum
 
 		count = 0
 		sum = Vector2.ZERO
@@ -52,11 +60,13 @@ func execute() -> void:
 				var neighbor := ny * columns + nx
 				count += counts[neighbor * 3 + AnimalEntity.Kind.SHEEP]
 				sum += velocity_sums[neighbor]
-		aligned_counts[index] = count
-		aligned_sums[index] = sum
-
-	output.merge({"cells": cells, "flock_counts": local_counts, "flock_sums": local_sums,
-		"alignment_counts": aligned_counts, "alignment_sums": aligned_sums, "nodes": nodes}, true)
+		alignment_counts[index] = count
+		alignment_sums[index] = sum
 
 func apply_result() -> void:
-	target.apply_cells(result)
+	if context.has("version"):
+		context.grid_ms = execute_ms
+		target.apply_grid(grid, context)
+		return
+
+	target.apply_cells(self)

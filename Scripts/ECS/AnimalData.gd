@@ -42,6 +42,7 @@ var sheep_dog_pressure: PackedVector2Array = []
 var sheep_threat_strength: PackedFloat64Array = []
 var sheep_panic_strength: PackedFloat64Array = []
 var sheep_panic_source: PackedVector2Array = []
+var sheep_panic_revision := PackedInt64Array()
 
 var wolf_hunting: PackedByteArray = []
 var wolf_hunt_elapsed: PackedFloat64Array = []
@@ -119,6 +120,7 @@ func append_slot() -> int:
 	sheep_threat_strength.append(0.0)
 	sheep_panic_strength.append(0.0)
 	sheep_panic_source.append(Vector2.ZERO)
+	sheep_panic_revision.append(0)
 
 	wolf_hunting.append(false)
 	wolf_hunt_elapsed.append(0.0)
@@ -185,6 +187,7 @@ func reset_row(row: int) -> void:
 	sheep_threat_strength[row] = 0.0
 	sheep_panic_strength[row] = 0.0
 	sheep_panic_source[row] = Vector2.ZERO
+	sheep_panic_revision[row] = 0
 
 	wolf_hunting[row] = false
 	wolf_hunt_elapsed[row] = 0.0
@@ -324,6 +327,9 @@ func swap_rows(first: int, second: int) -> void:
 	var value_36 = sheep_panic_source[first]
 	sheep_panic_source[first] = sheep_panic_source[second]
 	sheep_panic_source[second] = value_36
+	var panic_revision := sheep_panic_revision[first]
+	sheep_panic_revision[first] = sheep_panic_revision[second]
+	sheep_panic_revision[second] = panic_revision
 
 	var value_38 = wolf_hunting[first]
 	wolf_hunting[first] = wolf_hunting[second]
@@ -463,6 +469,7 @@ func clear() -> void:
 	sheep_threat_strength.clear()
 	sheep_panic_strength.clear()
 	sheep_panic_source.clear()
+	sheep_panic_revision.clear()
 
 	wolf_hunting.clear()
 	wolf_hunt_elapsed.clear()

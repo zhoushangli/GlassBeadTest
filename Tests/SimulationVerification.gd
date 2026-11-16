@@ -38,15 +38,19 @@ func _animal(kind: AnimalEntity.Kind, point: Vector2) -> AnimalEntity:
 func _step(count: int) -> void:
 	for index in range(count):
 		engine.job_service.invalidate_async()
-		engine.grid_service.rebuild()
-		for kind in [AnimalEntity.Kind.WOLF, AnimalEntity.Kind.SHEEPDOG]:
-			engine._decision_elapsed[kind] = 1.0
-		engine._submit_decisions(0.0)
-		for job: Job in engine.job_service.async_jobs.values():
-			while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
-				OS.delay_msec(1)
+		engine.animal_service.waiting.clear()
+		for kind in range(3):
+			engine.animal_service.update_elapsed[kind] = 1.0
+		engine.animal_service.schedule_updates(0.0)
+		while not engine.job_service.async_jobs.is_empty():
+			for job: Job in engine.job_service.async_jobs.values():
+				while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
+					OS.delay_msec(1)
+			engine.animal_service.apply_completed()
 		engine.simulate_step(1.0 / 60.0)
 		engine.job_service.invalidate_async()
+		engine.animal_service.waiting.clear()
+	engine.render_service.sync()
 
 func _key(code: Key, shift: bool = false, echo: bool = false) -> void:
 	var event := InputEventKey.new()
@@ -535,6 +539,7 @@ func _verify_behavior_edges() -> void:
 	_check(data.wolf_strategy_failures[wolf.row][0] < before, "strategy failures decay with simulation time")
 
 	_empty(false)
+	engine.config.arena_size = Vector2(1280, 720)
 	engine.config.sheep.idle_speed_scale = 0.0
 	engine.config.sheep.wander_weight = 0.0
 	engine.config.sheep.alignment_weight = 0.0
@@ -578,6 +583,17 @@ func _verify_runtime_config() -> void:
 	panel.set_draft(engine.config)
 	_check(panel.editors.has("Sheep.alignment_weight") and panel.editors.has("Wolves.howl_radius") and panel.editors.has("Dogs.vision_angle"), "new CFG fields exposed")
 	_check(panel.editors.has("World.grid_cell_size") and panel.editors.has("Sheep.wolf_pressure_distance") and not panel.editors.has("Sheep.vision_angle") and not panel.editors.has("Sheep.emergency_distance"), "pressure and grid settings replace sheep FOV controls")
+	_check(panel.editors.has("World.sheep_update_hz") and panel.editors.has("World.wolf_update_hz") and panel.editors.has("World.sheepdog_update_hz"), "all species frequencies belong to SimulationConfig")
+	_check(not panel.editors.has("Wolves.decision_hz") and not panel.editors.has("Dogs.decision_hz"), "behavior resources no longer expose scheduling")
+	for field in ["sheep_update_hz", "wolf_update_hz", "sheepdog_update_hz"]:
+		var invalid: SimulationConfig = engine.config.copy_config()
+		invalid.set(field, int(invalid.simulation_hz) + 1)
+		_check(not invalid.validate().is_empty(), "frequency above base simulation is rejected: " + field)
+	var updated: SimulationConfig = engine.config.copy_config()
+	updated.sheep_update_hz = 17
+	updated.wolf_update_hz = 11
+	updated.sheepdog_update_hz = 7
+	_check(not updated.requires_restart(engine.config) and updated.copy_config().sheep_update_hz == 17, "frequency changes copy independently and do not require restart")
 	_check(not engine.debug_service.visual_options.has("sheep_vision") and not scene.hud.debug_panel.controls.has("sheep_vision"), "sheep vision overlay is removed")
 
 	var draft: SimulationConfig = engine.config.copy_config()
@@ -1087,6 +1103,11 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(verification_directory)
 	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
 	authored = scene.simulation_config
+	scene.simulation_config = scene.simulation_config.copy_config()
+	scene.simulation_config.initial_total = 276
+	scene.simulation_config.arena_size = Vector2(1280, 720)
+	scene.simulation_config.simulation_hz = 60.0
+	scene.simulation_config.sheep_update_hz = 24
 	root.add_child(scene)
 	engine = root.get_node("g_gameplayEngine")
 	engine.set_process(false)

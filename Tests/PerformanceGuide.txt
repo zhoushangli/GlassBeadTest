@@ -197,3 +197,33 @@ MultiMesh random-motion comparison:
   Random mode skips AI/grid/interaction, turns every 0.8-1.2 simulation seconds, retains 60 Hz movement and presentation.
   RenderSync is CPU presentation synchronization, not GPU rendering time; render_fill_mean_ms and render_submit_mean_ms split MultiMesh buffer work.
   Use paired isolated before/after copies and alternate three runs each; preserve viewport, seed, HUD, visibility and clock configuration.
+
+Service update frequencies:
+  SimulationConfig owns simulation_hz and sheep_update_hz/wolf_update_hz/sheepdog_update_hz (defaults 60 and 24/12/12).
+  The authored scene may override these values; benchmark overrides never save back to that resource.
+  EntityService integrates movement; AnimalService schedules immutable grid and species snapshots through JobService.
+  Workers never write live AnimalData or run the behavior tree. The main thread validates identity/state before applying results.
+  Species Hz values cap requests per simulation second. Actual completion rates can be lower under load.
+  The normal simulation path does not wait for background jobs. Synchronous reference helpers remain for focused tests.
+  RenderService synchronizes once per display frame after fixed steps. Per-step RenderSync is now bookkeeping only.
+  simulation_per_frame_* includes all fixed steps plus presentation sync; step_* excludes that frame sync.
+  async_decisions now includes Grid and Sheep; snapshot_latency_ms includes both pipeline stages.
+  Logic request/application counters are whole-run totals, while async_decisions aggregates the measurement window.
+  Preset version 7 intentionally rejects older saved presets. Behavioral tests use bounded fixtures independent of scene population.
+
+Reproducible 2,000-entity rendered baseline (5 s warmup, 30 s measurement, 60 FPS cap):
+  Tests/RunBenchmark.ps1 -MainScene -Population 2000 -ArenaSize 5120x2880 -SimulationHz 60 -SheepHz 24 -Warmup 5 -Duration 30 -MaxFps 60 -Hud on -Animals on -Label service_2000
+  Use -Population 1500 or 5000 for other totals; those sizes are not implicitly measured by the 2000 run.
+  For artificial scaled/fixed layouts, -Entities also supports 1500 and 5000.
+
+Compute shader 对照（Forward+）
+- 后端通过 --compute=auto|cpu|gpu 选择；RunBenchmark.ps1 对应 -Compute auto|cpu|gpu。
+- auto 在可用时采用 GPU，headless/Compatibility/初始化失败时走 CPU；强制 GPU 基准不可用时失败，不静默回退。
+- RunComputeBenchmark.ps1 运行 2000、5000 总实体的等密度 CPU/GPU 矩阵，每项预热 5 秒、测量 30 秒、重复三次。
+- 参考密度明确固定为 1000 实体 / 5120×2880，模拟 30 Hz、羊 12 Hz，狼狗沿用 12 Hz，每帧最多 2 步。
+- 窗口和内容缩放沿用项目设置，脚本不再强制 1280×720；结果记录实际窗口和渲染尺寸。
+- 运行结束后：python -X utf8 Tests/SummarizeComputeBenchmark.py output/compute-<时间戳>，生成 REPORT.txt 和 summary.json。
+- processing_ms 表示准备、CPU 网格、打包、提交、GPU 时间戳、解码和应用等处理成本之和；latency_ms 表示快照捕获到应用完成的端到端延迟。
+- readback_ms 包含 GPU 工作和帧队列等待，不是纯下载时间；GPU 时间戳单独记录。
+- GPU 正确性：Godot --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/ComputeVerification.gd --compute=cpu（图形窗口运行，测试单独创建 GPU 计算器）。
+- headless 的同一入口只验证 CPU 回退，不代表 GPU 正确性。

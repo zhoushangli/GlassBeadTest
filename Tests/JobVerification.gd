@@ -5,15 +5,16 @@ class ProbeJob extends Job:
 	var applied: Array[int]
 	var main_thread: bool = false
 	var worker_thread: bool = false
+	var value: int = 0
 
 	func execute() -> void:
 		OS.delay_msec(delay_ms)
 		worker_thread = not Thread.is_main_thread()
-		result.value = batch
+		value = batch
 
 	func apply_result() -> void:
 		main_thread = Thread.is_main_thread()
-		applied.append(result.value)
+		applied.append(value)
 
 var checks: int = 0
 var failures: int = 0
@@ -184,9 +185,11 @@ func _equivalence(total: int) -> void:
 		_check(engine.job_service.pending.is_empty() and engine.job_service.working.is_empty() and engine.job_service.completed.is_empty(), "simulation stage queues drained")
 
 func _wait_decisions() -> void:
-	for job: Job in engine.job_service.async_jobs.values():
-		while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
-			OS.delay_msec(1)
+	while not engine.job_service.async_jobs.is_empty():
+		for job: Job in engine.job_service.async_jobs.values():
+			while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
+				OS.delay_msec(1)
+		engine.animal_service.apply_completed()
 
 func _dog_snapshot() -> void:
 	_setup(0, true)
@@ -269,9 +272,201 @@ func _perception_reference() -> void:
 	engine.wolf_system.perceive_batch(1.0 / 60.0)
 	_check(_state() == reference, "sheep and wolf batch perception preserves original sequential behavior and RNG")
 
+func _async_contracts() -> void:
+	_setup(0, true)
+	engine.config.arena_size = Vector2(1280, 720)
+	var entities: EntityService = engine.entity_service
+	var sheep := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(300, 300))[0]
+	var data := entities.data
+	data.motion_intent[sheep.row] = AnimalData.MotionIntent.STOP
+	data.motion_desired_velocity[sheep.row] = Vector2.RIGHT * 60.0
+	data.motion_speed_limit[sheep.row] = 60.0
+	var applied_values: Array[int] = []
+	var slow := ProbeJob.new()
+	slow.stage = &"Sheep"
+	slow.delay_ms = 250
+	slow.applied = applied_values
+	engine.job_service.submit_async(slow)
+	for index in range(10):
+		engine.simulate_step(1.0 / 60.0)
+	_check(data.motion_position[sheep.row].is_equal_approx(Vector2(310, 300)), "movement advances while sheep work is outstanding")
+	_check(engine.animal_service.requested[0] == 0 and engine.job_service.async_jobs.size() == 1, "busy species does not queue catch-up work")
+	while not WorkerThreadPool.is_task_completed(slow.task_id):
+		OS.delay_msec(1)
+	engine.paused = true
+	engine._process(1.0)
+	_check(applied_values.is_empty(), "pause holds completed results")
+	engine.request_single_step()
+	engine._process(0.0)
+	_check(applied_values == [0], "single step commits completed work exactly once")
+
+	_setup(0, true)
+	engine.config.arena_size = Vector2(1280, 720)
+	entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(300, 300))
+	entities.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(900, 300))
+	entities.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(600, 500))
+	for rates in [Vector3i(24, 12, 12), Vector3i(17, 11, 7)]:
+		engine.job_service.drain()
+		engine.animal_service.reset()
+		engine.config.sheep_update_hz = rates.x
+		engine.config.wolf_update_hz = rates.y
+		engine.config.sheepdog_update_hz = rates.z
+		for index in range(600):
+			engine.animal_service.schedule_updates(1.0 / 60.0)
+			_wait_decisions()
+		for kind in range(3):
+			_check(engine.animal_service.requested[kind] == rates[kind] * 10, "independent and fractional frequency counts kind=%d rate=%d" % [kind, rates[kind]])
+
+	_setup(0, true)
+	engine.config.arena_size = Vector2(1280, 720)
+	sheep = entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(300, 300))[0]
+	var survivor := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(310, 300))[0]
+	var snapshot: Dictionary = engine.animal_system.decision_snapshot(AnimalEntity.Kind.SHEEP)
+	snapshot.config = {"cell_size": engine.config.grid_cell_size, "arena_size": engine.config.arena_size}
+	snapshot.grid = GridService.build_snapshot(snapshot)
+	var output := SheepPerceptionJob.new()
+	output.rows = snapshot.rows
+	output.context = snapshot
+	SheepSystem.calculate_snapshot(output)
+	entities.capture(sheep)
+	entities.remove_expired(1.0)
+	data.motion_desired_velocity[survivor.row] = Vector2.INF
+	engine.sheep_system.apply_decision(output)
+	_check(data.motion_desired_velocity[survivor.row].is_finite(), "snapshot UID mapping follows a row swap")
+	var replacement := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(700, 500))[0]
+	data.motion_desired_velocity[replacement.row] = Vector2(123, 45)
+	engine.sheep_system.apply_decision(output)
+	_check(data.motion_desired_velocity[replacement.row] == Vector2(123, 45), "old result cannot write into a reused entity life")
+	engine.sheep_system.receive_howl(survivor, Vector2(100, 100))
+	data.motion_desired_velocity[survivor.row] = Vector2(12, 34)
+	engine.sheep_system.apply_decision(output)
+	_check(data.motion_desired_velocity[survivor.row] == Vector2(12, 34) and data.sheep_panic_strength[survivor.row] == 1.0, "old sheep result cannot overwrite a newer howl")
+
+	data.motion_intent[replacement.row] = AnimalData.MotionIntent.POINT
+	data.motion_position[replacement.row] = Vector2(700, 500)
+	data.motion_movement_goal[replacement.row] = Vector2(701, 500)
+	data.motion_speed_limit[replacement.row] = 600.0
+	data.motion_separation[replacement.row] = Vector2.ZERO
+	for index in range(60):
+		entities.update_movement(1.0 / 60.0)
+	_check(data.motion_position[replacement.row].is_equal_approx(Vector2(701, 500)), "reused point intent stops at its destination")
+
+func _packed_batches() -> void:
+	_setup(0, true)
+	var entities: EntityService = engine.entity_service
+	var data := entities.data
+	var sheep := entities.spawn(AnimalEntity.Kind.SHEEP, 3, Vector2(300, 300))
+	var wolves := entities.spawn(AnimalEntity.Kind.WOLF, 2, Vector2(450, 300))
+	var dogs := entities.spawn(AnimalEntity.Kind.SHEEPDOG, 3, Vector2(300, 300))
+	data.motion_position[sheep[2].row] = Vector2(450, 300)
+	for dog in dogs:
+		data.motion_facing[dog.row] = Vector2.RIGHT
+		data.dog_protected_sheep[dog.row] = sheep[0]
+		data.dog_protection_center[dog.row] = Vector2(300, 300)
+	engine.grid_service.rebuild()
+	var common: AnimalSystem = engine.animal_system
+	var context := common.perception_context(1.0 / 60.0)
+	context.common = common
+	context.panic_duration = engine.config.sheep.panic_duration
+	context.dogs = entities.dog_rows
+	context.threat_distance = engine.config.wolf.dog_threat_distance
+	context.rest_duration = engine.config.wolf.rest_duration
+	context.radius = engine.config.wolf.perception_radius
+	var sheep_job := SheepPerceptionJob.new()
+	sheep_job.context = context
+	sheep_job.rows = PackedInt32Array([sheep[2].row, sheep[0].row])
+	engine.sheep_system.calculate_batch(sheep_job)
+	engine.sheep_system.apply_batch(sheep_job)
+	_check(data.sheep_local_flock_center[sheep[2].row] == sheep_job.centers[0] and data.sheep_local_flock_center[sheep[0].row] == sheep_job.centers[1], "packed sheep submission follows noncontiguous input order")
+	sheep_job.rows = PackedInt32Array([sheep[1].row])
+	data.memory_perception_ready[sheep[1].row] = 1
+	data.memory_perception_remaining[sheep[1].row] = 1.0
+	data.motion_separation[sheep[1].row] = Vector2(12, 34)
+	engine.sheep_system.calculate_batch(sheep_job)
+	_check(sheep_job.centers.size() == 1 and sheep_job.refresh_flags == PackedByteArray([0]) and sheep_job.separations[0] == Vector2(12, 34), "reused sheep batch shrinks and keeps unrefreshed separation")
+	sheep_job.rows.clear()
+	engine.sheep_system.calculate_batch(sheep_job)
+	_check(sheep_job.centers.is_empty() and sheep_job.nearby_offsets == PackedInt32Array([0]) and sheep_job.nearby_members.is_empty(), "empty reused sheep batch clears member ranges")
+
+	var wolf_job := WolfPerceptionJob.new()
+	wolf_job.context = context
+	wolf_job.rows = entities.wolf_rows.duplicate()
+	data.memory_target[wolves[1].row] = sheep[0]
+	data.motion_facing[wolves[1].row] = Vector2.LEFT
+	engine.wolf_system.calculate_batch(wolf_job)
+	_check(wolf_job.visible_flags[1] == 1, "packed observation records visible target")
+	wolf_job.rows = PackedInt32Array([wolves[1].row])
+	data.memory_target[wolves[1].row] = null
+	engine.wolf_system.calculate_batch(wolf_job)
+	_check(wolf_job.threat_rows.size() == 1 and wolf_job.visible_flags[0] == 0 and wolf_job.unseen_elapsed[0] == 0.0 and wolf_job.last_positions[0] == Vector2.ZERO, "reused wolf batch clears previous observation")
+	wolf_job.rows.clear()
+	engine.wolf_system.calculate_batch(wolf_job)
+	_check(wolf_job.prey_rows.is_empty() and wolf_job.nearby_offsets == PackedInt32Array([0]) and wolf_job.nearby_members.is_empty(), "empty reused wolf batch clears member ranges")
+
+	context.radius = 80.0
+	context.complete_ratio = engine.config.sheepdog.collect_complete_ratio
+	context.memory_duration = engine.config.sheepdog.memory_duration
+	context.groups = {}
+	for dog in dogs:
+		context.groups[dog.row] = {"wolves": entities.wolf_rows, "sheep": entities.sheep_rows}
+	var dog_job := DogPerceptionJob.new()
+	dog_job.context = context
+	dog_job.rows = PackedInt32Array([dogs[2].row, dogs[0].row])
+	engine.dog_system.calculate_batch(dog_job)
+	engine.dog_system.apply_batch(dog_job)
+	_check(dog_job.wolf_offsets == PackedInt32Array([0, 2, 4]) and dog_job.stray_offsets == PackedInt32Array([0, 1, 2]), "packed dog candidates preserve per-result ranges")
+	_check(data.dog_wolf_candidates[dogs[2].row] == [wolves[0], wolves[1]] and data.dog_stray_candidates[dogs[0].row] == [sheep[2]], "packed dog submission maps candidates back to input animals")
+	dog_job.rows = PackedInt32Array([dogs[1].row])
+	context.groups = {}
+	engine.dog_system.calculate_batch(dog_job)
+	_check(dog_job.wolf_offsets == PackedInt32Array([0, 0]) and dog_job.stray_offsets == PackedInt32Array([0, 0]) and dog_job.wolves.is_empty() and dog_job.strays.is_empty(), "reused dog batch drops previous candidates")
+	dog_job.rows.clear()
+	engine.dog_system.calculate_batch(dog_job)
+	_check(dog_job.separations.is_empty() and dog_job.wolf_offsets == PackedInt32Array([0]) and dog_job.stray_offsets == PackedInt32Array([0]), "empty reused dog batch retains terminal offsets")
+
+	context.sheep = entities.sheep_rows
+	context.anchors = PackedInt32Array()
+	context.anchors.resize(data.active_count)
+	context.anchors.fill(-1)
+	context.coverage = PackedInt32Array()
+	context.coverage.resize(data.active_count)
+	context.coverage_weight = engine.config.sheepdog.coverage_weight
+	context.improvement = engine.config.sheepdog.reassignment_improvement
+	var anchor_job := DogAnchorJob.new()
+	anchor_job.context = context
+	anchor_job.rows = entities.dog_rows.duplicate()
+	engine.dog_system.calculate_anchors(anchor_job)
+	anchor_job.rows = PackedInt32Array([dogs[1].row])
+	engine.dog_system.calculate_anchors(anchor_job)
+	_check(anchor_job.anchor_rows.size() == 1 and anchor_job.anchor_rows[0] == sheep[0].row, "reused anchor batch shrinks without stale rows")
+	anchor_job.rows.clear()
+	engine.dog_system.calculate_anchors(anchor_job)
+	_check(anchor_job.anchor_rows.is_empty(), "empty reused anchor batch clears output")
+
+	var grid_job := GridAggregateJob.new()
+	grid_job.context = {"width": 2, "height": 2, "shared_min_sheep": 4,
+		"counts": PackedInt32Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0]),
+		"position_sums": PackedVector2Array([Vector2.ONE, Vector2.ZERO, Vector2.ZERO, Vector2(5, 5)]),
+		"velocity_sums": PackedVector2Array([Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]),
+		"flock_offsets": PackedInt32Array([0, 0]), "alignment_offsets": PackedInt32Array([0, 0])}
+	grid_job.rows = PackedInt32Array([3, 0])
+	grid_job.execute()
+	_check(grid_job.flock_counts == PackedInt32Array([5, 1]) and not grid_job.nodes.is_empty(), "packed grid aggregates follow input cell order")
+	grid_job.rows = PackedInt32Array([0])
+	grid_job.execute()
+	_check(grid_job.flock_counts == PackedInt32Array([1]) and grid_job.nodes.is_empty(), "reused grid batch shrinks and clears pressure nodes")
+	grid_job.rows.clear()
+	grid_job.execute()
+	_check(grid_job.flock_sums.is_empty() and grid_job.alignment_counts.is_empty(), "empty reused grid batch clears aggregates")
+
 func _run() -> void:
 	_queues()
 	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene.simulation_config = scene.simulation_config.copy_config()
+	scene.simulation_config.initial_total = 137
+	scene.simulation_config.arena_size = Vector2(1280, 720)
+	scene.simulation_config.simulation_hz = 60.0
+	scene.simulation_config.sheep_update_hz = 24
 	root.add_child(scene)
 	engine = root.get_node("g_gameplayEngine")
 	if engine.sheep_system == null or engine.wolf_system == null or engine.dog_system == null:
@@ -283,9 +478,11 @@ func _run() -> void:
 	for total in [0, 1, 137]:
 		_equivalence(total)
 
+	_async_contracts()
 	_dog_snapshot()
 	_grid_oracle()
 	_perception_reference()
+	_packed_batches()
 	engine.stop_simulation()
 	_check(not engine.job_service.started, "job service participates in engine shutdown")
 

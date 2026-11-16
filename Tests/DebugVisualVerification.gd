@@ -16,6 +16,7 @@ func _check(condition: bool, label: String) -> void:
 		push_error("FAIL: " + label)
 
 func _capture(name: String) -> void:
+	engine.render_service.sync()
 	await process_frame
 	await process_frame
 	if DisplayServer.get_name() == "headless":
@@ -61,6 +62,9 @@ func _run() -> void:
 	capture_directory = "res://output/ecs-visuals/" + Time.get_datetime_string_from_system().replace(":", "-") + "_" + str(OS.get_process_id())
 	DirAccess.make_dir_recursive_absolute(capture_directory)
 	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene.simulation_config = scene.simulation_config.copy_config()
+	scene.simulation_config.initial_total = 276
+	scene.simulation_config.arena_size = Vector2(1280, 720)
 	root.add_child(scene)
 	engine = root.get_node("g_gameplayEngine")
 	engine.set_process(false)

@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://ckhptyghoglap"
+path="res://.godot/imported/SheepCompute.glsl-1cfb8ece01cd0b2bb1a517bd5390cb0f.res"
+
+[deps]
+
+source_file="res://Shaders/Simulation/SheepCompute.glsl"
+dest_files=["res://.godot/imported/SheepCompute.glsl-1cfb8ece01cd0b2bb1a517bd5390cb0f.res"]
+
+[params]
+

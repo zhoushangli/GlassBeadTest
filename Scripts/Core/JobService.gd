@@ -25,7 +25,7 @@ var async_sequence: int = 0
 var async_timings: Dictionary = {}
 
 func submit_async(job: Job) -> bool:
-	if not started or job == null or job.stage not in [&"Wolf", &"Dog"] or job.state != Job.State.IDLE or async_jobs.has(job.stage):
+	if not started or job == null or job.stage not in [&"Grid", &"Sheep", &"Wolf", &"Dog"] or job.state != Job.State.IDLE or async_jobs.has(job.stage):
 		return false
 
 	async_sequence += 1
@@ -53,7 +53,7 @@ func _dispatch_async() -> void:
 
 func flush() -> void:
 	_reap_retired()
-	for stage in [&"Wolf", &"Dog"]:
+	for stage in [&"Grid", &"Sheep", &"Wolf", &"Dog"]:
 		var job: Job = async_jobs.get(stage)
 		if job == null or job.state != Job.State.WORKING or not WorkerThreadPool.is_task_completed(job.task_id):
 			continue
@@ -67,7 +67,8 @@ func flush() -> void:
 			job.apply_result()
 			job.state = Job.State.APPLIED
 			async_timings[stage] = {"latency_ms": (Time.get_ticks_usec() - job.context.submitted_usec) / 1000.0,
-				"execute_ms": job.result.get("execute_ms", 0.0), "sequence": job.context.sequence,
+				"snapshot_latency_ms": (Time.get_ticks_usec() - job.context.get("captured_usec", job.context.submitted_usec)) / 1000.0,
+				"execute_ms": job.execute_ms, "sequence": job.context.sequence,
 				"prepare_ms": job.context.get("prepare_ms", 0.0), "submit_ms": (Time.get_ticks_usec() - apply_started) / 1000.0}
 		else:
 			job.state = Job.State.DISCARDED

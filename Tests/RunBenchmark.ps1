@@ -1,10 +1,11 @@
 param(
+	[ValidateSet('auto', 'cpu', 'gpu')][string]$Compute = 'auto',
 	[ValidateSet('normal', 'random')][string]$Motion = 'normal',
 	[ValidateSet('default', 'serial', 'parallel')][string]$Jobs = 'default',
 	[ValidateSet(2, 4, 8)][int]$JobWorkers = 4,
 	[ValidateSet('default', 'all', 'Sheep', 'Wolf', 'DogAnchor', 'Dog', 'Grid')][string]$JobStages = 'default',
 	[string]$GodotPath = 'C:\Work\Godot\Editor\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe',
-	[ValidateSet(1000, 2000, 3000, 4000)][int]$Entities,
+	[ValidateSet(1000, 1500, 2000, 3000, 4000, 5000)][int]$Entities,
 	[ValidateSet('scaled', 'fixed')][string]$Scenario,
 	[ValidateSet(1, 2, 4, 6)][int]$Tiles = 1,
 	[ValidateSet('spread', 'cluster')][string]$Layout = 'spread',
@@ -20,6 +21,10 @@ param(
 	[ValidateRange(0, 1000000)][int]$WarmupSteps = 180,
 	[ValidateRange(1, 3600)][int]$TimeoutSeconds = 120,
 	[ValidateRange(0, 10000)][int]$MaxFps = 0,
+	[ValidateRange(0, 30000)][int]$Population,
+	[ValidateRange(1, 240)][int]$SimulationHz,
+	[ValidateRange(1, 240)][int]$SheepHz,
+	[ValidatePattern('^[0-9]+x[0-9]+$')][string]$ArenaSize,
 	[switch]$MainScene,
 	[switch]$Headless,
 	[switch]$Profile
@@ -67,7 +72,12 @@ if ($Steps -gt 0) {
 	$startInfo.Arguments += ' --steps={0} --warmup-steps={1}' -f $Steps, $WarmupSteps
 }
 $startInfo.Arguments += ' --jobs={0} --job-workers={1} --job-stages={2}' -f $Jobs, $JobWorkers, $JobStages
-$startInfo.Arguments += ' --motion={0}' -f $Motion
+$startInfo.Arguments += ' --motion={0} --compute={1}' -f $Motion, $Compute
+foreach ($option in @(@('Population', 'population'), @('SimulationHz', 'simulation-hz'), @('SheepHz', 'sheep-hz'), @('ArenaSize', 'arena-size'))) {
+	if ($PSBoundParameters.ContainsKey($option[0])) {
+		$startInfo.Arguments += ' --{0}={1}' -f $option[1], $PSBoundParameters[$option[0]]
+	}
+}
 $startInfo.UseShellExecute = $false
 $startInfo.CreateNoWindow = $true
 $startInfo.RedirectStandardOutput = $true

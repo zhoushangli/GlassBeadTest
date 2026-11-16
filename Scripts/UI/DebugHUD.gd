@@ -51,17 +51,23 @@ func refresh() -> void:
 		Engine.get_frames_per_second(), frequency, gameplay_engine.profile_service.last_step_ms,
 		counts.x + counts.y + counts.z, counts.x, counts.y, counts.z]
 
+	var logic: AnimalService = gameplay_engine.animal_service
+	var requests := logic.actual_request_hz if not gameplay_engine.paused else Vector3.ZERO
+	var applications := logic.actual_apply_hz if not gameplay_engine.paused else Vector3.ZERO
 	var hunters: int = 0
 	for wolf_row in gameplay_engine.entity_service.wolf_rows:
 		var wolf := data.handles[wolf_row]
 		if data.identity_alive[wolf.row] and data.wolf_hunting[wolf.row]:
 			hunters += 1
 
-	status.text = "%s    |    Seed %d    |    Sim %.1f s    |    Captured %d    |    %s    |    Debug %s" % [
+	status.text = "%s | Seed %d | Sim %.1f s | Captured %d | %s | Debug %s" % [
 		"PAUSED" if gameplay_engine.paused else "RUNNING", gameplay_engine.config.random_seed,
 		gameplay_engine.simulation_time, gameplay_engine.entity_service.capture_count,
 		"Hunting %d" % hunters,
 		"ON" if gameplay_engine.debug_service.show_details else "OFF"]
+	status.text += " | Logic S/W/D target %d/%d/%d req %.0f/%.0f/%.0f apply %.0f/%.0f/%.0f Hz" % [
+		gameplay_engine.config.sheep_update_hz, gameplay_engine.config.wolf_update_hz, gameplay_engine.config.sheepdog_update_hz,
+		requests.x, requests.y, requests.z, applications.x, applications.y, applications.z]
 	selection.text = gameplay_engine.debug_service.selection_text()
 	parameters.refresh()
 	if debug_panel.visible:

@@ -1,11 +1,6 @@
 class_name WolfConfig
 extends Resource
 
-@export_group("Decision")
-## 后台感知与决策请求的最高频率（Hz）；忙碌时不堆积请求。
-## e.g. decision_hz = 30 表示最多每秒请求 30 次。
-@export_range(1, 240, 1) var decision_hz: int = 30
-
 @export_group("Movement")
 ## 常态移动速度（px/s）。
 ## e.g. move_speed = 70.0。

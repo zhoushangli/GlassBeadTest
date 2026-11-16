@@ -1,0 +1,190 @@
+extends SceneTree
+
+var checks: int = 0
+var failures: int = 0
+var engine: Node
+var scene: Node
+var compute: SheepCompute
+var max_error: float = 0.0
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+func _check(condition: bool, label: String) -> void:
+	checks += 1
+	if not condition:
+		failures += 1
+		push_error("FAIL: " + label)
+
+func _near(actual: float, expected: float, label: String) -> void:
+	max_error = maxf(max_error, absf(actual - expected))
+	_check(is_finite(actual) and absf(actual - expected) <= 0.001 + absf(expected) * 0.0001, label)
+
+func _vector(actual: Vector2, expected: Vector2, label: String) -> void:
+	_near(actual.x, expected.x, label + ".x")
+	_near(actual.y, expected.y, label + ".y")
+
+func _receive(snapshot: Dictionary) -> Dictionary:
+	var grid := GridService.build_snapshot(snapshot, false)
+	compute.submit(grid, snapshot)
+	var deadline := Time.get_ticks_msec() + 10000
+	while compute.busy and Time.get_ticks_msec() < deadline:
+		await process_frame
+	_check(not compute.busy and compute.failure.is_empty(), "GPU finishes without blocking main thread")
+	return compute.take_result()
+
+func _snapshot() -> Dictionary:
+	var snapshot: Dictionary = engine.animal_system.decision_snapshot(AnimalEntity.Kind.SHEEP)
+	snapshot.config = {"cell_size": engine.config.grid_cell_size, "arena_size": engine.config.arena_size}
+	snapshot.due = PackedInt32Array([0])
+	snapshot.version = engine.job_service.async_version
+	snapshot.captured_usec = Time.get_ticks_usec()
+	return snapshot
+
+func _compare(snapshot: Dictionary, label: String) -> void:
+	var grid := GridService.build_snapshot(snapshot)
+	snapshot.grid = grid
+	var expected := SheepPerceptionJob.new()
+	expected.rows = snapshot.rows
+	expected.context = snapshot
+	SheepSystem.calculate_snapshot(expected)
+	var result := await _receive(snapshot)
+	if result.is_empty():
+		_check(false, label + " returns a result")
+		return
+
+	for cell in grid.occupied:
+		_check(result.grid.flock_counts[cell] == grid.flock_counts[cell], label + " flock count")
+		_check(result.grid.alignment_counts[cell] == grid.alignment_counts[cell], label + " alignment count")
+		_vector(result.grid.flock_sums[cell], grid.flock_sums[cell], label + " flock sum")
+		_vector(result.grid.alignment_sums[cell], grid.alignment_sums[cell], label + " alignment sum")
+	_check(result.sheep.rows == expected.rows, label + " entry count")
+	_check(result.sheep.pressure_source_pairs == expected.pressure_source_pairs, label + " source pairs")
+	var actual: SheepPerceptionJob = result.sheep
+	for index in range(expected.rows.size()):
+		_check(actual.neighbor_counts[index] == expected.neighbor_counts[index] and actual.refresh_flags[index] == expected.refresh_flags[index], label + " count and refresh")
+		for field in ["separations", "centers", "alignments", "threat_directions", "dog_pressures", "desired_velocities"]:
+			_vector(actual.get(field)[index], expected.get(field)[index], label + " " + field)
+		for field in ["threat_strengths", "speed_limits"]:
+			_near(actual.get(field)[index], expected.get(field)[index], label + " " + field)
+	for node in grid.pressure_nodes:
+		_vector(result.sheep.wolf_pressure[node], expected.wolf_pressure[node], label + " wolf field")
+		_vector(result.sheep.dog_pressure[node], expected.dog_pressure[node], label + " dog field")
+
+func _reset() -> void:
+	engine.reset_simulation()
+	engine.paused = true
+
+func _run() -> void:
+	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	var settings: SimulationConfig = scene.simulation_config.copy_config()
+	settings.initial_total = 0
+	settings.arena_size = Vector2(1280, 720)
+	scene.simulation_config = settings
+	root.add_child(scene)
+	engine = root.get_node("g_gameplayEngine")
+	engine.paused = true
+	engine.animal_service.compute_backend = "auto" if DisplayServer.get_name() == "headless" else "cpu"
+	compute = SheepCompute.new()
+	if DisplayServer.get_name() == "headless":
+		_check(not compute.available(), "headless compute unavailable")
+		engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(200, 200))
+		engine.animal_service.schedule_updates(1.0)
+		_check(engine.job_service.async_jobs.has(&"Grid") and not engine.job_service.async_jobs[&"Grid"].context.gpu, "headless uses CPU jobs")
+	else:
+		_check(compute.available(), "Forward+ compute available")
+		await _compare(_snapshot(), "empty")
+		engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(200, 200))
+		await _compare(_snapshot(), "single")
+		engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 12, Vector2(200, 200))
+		engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 2, Vector2(200, 200))
+		engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 2, Vector2(220, 200))
+		await _compare(_snapshot(), "overlap and shared pressure")
+		var snapshot := _snapshot()
+		snapshot.distance = 0.0
+		snapshot.species_settings[0].wolf_pressure_distance = 0.0
+		snapshot.species_settings[0].herding_distance = 0.0
+		await _compare(snapshot, "zero radii")
+		_reset()
+		var sheep: Array[AnimalEntity] = engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 96)
+		engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 12)
+		engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 6)
+		var data: AnimalData = engine.entity_service.data
+		for animal in sheep:
+			var row: int = animal.row
+			data.motion_velocity[row] = Vector2(row * 0.5, -row * 0.2)
+			data.sheep_panic_strength[row] = 0.4 if row % 3 == 0 else 0.0
+			data.sheep_panic_source[row] = Vector2(400, 400)
+			data.memory_perception_ready[row] = int(row % 2 == 0)
+			data.memory_perception_remaining[row] = 0.1 if row % 2 == 0 else 0.0
+		for row in engine.entity_service.wolf_rows:
+			data.wolf_hunting[row] = int(row % 2 == 0)
+		await _compare(_snapshot(), "mixed velocities panic and cached perception")
+		_reset()
+		for point in [Vector2(12, 94), Vector2(1268, 662), Vector2(100, 200), Vector2(230, 200), Vector2(230.01, 200), Vector2(229.99, 200)]:
+			engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, point)
+		engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(100, 200))
+		engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(140, 200))
+		await _compare(_snapshot(), "arena and influence boundaries")
+		await _lifecycle()
+	compute.close()
+	engine.stop_simulation()
+	scene.queue_free()
+	await process_frame
+	print("COMPUTE_VERIFICATION checks=%d failures=%d max_absolute_error=%.8f" % [checks, failures, max_error])
+	quit(1 if failures else 0)
+
+func _lifecycle() -> void:
+	var snapshot := _snapshot()
+	var output := await _receive(snapshot)
+	var data: AnimalData = engine.entity_service.data
+	var sheep: AnimalEntity = data.handles[engine.entity_service.sheep_rows[0]]
+	engine.entity_service.capture(sheep)
+	engine.entity_service.remove_expired(10.0)
+	var replacement: AnimalEntity = engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(600, 400))[0]
+	data.motion_desired_velocity[replacement.row] = Vector2(7, 9)
+	output.sheep.context = snapshot
+	engine.sheep_system.apply_decision(output.sheep)
+	_check(data.motion_desired_velocity[replacement.row] == Vector2(7, 9), "old GPU result cannot change reused slot")
+	var panic_snapshot := _snapshot()
+	var panic_output := await _receive(panic_snapshot)
+	engine.sheep_system.receive_howl(replacement, Vector2(20, 20))
+	data.motion_desired_velocity[replacement.row] = Vector2(11, 13)
+	panic_output.sheep.context = panic_snapshot
+	engine.sheep_system.apply_decision(panic_output.sheep)
+	_check(data.motion_desired_velocity[replacement.row] == Vector2(11, 13), "new panic rejects old GPU steering")
+	engine.animal_service.compute_backend = "gpu"
+	engine.animal_service.schedule_updates(1.0)
+	var deadline := Time.get_ticks_msec() + 10000
+	while not engine.animal_service.compute.busy and Time.get_ticks_msec() < deadline:
+		engine.animal_service.apply_completed()
+		await process_frame
+	_check(engine.animal_service.compute.busy, "integrated GPU request in flight")
+	engine.reset_simulation()
+	engine.paused = true
+	for index in range(12):
+		await process_frame
+	engine.animal_service.apply_completed()
+	_check(engine.animal_service.applied[0] == 0, "reset discards GPU result by request version")
+	engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 8, Vector2(300, 300))
+	engine.animal_service.schedule_updates(1.0)
+	for index in range(12):
+		engine.animal_service.apply_completed()
+		await process_frame
+	_check(engine.animal_service.applied[0] > 0, "GPU resumes after reset")
+	engine.animal_service.schedule_updates(1.0)
+	for index in range(12):
+		engine.animal_service.apply_completed()
+		await process_frame
+	var before := int(engine.animal_service.applied[0])
+	engine.animal_service.schedule_updates(1.0)
+	engine.job_service.invalidate_async()
+	for index in range(12):
+		await process_frame
+	engine.animal_service.apply_completed()
+	_check(engine.animal_service.applied[0] == before, "configuration version invalidates pending work")
+	engine.animal_service.schedule_updates(1.0)
+	engine.stop_simulation()
+	for index in range(12):
+		await process_frame
+	_check(not engine.running, "stop safely retires GPU work")

@@ -23,24 +23,26 @@ func advance_time(delta: float) -> void:
 				end_hunt(data.handles[row], false)
 				g_gameplayEngine.animal_system.decide(data.handles[row], 0.0)
 
-func apply_decision(output: Dictionary, snapshot: Dictionary) -> void:
+func apply_decision(job: WolfPerceptionJob) -> void:
+	var snapshot := job.context
 	var common: AnimalSystem = g_gameplayEngine.animal_system
-	common.submit_stats(output.stats)
-	for entry: Dictionary in output.entries:
-		var animal := common.snapshot_animal(snapshot, entry.row)
+	common.submit_stats(job.stats)
+	for index in range(job.rows.size()):
+		var snapshot_row := job.rows[index]
+		var animal := common.snapshot_animal(snapshot, snapshot_row)
 		if animal == null:
 			continue
 
 		var row := animal.row
-		if data.wolf_hunting[row] != snapshot.wolf_hunting[entry.row] or data.wolf_resting[row] != snapshot.wolf_resting[entry.row] or data.wolf_retreating[row] != snapshot.wolf_retreating[entry.row] or data.live(data.memory_target[row]) != common.snapshot_animal(snapshot, entry.target):
+		if data.wolf_hunting[row] != snapshot.wolf_hunting[snapshot_row] or data.wolf_resting[row] != snapshot.wolf_resting[snapshot_row] or data.wolf_retreating[row] != snapshot.wolf_retreating[snapshot_row] or data.live(data.memory_target[row]) != common.snapshot_animal(snapshot, job.target_rows[index]):
 			continue
 
-		var threat := common.snapshot_animal(snapshot, entry.threat)
-		var prey := common.snapshot_animal(snapshot, entry.prey)
-		if (entry.threat >= 0 and threat == null) or (entry.prey >= 0 and prey == null) or (entry.target >= 0 and common.snapshot_animal(snapshot, entry.target) == null):
+		var threat := common.snapshot_animal(snapshot, job.threat_rows[index])
+		var prey := common.snapshot_animal(snapshot, job.prey_rows[index])
+		if (job.threat_rows[index] >= 0 and threat == null) or (job.prey_rows[index] >= 0 and prey == null) or (job.target_rows[index] >= 0 and common.snapshot_animal(snapshot, job.target_rows[index]) == null):
 			continue
 
-		common.apply_snapshot_perception(row, entry, snapshot)
+		common.apply_snapshot_perception(row, snapshot_row, snapshot, job.separations[index], bool(job.refresh_flags[index]), job.target_rows[index], bool(job.visible_flags[index]), job.last_positions[index], job.last_velocities[index])
 		data.wolf_nearest_threat[row] = threat
 		if prey != null and not data.wolf_hunting[row] and not data.wolf_resting[row] and not data.wolf_retreating[row] and threat == null:
 			begin_hunt(animal, prey)
@@ -64,37 +66,37 @@ func find_dog(animal: AnimalEntity, radius: float) -> AnimalEntity:
 			best = distance
 	return result
 
-func perceive(animal: AnimalEntity, delta: float, result: Dictionary = {}) -> void:
+func perceive(animal: AnimalEntity, delta: float, job: WolfPerceptionJob = null, result_index: int = -1) -> void:
 	var wolf_resting := data.wolf_resting
 	var row := animal.row
 	var settings: WolfConfig = data.settings[row]
 	var common: AnimalSystem = g_gameplayEngine.animal_system
-	if result.is_empty():
+	if job == null:
 		common.perceive(animal, delta)
 	else:
-		common.submit_perception(result, delta)
+		common.submit_perception(row, job.remaining[result_index], bool(job.refresh_flags[result_index]), job.nearby_members.slice(job.nearby_offsets[result_index], job.nearby_offsets[result_index + 1]), job.separations[result_index], delta)
 	for index in range(4):
 		data.wolf_strategy_failures[row][index] = maxf(0.0, data.wolf_strategy_failures[row][index] - settings.strategy_decay * delta)
 	data.wolf_howl_elapsed[row] += delta
 	if wolf_resting[row]:
 		data.wolf_rest_elapsed[row] += delta
 		wolf_resting[row] = int(data.wolf_rest_elapsed[row] < settings.rest_duration)
-	data.wolf_nearest_threat[row] = find_dog(animal, settings.dog_threat_distance * (2.0 if data.wolf_retreating[row] else 1.0)) if result.is_empty() else (data.handles[result.threat] if result.threat >= 0 else null)
+	data.wolf_nearest_threat[row] = find_dog(animal, settings.dog_threat_distance * (2.0 if data.wolf_retreating[row] else 1.0)) if job == null else (data.handles[job.threat_rows[result_index]] if job.threat_rows[result_index] >= 0 else null)
 
 	if data.wolf_hunting[row]:
 		data.wolf_hunt_elapsed[row] += delta
-		if result.is_empty():
+		if job == null:
 			common.observe_target(animal, delta)
 		else:
-			common.submit_observation(row, result.observation)
+			common.submit_observation(row, bool(job.visible_flags[result_index]), job.unseen_elapsed[result_index], job.last_positions[result_index], job.last_velocities[result_index])
 		if not common.is_live(animal, data.live(data.memory_target[row])) or data.wolf_hunt_elapsed[row] >= settings.hunt_duration or (not data.memory_target_visible[row] and data.memory_unseen_elapsed[row] >= settings.memory_duration):
 			end_hunt(animal, false)
 
 	if not data.wolf_hunting[row] and not wolf_resting[row] and not common.is_live(animal, data.live(data.wolf_nearest_threat[row])) and not data.wolf_retreating[row]:
-		if result.is_empty():
+		if job == null:
 			_choose_prey(animal)
-		elif result.prey >= 0:
-			begin_hunt(animal, data.handles[result.prey])
+		elif job.prey_rows[result_index] >= 0:
+			begin_hunt(animal, data.handles[job.prey_rows[result_index]])
 
 func perceive_batch(delta: float) -> void:
 	var started_at := Time.get_ticks_usec()
@@ -110,18 +112,21 @@ func perceive_batch(delta: float) -> void:
 	jobs.run_batches(&"Wolf", g_gameplayEngine.entity_service.wolf_rows, WolfPerceptionJob, context, self)
 	jobs.record_stage(&"Wolf", started_at, prepared_at)
 
-func apply_batch(output: Dictionary, delta: float) -> void:
+func apply_batch(job: WolfPerceptionJob) -> void:
 	var common: AnimalSystem = g_gameplayEngine.animal_system
-	common.submit_stats(output.stats)
-	for result: Dictionary in output.entries:
-		perceive(data.handles[result.row], delta, result)
+	common.submit_stats(job.stats)
+	for index in range(job.rows.size()):
+		perceive(data.handles[job.rows[index]], job.context.delta, job, index)
 
-func calculate_batch(output: Dictionary, rows: PackedInt32Array, context: Dictionary) -> void:
+func calculate_batch(job: WolfPerceptionJob) -> void:
+	job.resize_output()
+	var rows := job.rows
+	var context := job.context
 	var stats := AnimalSystem.batch_stats(context)
-	var entries: Array[Dictionary] = []
 	var common: AnimalSystem = context.common
-	for row in rows:
-		var result := common.calculate_perception(row, context, stats)
+	for result_index in range(rows.size()):
+		var row := rows[result_index]
+		common.calculate_perception(row, context, stats, result_index, job.remaining, job.refresh_flags, job.separations, job.nearby_offsets, job.nearby_members)
 		var best: int = -1
 		var distance: float = context.threat_distance * (2.0 if data.wolf_retreating[row] else 1.0)
 		for dog_row in context.dogs:
@@ -130,9 +135,9 @@ func calculate_batch(output: Dictionary, rows: PackedInt32Array, context: Dictio
 				best = dog_row
 				distance = next_distance
 
-		result.threat = best
-		result.observation = common.calculate_observation(row, context.delta)
-		result.prey = -1
+		job.threat_rows[result_index] = best
+		common.calculate_observation(row, context.delta, job, result_index)
+		job.prey_rows[result_index] = -1
 		var resting: bool = data.wolf_resting[row] and data.wolf_rest_elapsed[row] + context.delta < context.rest_duration
 		if not data.wolf_hunting[row] and not resting and best < 0 and not data.wolf_retreating[row]:
 			var started_at := Time.get_ticks_usec() if stats.detailed else 0
@@ -143,17 +148,14 @@ func calculate_batch(output: Dictionary, rows: PackedInt32Array, context: Dictio
 					continue
 
 				var next_distance := data.motion_position[row].distance_squared_to(point)
-				if next_distance < distance or (is_equal_approx(next_distance, distance) and result.prey >= 0 and data.identity_entity_id[index] < data.identity_entity_id[result.prey]):
-					result.prey = index
+				if next_distance < distance or (is_equal_approx(next_distance, distance) and job.prey_rows[result_index] >= 0 and data.identity_entity_id[index] < data.identity_entity_id[job.prey_rows[result_index]]):
+					job.prey_rows[result_index] = index
 					distance = next_distance
 			if stats.detailed:
 				stats.hotspots.WolfTarget += (Time.get_ticks_usec() - started_at) / 1000.0
 				stats.calls.WolfTarget += 1
 
-		entries.append(result)
-
-	output.entries = entries
-	output.stats = stats
+	job.stats = stats
 
 func _choose_prey(animal: AnimalEntity) -> void:
 	var row := animal.row

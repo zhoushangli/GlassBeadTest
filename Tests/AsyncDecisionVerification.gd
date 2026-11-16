@@ -6,13 +6,14 @@ class GateJob extends Job:
 	var block: bool = true
 	var applications: int = 0
 	var worker: bool = false
+	var value: int = 0
 
 	func execute() -> void:
 		worker = not Thread.is_main_thread()
 		entered.post()
 		if block:
 			gate.wait()
-		result.value = context.get("value", 0)
+		value = context.get("value", 0)
 
 	func apply_result() -> void:
 		applications += 1
@@ -22,6 +23,7 @@ var failures: int = 0
 var engine: Node
 var scene: Node
 var authored: SimulationConfig
+var verification_directory: String
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -49,6 +51,9 @@ func _job(kind: AnimalEntity.Kind) -> Job:
 	var job: Job = WolfPerceptionJob.new() if kind == AnimalEntity.Kind.WOLF else DogPerceptionJob.new()
 	job.stage = &"Wolf" if kind == AnimalEntity.Kind.WOLF else &"Dog"
 	job.context = engine.animal_system.decision_snapshot(kind)
+	job.context.grid = engine.grid_service.query_context().duplicate(true)
+	job.context.cell_counts = engine.grid_service.cell_counts.duplicate()
+	job.context.sheep_position_sums = engine.grid_service.sheep_position_sums.duplicate()
 	job.rows = job.context.rows
 	job.target = engine.wolf_system if kind == AnimalEntity.Kind.WOLF else engine.dog_system
 	return job
@@ -109,7 +114,7 @@ func _snapshots() -> void:
 	_check(job.context.motion_position[sheep.row] == point and job.context.grid.positions[sheep.row] == grid_point, "job owns immutable entity and grid input")
 	engine.job_service.submit_async(job)
 	_wait(job)
-	_check(job.result.entries[0].prey == sheep.row, "worker selects from submitted snapshot despite live motion")
+	_check((job as WolfPerceptionJob).prey_rows[0] == sheep.row, "worker selects from submitted snapshot despite live motion")
 	_check(not data.wolf_hunting[wolf.row], "worker does not mutate live state")
 	engine.paused = true
 	engine._process(0.0)
@@ -149,20 +154,17 @@ func _frequency_and_motion() -> void:
 	var data := entities.data
 	var wolf := entities.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(400, 300))[0]
 	var dog := entities.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(800, 500))[0]
-	engine.config.wolf.decision_hz = 25
-	engine.config.sheepdog.decision_hz = 15
-	var counts := {&"Wolf": 0, &"Dog": 0}
-	var sequences := {&"Wolf": -1, &"Dog": -1}
+	engine.config.wolf_update_hz = 25
+	engine.config.sheepdog_update_hz = 15
 	for step in range(60):
 		engine.simulate_step(1.0 / 60.0)
-		for stage in engine.job_service.async_jobs:
-			var job: Job = engine.job_service.async_jobs[stage]
-			if sequences[stage] != job.context.sequence:
-				counts[stage] += 1
-				sequences[stage] = job.context.sequence
-			_wait(job)
-	_check(counts[&"Wolf"] == 25 and counts[&"Dog"] == 15, "non-divisor and independent frequencies preserve fractional time")
+		while not engine.job_service.async_jobs.is_empty():
+			for job: Job in engine.job_service.async_jobs.values():
+				_wait(job)
+			engine.animal_service.apply_completed()
+	_check(engine.animal_service.requested[1] == 25 and engine.animal_service.requested[2] == 15, "non-divisor and independent frequencies preserve fractional time")
 	engine.job_service.invalidate_async()
+	engine.animal_service.waiting.clear()
 	var blocked := GateJob.new()
 	blocked.stage = &"Wolf"
 	engine.job_service.submit_async(blocked)
@@ -211,12 +213,12 @@ func _configuration() -> void:
 	settings.max_steps_per_frame = 0
 	_check(not settings.validate().is_empty(), "config rejects nonpositive step limit")
 	settings.max_steps_per_frame = 7
-	_check(settings.simulation_hz == 60.0 and settings.wolf.decision_hz == 30 and settings.sheepdog.decision_hz == 30, "configuration supplies clock and decision defaults")
+	_check(settings.simulation_hz == 60.0 and settings.sheep_update_hz == 24 and settings.wolf_update_hz == 12 and settings.sheepdog_update_hz == 12, "configuration supplies clock and decision defaults")
 	settings.simulation_hz = 15.0
 	_check(not settings.validate().is_empty(), "decision frequency cannot exceed simulation rate")
 	settings.simulation_hz = 90.0
-	settings.wolf.decision_hz = 15
-	settings.sheepdog.decision_hz = 25
+	settings.wolf_update_hz = 15
+	settings.sheepdog_update_hz = 25
 	var blocked := GateJob.new()
 	blocked.stage = &"Wolf"
 	engine.job_service.invalidate_async()
@@ -231,14 +233,14 @@ func _configuration() -> void:
 	_wait(blocked)
 	engine.job_service.flush()
 	_check(blocked.applications == 0 and blocked.state == Job.State.DISCARDED, "configuration change cannot commit an in-flight old request")
-	var path := "res://output/async-decisions-20261116/test-preset.tres"
+	var path := verification_directory.path_join("test-preset.tres")
 	_check(engine.save_preset(path) == OK, "frequency preset saves")
 	var loaded: SimulationConfig = engine.load_preset(path)
-	_check(loaded != null and loaded.simulation_hz == 90.0 and loaded.wolf.decision_hz == 15 and loaded.sheepdog.decision_hz == 25, "frequency preset round trips")
+	_check(loaded != null and loaded.simulation_hz == 90.0 and loaded.wolf_update_hz == 15 and loaded.sheepdog_update_hz == 25, "frequency preset round trips")
 	_check(loaded != null and loaded.max_steps_per_frame == 7, "step limit preset round trips")
 	scene.hud.parameters.set_draft(engine.config)
 	_check(scene.hud.parameters.editors.has("World.max_steps_per_frame"), "runtime panel exposes step limit")
-	_check(scene.hud.parameters.editors.has("World.simulation_hz") and scene.hud.parameters.editors.has("Wolves.decision_hz") and scene.hud.parameters.editors.has("Dogs.decision_hz"), "runtime panel exposes all frequencies")
+	_check(scene.hud.parameters.editors.has("World.simulation_hz") and scene.hud.parameters.editors.has("World.wolf_update_hz") and scene.hud.parameters.editors.has("World.sheepdog_update_hz"), "runtime panel exposes all frequencies")
 
 func _timers_and_invalidation() -> void:
 	_empty()
@@ -267,8 +269,15 @@ func _timers_and_invalidation() -> void:
 	_check(data.dog_protected_sheep[dog.row] == null and data.dog_collected_sheep[dog.row] == null and data.brain_current_behavior[dog.row] == AnimalEntity.Behavior.PATROL, "lost dog anchor clears stale assignment and resumes patrol immediately")
 
 func _run() -> void:
+	verification_directory = "res://output/service-refactor/async-" + str(OS.get_process_id()) + "-" + str(Time.get_ticks_usec())
+	DirAccess.make_dir_recursive_absolute(verification_directory)
 	_queues()
 	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene.simulation_config = scene.simulation_config.copy_config()
+	scene.simulation_config.initial_total = 276
+	scene.simulation_config.arena_size = Vector2(1280, 720)
+	scene.simulation_config.simulation_hz = 60.0
+	scene.simulation_config.sheep_update_hz = 24
 	root.add_child(scene)
 	engine = root.get_node("g_gameplayEngine")
 	engine.set_process(false)
@@ -284,7 +293,7 @@ func _run() -> void:
 		engine.set_process(true)
 		await create_timer(3.0).timeout
 		await RenderingServer.frame_post_draw
-		var error := root.get_texture().get_image().save_png("res://output/async-decisions-20261116/running.png")
+		var error := root.get_texture().get_image().save_png(verification_directory.path_join("running.png"))
 		_check(error == OK and engine.actual_simulation_hz > 0.0, "running scene renders HUD with measured simulation frequency")
 	engine.stop_simulation()
 	scene.queue_free()

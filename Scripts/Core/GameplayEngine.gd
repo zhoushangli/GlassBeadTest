@@ -1,5 +1,6 @@
 extends Node
 
+signal simulation_frame_completed(elapsed_ms: float)
 signal simulation_stepped
 signal configuration_applied(restarted: bool)
 
@@ -7,6 +8,7 @@ const PRESET_PATH := "user://CFG_Runtime.tres"
 
 @export var config: SimulationConfig
 
+@onready var animal_service: AnimalService = $AnimalService
 @onready var job_service: JobService = $JobService
 @onready var grid_service: GridService = $GridService
 @onready var entity_service: EntityService = $EntityService
@@ -38,13 +40,19 @@ var _clock_error_reported: bool = false
 var actual_simulation_hz: float = 0.0
 var _frequency_started: int = 0
 var _frequency_steps: int = 0
-var _decision_elapsed: Dictionary = {AnimalEntity.Kind.WOLF: 0.0, AnimalEntity.Kind.SHEEPDOG: 0.0}
-var _last_decision: Dictionary = {}
 
-var animal_system: AnimalSystem
-var sheep_system: SheepSystem
-var wolf_system: WolfSystem
-var dog_system: SheepdogSystem
+var animal_system: AnimalSystem:
+	get:
+		return animal_service.animal_system
+var sheep_system: SheepSystem:
+	get:
+		return animal_service.sheep_system
+var wolf_system: WolfSystem:
+	get:
+		return animal_service.wolf_system
+var dog_system: SheepdogSystem:
+	get:
+		return animal_service.dog_system
 
 func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationConfig) -> void:
 	stop_simulation()
@@ -58,8 +66,8 @@ func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationCo
 	entity_service.container = world.get_node("Animals")
 	render_service.container = entity_service.container
 	debug_service.hud = debug_hud
-	_create_systems()
 	running = true
+	animal_service.startup()
 	job_service.startup()
 	grid_service.startup()
 	entity_service.startup()
@@ -71,6 +79,7 @@ func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationCo
 func stop_simulation() -> void:
 	running = false
 	job_service.shutdown()
+	animal_service.shutdown()
 	debug_service.shutdown()
 	profile_service.shutdown()
 	entity_service.shutdown()
@@ -96,7 +105,7 @@ func reset_simulation() -> void:
 	rng.seed = config.random_seed
 	simulation_time = 0.0
 	step_count = 0
-	_reset_decisions()
+	animal_service.reset()
 	reset_frequency_window()
 	paused = false
 	entity_service.spawn_initial()
@@ -115,7 +124,7 @@ func _apply_pending_config() -> void:
 	config = _pending_config
 	_pending_config = null
 	job_service.invalidate_async()
-	_reset_decisions()
+	animal_service.reset()
 	_accumulator = 0.0
 	reset_frequency_window()
 	if restart:
@@ -192,47 +201,36 @@ func _process(delta: float) -> void:
 	var pending_steps := floorf(_accumulator / interval + 0.000000001)
 	var steps := int(minf(pending_steps, float(config.max_steps_per_frame)))
 	_accumulator = maxf(0.0, _accumulator - pending_steps * interval)
+	var frame_started := Time.get_ticks_usec()
 	for index in range(steps):
 		simulate_step(interval)
 	if render_service.dirty:
 		render_service.sync()
+	simulation_frame_completed.emit((Time.get_ticks_usec() - frame_started) / 1000.0)
 
 func simulate_step(delta: float) -> void:
 	profile_service.begin_step()
 	entity_service.remove_expired()
 
-	# 1) Commit completed decisions without waiting, then advance simulation timers.
-	job_service.flush()
+	# 1) Commit completed logic without waiting, then advance animal time.
+	animal_service.apply_completed()
+	animal_service.advance_time(delta)
 	profile_service.end_stage("Decision")
-	_advance_decision_time(delta)
-
-	# 2) Build spatial input for sheep perception and new asynchronous requests.
-	grid_service.rebuild()
-	dog_system.begin_spatial_step()
+	animal_service.schedule_updates(delta)
 	profile_service.end_stage("SpatialBuild")
-
-	wolf_system.accumulate_sheep_pressure()
-	dog_system.accumulate_sheep_pressure()
-	sheep_system.perceive_batch(delta)
-	_submit_decisions(delta)
 	profile_service.end_stage("Perception")
-
 	profile_service.end_stage("TaskAssignment")
 
-	# 3) Steer and move every animal using the latest valid intent.
-	animal_system.update_steering(delta)
+	# 2) Move using the latest valid intent, independently of background work.
+	animal_service.prepare_motion(delta)
 	profile_service.end_stage("Steering")
-	animal_system.update_movement(delta)
+	entity_service.update_movement(delta)
 	profile_service.end_stage("Movement")
-
-	# 4) Resolve howls and captures at the resulting positions.
-	for row in entity_service.wolf_rows:
-		wolf_system.resolve_interactions(entity_service.data.handles[row], delta)
+	animal_service.resolve_interactions(delta)
 	profile_service.end_stage("Interaction")
-
 	entity_service.remove_expired(delta)
 	profile_service.end_stage("Cleanup")
-	render_service.sync()
+	render_service.mark_dirty()
 	profile_service.end_stage("RenderSync")
 	debug_service.advance_visuals(delta)
 	simulation_time += delta
@@ -254,75 +252,8 @@ func update_frequency() -> void:
 		_frequency_steps = 0
 		_frequency_started = now
 
-func _reset_decisions() -> void:
-	_decision_elapsed = {AnimalEntity.Kind.WOLF: 0.0, AnimalEntity.Kind.SHEEPDOG: 0.0}
-	_last_decision.clear()
-
 func advance_decision(animal: AnimalEntity) -> void:
-	var uid: int = entity_service.data.identity_uid[animal.row]
-	var elapsed: float = simulation_time - _last_decision.get(uid, simulation_time)
-	animal_system.decide(animal, elapsed)
-	_last_decision[uid] = simulation_time
-
-func _advance_decision_time(delta: float) -> void:
-	var data := entity_service.data
-	var active_uids: Dictionary = {}
-	for row in range(data.active_count):
-		if data.identity_kind[row] == AnimalEntity.Kind.SHEEP:
-			continue
-
-		var uid := data.identity_uid[row]
-		active_uids[uid] = true
-		data.motion_wander_remaining[row] -= delta
-		data.memory_perception_remaining[row] -= delta
-		data.memory_unseen_elapsed[row] += delta
-		var target := data.live(data.memory_target[row])
-		if target == null:
-			data.memory_target[row] = null
-			data.memory_target_visible[row] = 0
-		if data.identity_kind[row] == AnimalEntity.Kind.SHEEPDOG and data.dog_collected_sheep[row] != null and data.live(data.dog_collected_sheep[row]) == null:
-			data.dog_collected_sheep[row] = null
-			data.motion_intent[row] = AnimalData.MotionIntent.STOP
-			data.motion_desired_velocity[row] = Vector2.ZERO
-		if not _last_decision.has(uid) or (target == null and data.brain_current_behavior[row] in [AnimalEntity.Behavior.CHASE, AnimalEntity.Behavior.STALK, AnimalEntity.Behavior.DRIVE]):
-			advance_decision(data.handles[row])
-	for uid in _last_decision.keys():
-		if not active_uids.has(uid):
-			_last_decision.erase(uid)
-	wolf_system.advance_time(delta)
-	dog_system.advance_time(delta)
-
-func _submit_decisions(delta: float) -> void:
-	for kind in [AnimalEntity.Kind.WOLF, AnimalEntity.Kind.SHEEPDOG]:
-		var stage: StringName = &"Wolf" if kind == AnimalEntity.Kind.WOLF else &"Dog"
-		var settings: Resource = config.wolf if kind == AnimalEntity.Kind.WOLF else config.sheepdog
-		var interval := 1.0 / float(settings.decision_hz)
-		_decision_elapsed[kind] += delta
-		if job_service.async_jobs.has(stage):
-			_decision_elapsed[kind] = minf(_decision_elapsed[kind], interval)
-			continue
-		if _decision_elapsed[kind] + 0.000000001 < interval:
-			continue
-
-		var rows: PackedInt32Array = entity_service.wolf_rows if kind == AnimalEntity.Kind.WOLF else entity_service.dog_rows
-		if rows.is_empty():
-			continue
-
-		var job: Job = WolfPerceptionJob.new() if kind == AnimalEntity.Kind.WOLF else DogPerceptionJob.new()
-		job.stage = stage
-		var prepared_at := Time.get_ticks_usec()
-		job.context = animal_system.decision_snapshot(kind)
-		job.context.prepare_ms = (Time.get_ticks_usec() - prepared_at) / 1000.0
-		job.rows = job.context.rows
-		job.target = wolf_system if kind == AnimalEntity.Kind.WOLF else dog_system
-		if job_service.submit_async(job):
-			_decision_elapsed[kind] = maxf(0.0, _decision_elapsed[kind] - interval)
-
-func _create_systems() -> void:
-	animal_system = AnimalSystem.new(entity_service.data)
-	sheep_system = SheepSystem.new(entity_service.data)
-	wolf_system = WolfSystem.new(entity_service.data)
-	dog_system = SheepdogSystem.new(entity_service.data)
+	animal_service.advance_decision(animal)
 
 func refresh_animal_config(animal: AnimalEntity) -> void:
 	var data: AnimalData = g_gameplayEngine.entity_service.data

@@ -22,13 +22,6 @@ var flock_position_sums := PackedVector2Array()
 var alignment_counts := PackedInt32Array()
 var alignment_velocity_sums := PackedVector2Array()
 
-var _cursors := PackedInt32Array()
-var _flock_offsets := PackedInt32Array()
-var _alignment_offsets := PackedInt32Array()
-var _flock_radius: float = -1.0
-var _alignment_radius: float = -1.0
-var _offset_cell_size: float = -1.0
-
 var wolf_pressure := PackedVector2Array()
 var dog_pressure := PackedVector2Array()
 var pressure_nodes := PackedInt32Array()
@@ -45,94 +38,13 @@ var spatial_nonempty_cells: int = 0
 var spatial_max_occupancy: int = 0
 
 func rebuild() -> void:
-	snapshot_version += 1
-	var data: AnimalData = g_gameplayEngine.entity_service.data
-	var config: SimulationConfig = g_gameplayEngine.config
-	cell_size = config.grid_cell_size
-	width = ceili(config.arena_size.x / cell_size)
-	height = ceili(config.arena_size.y / cell_size)
-	var cells := width * height
+	var snapshot: Dictionary = g_gameplayEngine.animal_system.decision_snapshot(AnimalEntity.Kind.SHEEP)
+	snapshot.config = {"cell_size": g_gameplayEngine.config.grid_cell_size, "arena_size": g_gameplayEngine.config.arena_size}
+	install_snapshot(build_snapshot(snapshot))
 
-	reset_spatial_stats()
-	_prepare_pressure_nodes()
-	cell_counts.resize(cells * 3)
-	cell_counts.fill(0)
-	cell_offsets.resize(cells * 3 + 1)
-	_cursors.resize(cells * 3)
-	members.resize(data.active_count)
-	row_cells.resize(data.active_count)
-	perception_positions.resize(data.active_count)
-	perception_velocities.resize(data.active_count)
-	perception_kinds.resize(data.active_count)
-	sheep_position_sums.resize(cells)
-	sheep_position_sums.fill(Vector2.ZERO)
-	sheep_velocity_sums.resize(cells)
-	sheep_velocity_sums.fill(Vector2.ZERO)
-
-	# 1) Count members by cell and species, and accumulate sheep statistics.
-	for row in range(data.active_count):
-		var point := data.motion_position[row]
-		var cell := cell_at(point)
-		var kind := data.identity_kind[row]
-		row_cells[row] = cell
-		perception_positions[row] = point
-		perception_velocities[row] = data.motion_velocity[row]
-		perception_kinds[row] = kind
-		cell_counts[cell * 3 + kind] += 1
-		if kind == AnimalEntity.Kind.SHEEP:
-			sheep_position_sums[cell] += point
-			sheep_velocity_sums[cell] += data.motion_velocity[row]
-
-	# 2) Pack members into contiguous cell/species ranges in row order.
-	cell_offsets[0] = 0
-	for bucket in range(cells * 3):
-		cell_offsets[bucket + 1] = cell_offsets[bucket] + cell_counts[bucket]
-		_cursors[bucket] = cell_offsets[bucket]
-	for row in range(data.active_count):
-		var bucket := row_cells[row] * 3 + perception_kinds[row]
-		members[_cursors[bucket]] = row
-		_cursors[bucket] += 1
-
-	if spatial_stats_enabled:
-		for cell in range(cells):
-			var count := cell_counts[cell * 3] + cell_counts[cell * 3 + 1] + cell_counts[cell * 3 + 2]
-			if count > 0:
-				spatial_nonempty_cells += 1
-				spatial_max_occupancy = maxi(spatial_max_occupancy, count)
-
-	# 3) Share flock and alignment sums between sheep in the same cell.
-	if _offset_cell_size != cell_size or _flock_radius != config.sheep.flock_radius or _alignment_radius != config.sheep.alignment_radius:
-		_flock_offsets = _make_offsets(config.sheep.flock_radius)
-		_alignment_offsets = _make_offsets(config.sheep.alignment_radius)
-		_offset_cell_size = cell_size
-		_flock_radius = config.sheep.flock_radius
-		_alignment_radius = config.sheep.alignment_radius
-	flock_counts.resize(cells)
-	flock_counts.fill(0)
-	flock_position_sums.resize(cells)
-	flock_position_sums.fill(Vector2.ZERO)
-	alignment_counts.resize(cells)
-	alignment_counts.fill(0)
-	alignment_velocity_sums.resize(cells)
-	alignment_velocity_sums.fill(Vector2.ZERO)
-
-	var started_at := Time.get_ticks_usec()
-	var occupied := PackedInt32Array()
-	for cell in range(cells):
-		if cell_counts[cell * 3 + AnimalEntity.Kind.SHEEP] > 0:
-			occupied.append(cell)
-
-	var context := {"width": width, "height": height, "shared_min_sheep": PRESSURE_SHARED_MIN_SHEEP, "counts": cell_counts, "position_sums": sheep_position_sums,
-		"velocity_sums": sheep_velocity_sums, "flock_offsets": _flock_offsets, "alignment_offsets": _alignment_offsets}
-	var jobs: JobService = g_gameplayEngine.job_service
-	var prepared_at := Time.get_ticks_usec()
-	jobs.run_batches(&"Grid", occupied, GridAggregateJob, context, self, 128)
-	pressure_sample_count = pressure_nodes.size()
-	jobs.record_stage(&"Grid", started_at, prepared_at)
-
-func apply_cells(result: Dictionary) -> void:
-	for index in range(result.cells.size()):
-		var cell: int = result.cells[index]
+func apply_cells(result: GridAggregateJob) -> void:
+	for index in range(result.rows.size()):
+		var cell: int = result.rows[index]
 		flock_counts[cell] = result.flock_counts[index]
 		flock_position_sums[cell] = result.flock_sums[index]
 		alignment_counts[cell] = result.alignment_counts[index]
@@ -143,102 +55,26 @@ func apply_cells(result: Dictionary) -> void:
 			_pressure_needed[node] = 1
 			pressure_nodes.append(node)
 
-func _prepare_pressure_nodes() -> void:
-	var nodes := (width + 1) * (height + 1)
-	wolf_pressure.resize(nodes)
-	wolf_pressure.fill(Vector2.ZERO)
-	dog_pressure.resize(nodes)
-	dog_pressure.fill(Vector2.ZERO)
-	_pressure_needed.resize(nodes)
-	_pressure_needed.fill(0)
-	pressure_nodes.clear()
-	pressure_sample_count = 0
-	pressure_source_pairs = 0
-
 func accumulate_pressure(kind: AnimalEntity.Kind) -> void:
+	var snapshot: Dictionary = g_gameplayEngine.animal_system.decision_snapshot(AnimalEntity.Kind.SHEEP)
+	var grid := query_context()
+	grid.merge({"counts": cell_counts, "pressure_needed": _pressure_needed, "pressure_sample_count": pressure_sample_count,
+		"pressure_source_pairs": 0, "wolf_pressure": wolf_pressure, "dog_pressure": dog_pressure})
+	var output := snapshot_pressure(kind, snapshot, grid)
 	var data: AnimalData = g_gameplayEngine.entity_service.data
-	var is_wolf := kind == AnimalEntity.Kind.WOLF
-	var radius: float = g_gameplayEngine.config.sheep.wolf_pressure_distance if is_wolf else g_gameplayEngine.config.sheep.herding_distance
-	var radius_squared := radius * radius
-	var field := wolf_pressure if is_wolf else dog_pressure
-	var sources: PackedInt32Array = g_gameplayEngine.entity_service.wolf_rows if is_wolf else g_gameplayEngine.entity_service.dog_rows
-	if is_wolf:
+	if kind == AnimalEntity.Kind.WOLF:
+		wolf_pressure = output.field
 		data.sheep_threat_direction.fill(Vector2.ZERO)
 		data.sheep_threat_strength.fill(0.0)
+		for row in g_gameplayEngine.entity_service.sheep_rows:
+			data.sheep_threat_direction[row] = output.sheep_threat_direction[row]
+			data.sheep_threat_strength[row] = output.sheep_threat_strength[row]
 	else:
+		dog_pressure = output.field
 		data.sheep_dog_pressure.fill(Vector2.ZERO)
-
-	var affected := PackedInt32Array()
-	var in_range := PackedByteArray()
-	in_range.resize(data.active_count)
-
-	# 1) Accumulate only sample points needed by sheep this step.
-	for source_row in sources:
-		var source := perception_positions[source_row]
-		var multiplier: float = g_gameplayEngine.config.sheep.hunting_pressure_multiplier if is_wolf and data.wolf_hunting[source_row] else 1.0
-		if pressure_sample_count > 0:
-			var first := Vector2i(((source - Vector2.ONE * radius) / cell_size).ceil()).max(Vector2i.ZERO)
-			var last := Vector2i(((source + Vector2.ONE * radius) / cell_size).floor()).min(Vector2i(width, height))
-			for y in range(first.y, last.y + 1):
-				for x in range(first.x, last.x + 1):
-					var node := y * (width + 1) + x
-					if not _pressure_needed[node]:
-						continue
-
-					var offset := Vector2(x, y) * cell_size - source
-					var distance_squared := offset.length_squared()
-					if distance_squared > radius_squared:
-						continue
-
-					var distance := sqrt(distance_squared)
-					var direction := offset / distance if distance > 0.0 else Vector2.ZERO
-					var strength := (1.0 - distance / radius) * multiplier
-					field[node] += direction * strength
-					pressure_source_pairs += 1
-
-		# 2) Keep the actual influence radius independent of the sampled vector.
-		var first_cell := Vector2i(((source - Vector2.ONE * radius) / cell_size).floor()).max(Vector2i.ZERO)
-		var last_cell := Vector2i(((source + Vector2.ONE * radius) / cell_size).floor()).min(Vector2i(width - 1, height - 1))
-		for y in range(first_cell.y, last_cell.y + 1):
-			for x in range(first_cell.x, last_cell.x + 1):
-				var bucket := (y * width + x) * 3 + AnimalEntity.Kind.SHEEP
-				for member in range(cell_offsets[bucket], cell_offsets[bucket + 1]):
-					var row := members[member]
-					if cell_counts[bucket] < PRESSURE_SHARED_MIN_SHEEP:
-						var offset := perception_positions[row] - source
-						var distance_squared := offset.length_squared()
-						if distance_squared > radius_squared:
-							continue
-
-						var distance := sqrt(distance_squared)
-						var direction := offset / distance if distance > 0.0 else Vector2.ZERO
-						if is_wolf:
-							var strength := (1.0 - distance / radius) * multiplier
-							data.sheep_threat_strength[row] = minf(1.0, data.sheep_threat_strength[row] + strength)
-							data.sheep_threat_direction[row] += direction * strength
-						else:
-							data.sheep_dog_pressure[row] += direction * (1.0 - distance / radius)
-					else:
-						var distance := perception_positions[row].distance_to(source)
-						if distance > radius:
-							continue
-						if is_wolf:
-							data.sheep_threat_strength[row] = minf(1.0, data.sheep_threat_strength[row] + (1.0 - distance / radius) * multiplier)
-						if not in_range[row]:
-							in_range[row] = 1
-							affected.append(row)
-	if is_wolf:
-		wolf_pressure = field
-	else:
-		dog_pressure = field
-
-	# 3) Interpolate the field, but never create a threat outside the true radius.
-	for row in affected:
-		var value := sample_pressure(perception_positions[row], field)
-		if is_wolf:
-			data.sheep_threat_direction[row] = value if data.sheep_threat_strength[row] > 0.0 else Vector2.ZERO
-		else:
-			data.sheep_dog_pressure[row] = value
+		for row in g_gameplayEngine.entity_service.sheep_rows:
+			data.sheep_dog_pressure[row] = output.sheep_dog_pressure[row]
+	pressure_source_pairs += output.pairs
 
 func sample_pressure(point: Vector2, field: PackedVector2Array) -> Vector2:
 	var coordinate := point / cell_size
@@ -252,16 +88,6 @@ func cell_at(point: Vector2) -> int:
 	var x := clampi(floori(point.x / cell_size), 0, width - 1)
 	var y := clampi(floori(point.y / cell_size), 0, height - 1)
 	return y * width + x
-
-func _make_offsets(radius: float) -> PackedInt32Array:
-	var offsets := PackedInt32Array()
-	var extent := ceili(radius / cell_size)
-	for y in range(-extent, extent + 1):
-		for x in range(-extent, extent + 1):
-			if Vector2(x, y).length_squared() * cell_size * cell_size <= radius * radius:
-				offsets.append(x)
-				offsets.append(y)
-	return offsets
 
 # Return broad-phase snapshot rows, optionally restricted to one species.
 # e.g. get_nearby_indices(Vector2(300, 300), 24.0, AnimalEntity.Kind.SHEEP)
@@ -359,7 +185,6 @@ func _reset() -> void:
 	cell_counts.clear()
 	cell_offsets.clear()
 	members.clear()
-	_cursors.clear()
 	sheep_position_sums.clear()
 	sheep_velocity_sums.clear()
 	flock_counts.clear()
@@ -371,3 +196,247 @@ func _reset() -> void:
 
 func _shutdown() -> void:
 	_reset()
+
+static func build_snapshot(snapshot: Dictionary, aggregate: bool = true) -> Dictionary:
+	var size: float = snapshot.config.cell_size
+	var columns := ceili(snapshot.config.arena_size.x / size)
+	var height := ceili(snapshot.config.arena_size.y / size)
+	var cells := columns * height
+	var count: int = snapshot.sheep.size() + snapshot.wolves.size() + snapshot.dogs.size()
+	var positions: PackedVector2Array = snapshot.motion_position.slice(0, count)
+	var velocities: PackedVector2Array = snapshot.motion_velocity.slice(0, count)
+	var kinds := PackedInt32Array(Array(snapshot.identity_kind.slice(0, count)))
+	var counts := PackedInt32Array()
+	var offsets := PackedInt32Array()
+	var packed_members := PackedInt32Array()
+	var captured_cells := PackedInt32Array()
+	var position_sums := PackedVector2Array()
+	var velocity_sums := PackedVector2Array()
+	counts.resize(cells * 3)
+	offsets.resize(cells * 3 + 1)
+	packed_members.resize(count)
+	captured_cells.resize(count)
+	position_sums.resize(cells)
+	velocity_sums.resize(cells)
+
+	# 1) Pack spatial membership from the captured active rows.
+	for row in range(count):
+		var point := positions[row]
+		var cell := clampi(floori(point.y / size), 0, height - 1) * columns + clampi(floori(point.x / size), 0, columns - 1)
+		captured_cells[row] = cell
+		counts[cell * 3 + kinds[row]] += 1
+		if kinds[row] == AnimalEntity.Kind.SHEEP:
+			position_sums[cell] += point
+			velocity_sums[cell] += velocities[row]
+	for bucket in range(cells * 3):
+		offsets[bucket + 1] = offsets[bucket] + counts[bucket]
+	var cursors := offsets.duplicate()
+	for row in range(count):
+		var bucket := captured_cells[row] * 3 + kinds[row]
+		packed_members[cursors[bucket]] = row
+		cursors[bucket] += 1
+
+	# 2) Reuse the existing aggregate calculation without its synchronous barrier.
+	var occupied := PackedInt32Array()
+	var nonempty := 0
+	var occupancy_max := 0
+	for cell in range(cells):
+		var occupancy := counts[cell * 3] + counts[cell * 3 + 1] + counts[cell * 3 + 2]
+		if occupancy > 0:
+			nonempty += 1
+			occupancy_max = maxi(occupancy_max, occupancy)
+		if counts[cell * 3] > 0:
+			occupied.append(cell)
+	var settings: Dictionary = snapshot.species_settings[0]
+	var job := GridAggregateJob.new()
+	job.rows = occupied
+	job.context = {"width": columns, "height": height, "shared_min_sheep": PRESSURE_SHARED_MIN_SHEEP,
+		"counts": counts, "position_sums": position_sums, "velocity_sums": velocity_sums,
+		"flock_offsets": snapshot_offsets(settings.flock_radius, size), "alignment_offsets": snapshot_offsets(settings.alignment_radius, size)}
+	if aggregate:
+		job.execute()
+	var flock_count := PackedInt32Array()
+	var flock_sum := PackedVector2Array()
+	var aligned_count := PackedInt32Array()
+	var aligned_sum := PackedVector2Array()
+	flock_count.resize(cells)
+	flock_sum.resize(cells)
+	aligned_count.resize(cells)
+	aligned_sum.resize(cells)
+	for index in range(occupied.size() if aggregate else 0):
+		var cell := occupied[index]
+		flock_count[cell] = job.flock_counts[index]
+		flock_sum[cell] = job.flock_sums[index]
+		aligned_count[cell] = job.alignment_counts[index]
+		aligned_sum[cell] = job.alignment_sums[index]
+	var needed := PackedByteArray()
+	needed.resize((columns + 1) * (height + 1))
+	var nodes := PackedInt32Array()
+	var requested_nodes := PackedInt32Array()
+	for cell in occupied:
+		if counts[cell * 3] >= PRESSURE_SHARED_MIN_SHEEP:
+			var base: int = (cell / columns) * (columns + 1) + cell % columns
+			requested_nodes.append_array(PackedInt32Array([base, base + 1, base + columns + 1, base + columns + 2]))
+	for node in requested_nodes:
+		if not needed[node]:
+			needed[node] = 1
+			nodes.append(node)
+	return {"cell_size": size, "width": columns, "height": height, "positions": positions, "velocities": velocities,
+		"kinds": kinds, "counts": counts, "offsets": offsets, "members": packed_members, "row_cells": captured_cells,
+		"position_sums": position_sums, "velocity_sums": velocity_sums, "flock_counts": flock_count,
+		"flock_sums": flock_sum, "alignment_counts": aligned_count, "alignment_sums": aligned_sum,
+		"pressure_nodes": nodes, "pressure_needed": needed, "pressure_sample_count": nodes.size(),
+		"nonempty_cells": nonempty, "max_occupancy": occupancy_max, "occupied": occupied}
+
+static func snapshot_offsets(radius: float, size: float) -> PackedInt32Array:
+	var offsets := PackedInt32Array()
+	var extent := ceili(radius / size)
+	for y in range(-extent, extent + 1):
+		for x in range(-extent, extent + 1):
+			if Vector2(x, y).length_squared() * size * size <= radius * radius:
+				offsets.append(x)
+				offsets.append(y)
+	return offsets
+
+func install_snapshot(grid: Dictionary) -> void:
+	snapshot_version += 1
+	cell_size = grid.cell_size
+	width = grid.width
+	height = grid.height
+	perception_positions = grid.positions
+	perception_velocities = grid.velocities
+	perception_kinds = grid.kinds
+	row_cells = grid.row_cells
+	cell_counts = grid.counts
+	cell_offsets = grid.offsets
+	members = grid.members
+	sheep_position_sums = grid.position_sums
+	sheep_velocity_sums = grid.velocity_sums
+	flock_counts = grid.flock_counts
+	flock_position_sums = grid.flock_sums
+	alignment_counts = grid.alignment_counts
+	alignment_velocity_sums = grid.alignment_sums
+	_pressure_needed = grid.pressure_needed
+	wolf_pressure.resize((width + 1) * (height + 1))
+	wolf_pressure.fill(Vector2.ZERO)
+	dog_pressure.resize((width + 1) * (height + 1))
+	dog_pressure.fill(Vector2.ZERO)
+	pressure_source_pairs = 0
+	pressure_nodes = grid.pressure_nodes
+	pressure_sample_count = grid.pressure_sample_count
+	reset_spatial_stats()
+	if spatial_stats_enabled:
+		spatial_nonempty_cells = grid.nonempty_cells
+		spatial_max_occupancy = grid.max_occupancy
+
+static func snapshot_pressure(kind: AnimalEntity.Kind, snapshot: Dictionary, source_grid: Dictionary) -> Dictionary:
+	var grid := source_grid
+	var positions: PackedVector2Array = grid.positions
+	var counts: PackedInt32Array = grid.counts
+	var offsets: PackedInt32Array = grid.offsets
+	var packed_members: PackedInt32Array = grid.members
+	var needed: PackedByteArray = grid.pressure_needed
+	var columns: int = grid.width
+	var height: int = grid.height
+	var size: float = grid.cell_size
+	var sample_count: int = grid.pressure_sample_count
+	var data := {"active_count": snapshot.sheep.size() + snapshot.wolves.size() + snapshot.dogs.size(),
+		"sheep_threat_direction": PackedVector2Array(), "sheep_threat_strength": PackedFloat64Array(), "sheep_dog_pressure": PackedVector2Array(),
+		"wolf_hunting": snapshot.wolf_hunting}
+	for name in ["sheep_threat_direction", "sheep_threat_strength", "sheep_dog_pressure"]:
+		data[name].resize(data.active_count)
+	var directions: PackedVector2Array = data.sheep_threat_direction
+	var strengths: PackedFloat64Array = data.sheep_threat_strength
+	var dog_forces: PackedVector2Array = data.sheep_dog_pressure
+	var pairs := 0
+	var is_wolf := kind == AnimalEntity.Kind.WOLF
+	var radius: float = snapshot.species_settings[0].wolf_pressure_distance if is_wolf else snapshot.species_settings[0].herding_distance
+	var radius_squared := radius * radius
+	var field := PackedVector2Array()
+	field.resize((columns + 1) * (height + 1))
+	var sources: PackedInt32Array = snapshot.wolves if is_wolf else snapshot.dogs
+	if is_wolf:
+		directions.fill(Vector2.ZERO)
+		strengths.fill(0.0)
+	else:
+		dog_forces.fill(Vector2.ZERO)
+
+	var affected := PackedInt32Array()
+	var in_range := PackedByteArray()
+	in_range.resize(data.active_count)
+
+	# 1) Accumulate only sample points needed by sheep this step.
+	for source_row in sources if radius > 0.0 else PackedInt32Array():
+		var source: Vector2 = positions[source_row]
+		var multiplier: float = snapshot.species_settings[0].hunting_pressure_multiplier if is_wolf and data.wolf_hunting[source_row] else 1.0
+		if sample_count > 0:
+			var first := Vector2i(((source - Vector2.ONE * radius) / size).ceil()).max(Vector2i.ZERO)
+			var last := Vector2i(((source + Vector2.ONE * radius) / size).floor()).min(Vector2i(columns, height))
+			for y in range(first.y, last.y + 1):
+				for x in range(first.x, last.x + 1):
+					var node: int = y * (columns + 1) + x
+					if not needed[node]:
+						continue
+
+					var offset: Vector2 = Vector2(x, y) * size - source
+					var distance_squared: float = offset.length_squared()
+					if distance_squared > radius_squared:
+						continue
+
+					var distance: float = sqrt(distance_squared)
+					var direction: Vector2 = offset / distance if distance > 0.0 else Vector2.ZERO
+					var strength := (1.0 - distance / radius) * multiplier
+					field[node] += direction * strength
+					pairs += 1
+
+		# 2) Keep the actual influence radius independent of the sampled vector.
+		var first_cell := Vector2i(((source - Vector2.ONE * radius) / size).floor()).max(Vector2i.ZERO)
+		var last_cell := Vector2i(((source + Vector2.ONE * radius) / size).floor()).min(Vector2i(columns - 1, height - 1))
+		for y in range(first_cell.y, last_cell.y + 1):
+			for x in range(first_cell.x, last_cell.x + 1):
+				var bucket: int = (y * columns + x) * 3 + AnimalEntity.Kind.SHEEP
+				for member in range(offsets[bucket], offsets[bucket + 1]):
+					var row: int = packed_members[member]
+					if counts[bucket] < PRESSURE_SHARED_MIN_SHEEP:
+						var offset: Vector2 = positions[row] - source
+						var distance_squared: float = offset.length_squared()
+						if distance_squared > radius_squared:
+							continue
+
+						var distance: float = sqrt(distance_squared)
+						var direction: Vector2 = offset / distance if distance > 0.0 else Vector2.ZERO
+						if is_wolf:
+							var strength := (1.0 - distance / radius) * multiplier
+							strengths[row] = minf(1.0, strengths[row] + strength)
+							directions[row] += direction * strength
+						else:
+							dog_forces[row] += direction * (1.0 - distance / radius)
+					else:
+						var distance: float = positions[row].distance_to(source)
+						if distance > radius:
+							continue
+						if is_wolf:
+							strengths[row] = minf(1.0, strengths[row] + (1.0 - distance / radius) * multiplier)
+						if not in_range[row]:
+							in_range[row] = 1
+							affected.append(row)
+
+	# 3) Interpolate the field, but never create a threat outside the true radius.
+	for row in affected:
+		var value := sample_snapshot_pressure(positions[row], field, grid)
+		if is_wolf:
+			directions[row] = value if strengths[row] > 0.0 else Vector2.ZERO
+		else:
+			dog_forces[row] = value
+
+	data.field = field
+	data.pairs = pairs
+	return data
+
+static func sample_snapshot_pressure(point: Vector2, field: PackedVector2Array, grid: Dictionary) -> Vector2:
+	var coordinate: Vector2 = point / grid.cell_size
+	var x := clampi(floori(coordinate.x), 0, grid.width - 1)
+	var y := clampi(floori(coordinate.y), 0, grid.height - 1)
+	var fraction: Vector2 = (coordinate - Vector2(x, y)).clamp(Vector2.ZERO, Vector2.ONE)
+	var node: int = y * (grid.width + 1) + x
+	return field[node].lerp(field[node + 1], fraction.x).lerp(field[node + grid.width + 1].lerp(field[node + grid.width + 2], fraction.x), fraction.y)

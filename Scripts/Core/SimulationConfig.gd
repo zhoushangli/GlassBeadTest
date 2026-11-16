@@ -1,7 +1,7 @@
 class_name SimulationConfig
 extends Resource
 
-const PRESET_VERSION: int = 6
+const PRESET_VERSION: int = 7
 
 @export_storage var preset_version: int = 0
 
@@ -12,6 +12,17 @@ const PRESET_VERSION: int = 6
 ## 每个显示帧最多执行的模拟步数；超过上限的整步积压会舍弃。
 ## e.g. max_steps_per_frame = 4 表示一帧最多推进 4 个模拟步。
 @export_range(1, 16, 1) var max_steps_per_frame: int = 4
+
+@export_group("Animal updates")
+## 羊的后台逻辑请求频率上限（Hz）；任务未完成时继续已有移动。
+## e.g. sheep_update_hz = 24 表示最多每模拟秒请求 24 次。
+@export_range(1, 240, 1) var sheep_update_hz: int = 24
+## 狼的后台逻辑请求频率上限（Hz）；任务未完成时不积压请求。
+## e.g. wolf_update_hz = 12 表示最多每模拟秒请求 12 次。
+@export_range(1, 240, 1) var wolf_update_hz: int = 12
+## 狗的后台逻辑请求频率上限（Hz）；任务未完成时不积压请求。
+## e.g. sheepdog_update_hz = 12 表示最多每模拟秒请求 12 次。
+@export_range(1, 240, 1) var sheepdog_update_hz: int = 12
 
 @export_group("World - restart required")
 ## 场地宽高，单位为像素；应用修改需要重启模拟，运行时数值表单不编辑此向量。
@@ -38,7 +49,7 @@ const PRESET_VERSION: int = 6
 @export_range(12, 120, 1) var grid_cell_size: int = 30
 
 @export_group("Shared movement")
-## 同类软分离的采样间隔（模拟秒）；狼狗在后台请求中采样，羊仍同步计算。
+## 同类软分离的采样间隔（模拟秒）；各物种在后台逻辑请求中采样。
 ## e.g. 0.125 表示约每 0.125 秒更新一次软分离。
 @export_range(0.0, 0.25, 0.005) var perception_interval: float = 0.125
 ## 同物种动物之间软分离的作用距离，单位为像素；不等同于物理碰撞。
@@ -96,8 +107,8 @@ func requires_restart(previous: SimulationConfig) -> bool:
 func validate() -> String:
 	if sheep == null or wolf == null or sheepdog == null:
 		return "The preset must include all three behavior resources."
-	if wolf.decision_hz > simulation_hz or sheepdog.decision_hz > simulation_hz:
-		return "Decision frequency must not exceed simulation frequency."
+	if sheep_update_hz > simulation_hz or wolf_update_hz > simulation_hz or sheepdog_update_hz > simulation_hz:
+		return "Animal update frequency must not exceed simulation frequency."
 
 	for section in get_sections().values():
 		for property in section.get_property_list():

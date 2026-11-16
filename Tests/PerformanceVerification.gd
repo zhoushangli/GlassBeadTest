@@ -63,6 +63,9 @@ func _verify() -> void:
 
 	entities_count = 0
 	scenario = ""
+	population = 276
+	arena_override = Vector2(1280, 720)
+	original_size = arena_override
 	tiles = 2
 	layout = "spread"
 	_start()
@@ -72,7 +75,7 @@ func _verify() -> void:
 	_check(engine.config.arena_size == original_size * 2.0, "expanded area")
 
 	var entity_count: int = engine.entity_service.entities.size()
-	for item: Service in [engine.entity_service, engine.grid_service, engine.debug_service, engine.profile_service, engine.render_service]:
+	for item: Service in [engine.animal_service, engine.entity_service, engine.grid_service, engine.debug_service, engine.profile_service, engine.render_service]:
 		_check(item.started, "service is started")
 
 		item.startup()
@@ -255,7 +258,7 @@ func _verify() -> void:
 	_check(engine.debug_service.selected == null and engine.debug_service.hud == null, "shutdown releases debug references")
 	_check(engine.entity_service.entities.is_empty() and engine.entity_service.container == null, "shutdown releases entities and container")
 
-	for item: Service in [engine.entity_service, engine.grid_service, engine.debug_service, engine.profile_service, engine.render_service]:
+	for item: Service in [engine.animal_service, engine.entity_service, engine.grid_service, engine.debug_service, engine.profile_service, engine.render_service]:
 		item.reset()
 		_check(not item.started, "reset does not restart stopped service")
 	engine.start_simulation(scene.get_node("World"), scene.get_node("DebugHUD"), scene.simulation_config)
@@ -271,6 +274,8 @@ func _verify() -> void:
 	quit(0 if failures == 0 else 1)
 
 func _wait_decisions() -> void:
-	for job: Job in engine.job_service.async_jobs.values():
-		while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
-			OS.delay_msec(1)
+	while not engine.job_service.async_jobs.is_empty():
+		for job: Job in engine.job_service.async_jobs.values():
+			while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
+				OS.delay_msec(1)
+		engine.animal_service.apply_completed()

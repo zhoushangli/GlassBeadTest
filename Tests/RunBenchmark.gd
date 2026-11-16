@@ -3,6 +3,10 @@ extends SceneTree
 var job_totals: Dictionary = {}
 var async_totals: Dictionary = {}
 var async_sequences: Dictionary = {}
+var compute_backend: String = "auto"
+var applied_at_start := Vector3i.ZERO
+var requested_at_start := Vector3i.ZERO
+
 var jobs_mode: String = "default"
 var jobs_workers: int = 4
 var jobs_stages: String = "default"
@@ -12,6 +16,10 @@ var random_accumulator: float = 0.0
 var render_fill_total: float = 0.0
 var render_submit_total: float = 0.0
 
+var population: int = -1
+var simulation_frequency: int = 0
+var sheep_frequency: int = 0
+var arena_override := Vector2.ZERO
 var main_scene: bool = false
 var frame_steps: Array[float] = []
 var frame_simulation_ms: Array[float] = []
@@ -98,6 +106,30 @@ func _initialize() -> void:
 
 		var value := parts[1]
 		match parts[0]:
+			"--compute":
+				if value not in ["auto", "cpu", "gpu"]:
+					_fail("Expected --compute=auto|cpu|gpu")
+					return
+				compute_backend = value
+			"--simulation-hz", "--sheep-hz":
+				if not value.is_valid_int() or value.to_int() < 1:
+					_fail("Expected positive update frequency")
+					return
+				if parts[0] == "--simulation-hz":
+					simulation_frequency = value.to_int()
+				else:
+					sheep_frequency = value.to_int()
+			"--arena-size":
+				var dimensions := value.split("x")
+				if dimensions.size() != 2 or not dimensions[0].is_valid_float() or not dimensions[1].is_valid_float():
+					_fail("Expected --arena-size=WIDTHxHEIGHT")
+					return
+				arena_override = Vector2(dimensions[0].to_float(), dimensions[1].to_float())
+			"--population":
+				if not value.is_valid_int() or value.to_int() < 0:
+					_fail("Expected nonnegative population")
+					return
+				population = value.to_int()
 			"--motion":
 				if value not in ["normal", "random"]:
 					_fail("Expected --motion=normal|random")
@@ -211,8 +243,8 @@ func _initialize() -> void:
 		_fail("Invalid tier, frame cap, or duration")
 		return
 	if has_entities or not scenario.is_empty():
-		if entities_count not in [1000, 2000, 3000, 4000] or scenario not in ["scaled", "fixed"] or has_tier or has_tiles or has_layout:
-			_fail("Use --entities=1000|2000|3000|4000 --scenario=scaled|fixed without tier, tiles or layout")
+		if entities_count not in [1000, 1500, 2000, 3000, 4000, 5000] or scenario not in ["scaled", "fixed"] or has_tier or has_tiles or has_layout:
+			_fail("Use --entities=1000|1500|2000|3000|4000|5000 --scenario=scaled|fixed without tier, tiles or layout")
 			return
 
 		layout = "uniform_v1"
@@ -237,6 +269,14 @@ func _fail(message: String) -> void:
 func _start() -> void:
 	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
 	var settings: SimulationConfig = scene.simulation_config.copy_config()
+	if population >= 0:
+		settings.initial_total = population
+	if simulation_frequency > 0:
+		settings.simulation_hz = simulation_frequency
+	if sheep_frequency > 0:
+		settings.sheep_update_hz = sheep_frequency
+	if arena_override != Vector2.ZERO:
+		settings.arena_size = arena_override
 	var base_size := settings.arena_size
 	var multiplier := tiles * tiles if tiles > 0 else tier
 	if entities_count > 0:
@@ -300,9 +340,8 @@ func _start() -> void:
 		for player in engine.entity_service.data.brain_player:
 			if player != null:
 				player.active = false
-	root.size = Vector2i(1280, 720)
-	root.content_scale_size = Vector2i(1280, 720)
 	engine.simulation_stepped.connect(_record_step)
+	engine.simulation_frame_completed.connect(_record_frame)
 	DisplayServer.window_set_title("GlassBeadTest - %s %d animals" % [layout, configured_counts.x + configured_counts.y + configured_counts.z])
 
 	if DisplayServer.get_name() != "headless":
@@ -422,6 +461,11 @@ func _process(_delta: float) -> bool:
 			_simulate_benchmark_step(interval)
 	if fixed_steps > 0:
 		return false
+	if compute_backend == "gpu" and engine != null and engine.animal_service.compute != null:
+		var compute: SheepCompute = engine.animal_service.compute
+		if not compute.available():
+			_fail("Forced GPU unavailable: " + compute.failure)
+			return false
 	if ready_time == 0 or done:
 		return false
 
@@ -435,6 +479,10 @@ func _process(_delta: float) -> bool:
 			sim_started = engine.simulation_time
 			capture_started = engine.entity_service.capture_count
 			engine.profile_service.reset()
+			engine.animal_service.preprocessing_samples.clear()
+			for kind in range(3):
+				applied_at_start[kind] = engine.animal_service.applied[kind]
+				requested_at_start[kind] = engine.animal_service.requested[kind]
 		return false
 
 	frame_steps.append(float(pending_frame_steps))
@@ -456,14 +504,17 @@ func _process(_delta: float) -> bool:
 		_finish(elapsed)
 	return false
 
+func _record_frame(elapsed_ms: float) -> void:
+	if started > 0 and not done:
+		pending_frame_simulation_ms += elapsed_ms
+		if pending_frame_steps > 0:
+			render_fill_total += engine.render_service.last_fill_ms
+			render_submit_total += engine.render_service.last_submit_ms
+
 func _record_step() -> void:
 	if started > 0 and not done:
 		pending_frame_steps += 1
-		pending_frame_simulation_ms += engine.profile_service.last_step_ms
 		step_times.append(engine.profile_service.last_step_ms)
-		if "render_service" in engine:
-			render_fill_total += engine.render_service.last_fill_ms
-			render_submit_total += engine.render_service.last_submit_ms
 		_record_job_timings()
 		perception_total += engine.profile_service.last_perception_ms
 		decision_total += engine.profile_service.last_decision_ms
@@ -495,10 +546,10 @@ func _record_job_timings() -> void:
 
 		async_sequences[stage] = timing.sequence
 		if not async_totals.has(stage):
-			async_totals[stage] = {"requests": 0, "latency_ms": 0.0, "execute_ms": 0.0, "prepare_ms": 0.0, "submit_ms": 0.0, "max_latency_ms": 0.0}
+			async_totals[stage] = {"requests": 0, "latency_ms": 0.0, "snapshot_latency_ms": 0.0, "execute_ms": 0.0, "prepare_ms": 0.0, "submit_ms": 0.0, "max_latency_ms": 0.0}
 		var totals: Dictionary = async_totals[stage]
 		totals.requests += 1
-		for metric in ["latency_ms", "execute_ms", "prepare_ms", "submit_ms"]:
+		for metric in ["latency_ms", "snapshot_latency_ms", "execute_ms", "prepare_ms", "submit_ms"]:
 			totals[metric] += timing[metric]
 		totals.max_latency_ms = maxf(totals.max_latency_ms, timing.latency_ms)
 	for stage in engine.job_service.last_timings:
@@ -522,7 +573,7 @@ func _job_means() -> Dictionary:
 func _async_means() -> Dictionary:
 	var result := async_totals.duplicate(true)
 	for stage in result:
-		for metric in ["latency_ms", "execute_ms", "prepare_ms", "submit_ms"]:
+		for metric in ["latency_ms", "snapshot_latency_ms", "execute_ms", "prepare_ms", "submit_ms"]:
 			result[stage][metric] /= maxi(1, result[stage].requests)
 	return result
 
@@ -583,6 +634,9 @@ func _percentile(values: Array[float], fraction: float) -> float:
 	return sorted[mini(sorted.size() - 1, int(ceil(sorted.size() * fraction)) - 1)]
 
 func _finish(elapsed: float) -> void:
+	if compute_backend == "gpu" and engine.animal_service.preprocessing_samples.is_empty():
+		_fail("Forced GPU produced no applied sheep results")
+		return
 	done = true
 	var counts: Vector3i = engine.entity_service.get_counts()
 	if elapsed > window_elapsed:
@@ -639,8 +693,9 @@ func _finish(elapsed: float) -> void:
 		"max_fps": Engine.max_fps, "physics_hz": Engine.physics_ticks_per_second,
 		"simulation_hz": engine.config.simulation_hz, "max_steps_per_frame": engine.config.max_steps_per_frame,
 		"actual_simulation_hz": step_times.size() / elapsed,
-		"wolf_decision_hz": engine.config.wolf.decision_hz, "dog_decision_hz": engine.config.sheepdog.decision_hz,
-		"async_decisions": _async_means(),
+		"sheep_update_hz": engine.config.sheep_update_hz, "wolf_update_hz": engine.config.wolf_update_hz, "sheepdog_update_hz": engine.config.sheepdog_update_hz,
+		"logic_requests": engine.animal_service.requested, "logic_applications": engine.animal_service.applied,
+		"async_decisions": _async_means(), "compute": _compute_summary(elapsed),
 		"seed": engine.config.random_seed, "warmup_wall_seconds": warmup,
 		"measured_wall_seconds": elapsed, "process_iterations": frames,
 		"loop_hz": frames / elapsed, "loop_mean_ms": _mean(frame_times),
@@ -757,3 +812,26 @@ func _active_bt_players() -> int:
 func _motion_hash() -> String:
 	var data: AnimalData = engine.entity_service.data
 	return var_to_bytes([engine.rng.state, data.motion_position, data.motion_velocity, data.motion_facing]).hex_encode().sha256_text()
+
+func _compute_summary(elapsed: float) -> Dictionary:
+	var service: AnimalService = engine.animal_service
+	var rows: Array[Dictionary] = service.preprocessing_samples
+	for sample in rows:
+		if sample.get("backend", "cpu") == "gpu" and service.compute != null:
+			var timestamp: float = service.compute.gpu_timings.get(sample.get("gpu_sequence", -1), sample.get("gpu_ms", -1.0))
+			sample.processing_ms += maxf(timestamp, 0.0) - maxf(sample.get("gpu_ms", 0.0), 0.0)
+			sample.gpu_ms = timestamp
+	var result := {"requested_backend": compute_backend, "samples": rows, "requests_hz": [], "applied_hz": [], "metrics": {}, "failure": service.compute.failure if service.compute != null else "", "fallback_reason": service.compute_fallback_reason}
+	for kind in range(3):
+		result.requests_hz.append((service.requested[kind] - requested_at_start[kind]) / elapsed)
+		result.applied_hz.append((service.applied[kind] - applied_at_start[kind]) / elapsed)
+	for metric in ["latency_ms", "processing_ms", "grid_ms", "prepare_ms", "pack_ms", "upload_submit_ms", "gpu_ms", "readback_ms", "decode_ms", "apply_ms", "execute_ms", "upload_bytes", "download_bytes"]:
+		var values: Array[float] = []
+		for sample in rows:
+			if sample.has(metric) and sample[metric] >= 0.0:
+				values.append(float(sample[metric]))
+		result.metrics[metric] = {"count": values.size(), "mean": _mean(values), "p95": _percentile(values, 0.95)}
+	result.window_size = [root.size.x, root.size.y]
+	var viewport_size := root.get_texture().get_size()
+	result.render_size = [viewport_size.x, viewport_size.y]
+	return result
