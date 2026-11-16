@@ -1,6 +1,0 @@
-﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-BENCHMARK_START layout=uniform_v1 tiles=0 configured=(3478, 348, 174) warmup=3.0s measurement=30.0s stats=true
-BENCHMARK_SAMPLE tier=1 wall=3.6 loop_hz=0.3 step_ms=428.46 alive=(3478, 348, 174) sim=0.2
-BENCHMARK_SAMPLE tier=1 wall=6.9 loop_hz=0.3 step_ms=562.60 alive=(3478, 348, 174) sim=0.4
-

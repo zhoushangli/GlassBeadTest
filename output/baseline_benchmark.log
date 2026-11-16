@@ -1,8 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-OpenGL API 3.3.0 NVIDIA 621.01 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070 Ti Laptop GPU
-
-BENCHMARK_START tier=4 configured=(320, 32, 16) warmup=1.0s measurement=6.0s
-BENCHMARK_SAMPLE tier=4 wall=1.8 fps=1.1 step_ms=118.74 alive=(320, 32, 16) sim=0.5
-BENCHMARK_SAMPLE tier=4 wall=3.6 fps=1.1 step_ms=117.97 alive=(320, 32, 16) sim=0.7
-BENCHMARK_SAMPLE tier=4 wall=5.4 fps=1.1 step_ms=117.29 alive=(320, 32, 16) sim=1.0
-BENCHMARK_RESULT {"average_fps":1.10237296805103,"captures_total":0,"cpu":"Intel(R) Core(TM) Ultra 9 275HX","decision_mean_ms":3.97344642857143,"engine":"4.7.2-stable (official)","final_counts":[320,32,16],"frame_p95_ms":945.806,"gpu":"NVIDIA GeForce RTX 5070 Ti Laptop GPU","initial_counts":[320,32,16],"max_fps":0,"measured_wall_seconds":6.349938,"movement_interaction_mean_ms":1.02223214285714,"perception_mean_ms":108.040660714286,"physics_hz":60,"physics_steps":56,"rendered_frames":7,"renderer":"gl_compatibility","samples":[{"dogs":16,"fps_average_so_far":1.10773620813034,"last_step_ms":118.742,"sheep":320,"simulation_seconds":0.466666666666667,"wall_seconds":1.805484,"wolves":32},{"dogs":16,"fps_average_so_far":1.10379996936955,"last_step_ms":117.965,"sheep":320,"simulation_seconds":0.733333333333334,"wall_seconds":3.623845,"wolves":32},{"dogs":16,"fps_average_so_far":1.10136323069485,"last_step_ms":117.291,"sheep":320,"simulation_seconds":1.0,"wall_seconds":5.447794,"wolves":32}],"seed":1337,"simulation_seconds_advanced":0.933333333333334,"step_mean_ms":113.036339285714,"step_p95_ms":122.431,"tier":4,"viewport":"1280x720","vsync":false,"warmup_wall_seconds":1.0}
