@@ -6,6 +6,7 @@ var started: bool = false
 func startup() -> void:
 	if started:
 		return
+
 	started = true
 	_startup()
 
@@ -16,6 +17,7 @@ func reset() -> void:
 func shutdown() -> void:
 	if not started:
 		return
+
 	started = false
 	_shutdown()
 

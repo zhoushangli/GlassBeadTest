@@ -12,10 +12,12 @@ func _load_entry() -> void:
 		push_error("Expected --entry=res://path/to/script.gd")
 		quit(1)
 		return
+
 	var script := load(entry) as Script
 	if script == null or not script.can_instantiate() or script.get_instance_base_type() != &"SceneTree":
 		push_error("Entry must be a valid SceneTree script: " + entry)
 		quit(1)
 		return
+
 	set_script(script)
 	call("_initialize")

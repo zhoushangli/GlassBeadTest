@@ -1,0 +1,29 @@
+{
+  "checked": 47,
+  "changed": [
+    "Scripts/AnimalView.gd",
+    "Scripts/Core/DebugService.gd",
+    "Scripts/Core/EntityService.gd",
+    "Scripts/Core/GameplayEngine.gd",
+    "Scripts/Core/GridService.gd",
+    "Scripts/Core/JobService.gd",
+    "Scripts/Core/ProfileService.gd",
+    "Scripts/Core/Service.gd",
+    "Scripts/ECS/AnimalData.gd",
+    "Scripts/ECS/Systems/AnimalSystem.gd",
+    "Scripts/ECS/Systems/SheepdogSystem.gd",
+    "Scripts/ECS/Systems/SheepSystem.gd",
+    "Scripts/ECS/Systems/WolfSystem.gd",
+    "Scripts/Job/GridAggregateJob.gd",
+    "Scripts/UI/DebugHUD.gd",
+    "Scripts/UI/DebugPanel.gd",
+    "Scripts/UI/RuntimeConfigPanel.gd",
+    "Tests/DebugVisualVerification.gd",
+    "Tests/JobVerification.gd",
+    "Tests/PerformanceVerification.gd",
+    "Tests/RunBenchmark.gd",
+    "Tests/RunBenchmark.ps1",
+    "Tests/RunWithAutoload.gd",
+    "Tests/SimulationVerification.gd"
+  ]
+}

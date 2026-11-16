@@ -1,0 +1,52 @@
+第一阶段交付：狼狗异步决策、独立模拟频率与 RenderService 集成验证
+
+实现
+- SimulationConfig.simulation_hz 默认 60 Hz；WolfConfig 和 SheepdogConfig.decision_hz 分别默认 30 Hz。
+- F2 配置面板可分别配置三个频率，支持热应用、预设保存与加载；决策频率不得超过模拟频率。
+- project.godot 取消渲染 60 FPS 上限；HUD 分别显示渲染 FPS、实际模拟 Hz、目标 Hz 和每步耗时。
+- Job 自持固定输入与独立输出。狼狗分别最多一轮请求，后台执行；每步开始 flush 仅回收已完成结果。
+- 工作线程不读取实时 AnimalData、节点或主线程 RNG。结果提交校验稳定身份、请求版本及相关行为状态。
+- 冷却、休息、记忆和巡逻计时按模拟时间推进；等待期间沿用有效意图，目标失效及时清理。
+- 狼潜行和狗收拢目标由基础数据重新推导，避免决策分频后重复叠加偏移。
+- 暂停不提交；单步可提交。重置和热应用使旧请求失效，停止时安全回收后台任务。
+- 羊和空间统计仍同步。1000 实体纯随机移动模式属于后续阶段，本阶段未实现。
+
+本轮主要修改
+- GameplayEngine、JobService、ProfileService：时钟、异步调度、步首提交和统计。
+- SimulationConfig、WolfConfig、SheepdogConfig、RuntimeConfigPanel、DebugHUD：配置、预设和显示。
+- AnimalSystem、WolfSystem、SheepdogSystem、WolfPerceptionJob、DogPerceptionJob：固定快照计算、提交和移动衔接。
+- Tests：新增 AsyncDecisionVerification，更新受影响的行为、Job、性能和基准检查及说明。
+- 保留原有工作区修改，并在并行完成的 AnimalAgent / RenderService 渲染重构上做最终集成验证。
+
+最终集成验证（Godot 4.7.2，源码未重编）
+- integrated-async.log：88 checks，0 failures。
+- integrated-simulation.log：250 checks，0 failures。
+- integrated-jobs.log：716 checks，0 failures。
+- integrated-performance.log：84 checks，0 failures。
+- integrated-window.log：89 checks，0 failures，含运行窗口及实际模拟 Hz。
+- integrated-visual.log：27 checks，0 failures；已检查配置面板和运行截图。
+- 专项覆盖未完成任务不等待、同步阶段不等待狼狗、独立及非整除频率、旧结果失效、row 交换、槽位复用、暂停、单步、热应用、移动连续和偏移不累积。
+- 集成窗口验证与最后一次基准之间，61 个脚本/场景/资源文件及项目配置的 SHA-256 未变化。
+- 自动验证和截图观察不等于长期人工游玩验收。
+
+性能短测
+以下每项仅一次短测：预热 2 秒，测量约 8 秒，1000 初始实体（870 羊、87 狼、43 狗），2560 x 1440 场地，1280 x 720 窗口。
+均保留动物和 HUD，overlay=on，统计为 stages，渲染无上限且 VSync 关闭。
+
+主场景（同一主场景配置）
+修改前：10.69 FPS，实际模拟 42.78 Hz，平均每步 22.31 ms，每帧模拟总耗时 89.26 ms。
+仅异步决策：12.25 FPS，实际模拟 49.02 Hz，平均每步 19.38 ms，每帧模拟总耗时 77.52 ms。
+异步决策 + RenderService 集成：18.98 FPS，实际模拟 57.82 Hz，平均每步 16.57 ms，P95 每步 19.63 ms。
+集成测量中狼请求至提交平均 8.12 ms，狗平均 25.50 ms；这包含排队、计算和等待下一模拟步提交的时间。
+
+1000 实体 fixed 场景（仅异步决策对照）
+修改前：9.70 FPS，实际模拟 38.80 Hz，平均每步 24.66 ms。
+仅异步决策：11.80 FPS，实际模拟 47.19 Hz，平均每步 20.13 ms。
+
+这些样本反映当前机器上的短测，异步完成时机和捕获过程会改变轨迹；未做多次重复统计，不作为稳定性能承诺。
+RenderService 集成后的收益包含渲染重构，不能全部归因于异步决策。整体仍未稳定达到目标 60 Hz。
+完整条件、路径和结果见 performance-summary.json；运行截图见 running.png。
+
+过程说明
+并行渲染重构写入期间的一次 final-default.log 记录了瞬时缺少新类的错误，该次基准被中止，不计入性能结果。
+刷新类索引、待相关文件完整后，以上集成检查和最后一次集成基准通过。

@@ -1,0 +1,295 @@
+{
+  "serial": {
+    "step_mean_ms": 26.5622398523986,
+    "step_p95_ms": 36.968,
+    "simulation_per_frame_mean_ms": 106.248959409594,
+    "simulation_per_frame_p95_ms": 133.831,
+    "steps_per_frame_mean": 4.0,
+    "average_fps": 9.22575714156868,
+    "frame_p95_ms": 135.006,
+    "simulation_wall_ratio": 0.615050476104581,
+    "job_timings_mean_ms": {
+      "Sheep": {
+        "prepare_ms": 0.0562758302583024,
+        "dispatch_ms": 0.0,
+        "wait_ms": 0.0,
+        "execute_ms": 1.39012084870849,
+        "submit_ms": 1.03961070110701,
+        "total_ms": 2.49515221402215
+      },
+      "Wolf": {
+        "prepare_ms": 0.0360848708487084,
+        "dispatch_ms": 0.0,
+        "wait_ms": 0.0,
+        "execute_ms": 1.83925451263538,
+        "submit_ms": 0.519198339483394,
+        "total_ms": 2.40796480144404
+      },
+      "DogAnchor": {
+        "prepare_ms": 0.149463898916967,
+        "dispatch_ms": 0.0,
+        "wait_ms": 0.0,
+        "execute_ms": 0.0879557761732859,
+        "submit_ms": 0.00200541516245483,
+        "total_ms": 0.245146209386282
+      },
+      "Dog": {
+        "prepare_ms": 3.30625276752767,
+        "dispatch_ms": 0.0,
+        "wait_ms": 0.0,
+        "execute_ms": 1.37327859778598,
+        "submit_ms": 0.314424354243543,
+        "total_ms": 5.0009557195572
+      },
+      "Grid": {
+        "prepare_ms": 0.185923285198556,
+        "dispatch_ms": 0.0,
+        "wait_ms": 0.0,
+        "execute_ms": 1.93538898916968,
+        "submit_ms": 0.38798916967509,
+        "total_ms": 2.52027888086642
+      }
+    },
+    "runs": [
+      {
+        "label": "jobs_final_serial_r1",
+        "evidence_path": "output\\performance\\2026-11-16T14-59-48_jobs_final_serial_r1_51632_1809094\\result.json",
+        "initial_counts": [
+          824,
+          87,
+          43
+        ],
+        "final_counts": [
+          810,
+          87,
+          43
+        ],
+        "step_mean_ms": 26.8241028880866,
+        "step_p95_ms": 36.968,
+        "average_fps": 9.22575714156868,
+        "simulation_per_frame_mean_ms": 107.296411552347
+      },
+      {
+        "label": "jobs_final_serial_r2",
+        "evidence_path": "output\\performance\\2026-11-16T15-01-03_jobs_final_serial_r2_72148_2298112\\result.json",
+        "initial_counts": [
+          824,
+          87,
+          43
+        ],
+        "final_counts": [
+          808,
+          87,
+          43
+        ],
+        "step_mean_ms": 24.208180976431,
+        "step_p95_ms": 28.609,
+        "average_fps": 9.89105321266737,
+        "simulation_per_frame_mean_ms": 96.8327239057239
+      },
+      {
+        "label": "jobs_final_serial_r3",
+        "evidence_path": "output\\performance\\2026-11-16T15-02-18_jobs_final_serial_r3_51116_1842927\\result.json",
+        "initial_counts": [
+          824,
+          87,
+          43
+        ],
+        "final_counts": [
+          810,
+          87,
+          43
+        ],
+        "step_mean_ms": 26.5622398523986,
+        "step_p95_ms": 41.222,
+        "average_fps": 9.02818756735952,
+        "simulation_per_frame_mean_ms": 106.248959409594
+      }
+    ]
+  },
+  "parallel": {
+    "step_mean_ms": 23.933881270903,
+    "step_p95_ms": 31.272,
+    "simulation_per_frame_mean_ms": 95.7355250836119,
+    "simulation_per_frame_p95_ms": 117.55,
+    "steps_per_frame_mean": 4.0,
+    "average_fps": 9.95859854208116,
+    "frame_p95_ms": 119.239,
+    "simulation_wall_ratio": 0.663906569472076,
+    "job_timings_mean_ms": {
+      "Sheep": {
+        "prepare_ms": 0.055790133779264,
+        "dispatch_ms": 0.0640735785953177,
+        "wait_ms": 0.906628947368421,
+        "execute_ms": 0.0,
+        "submit_ms": 0.998823578595319,
+        "total_ms": 2.04371655518395
+      },
+      "Wolf": {
+        "prepare_ms": 0.0369372909698996,
+        "dispatch_ms": 0.0,
+        "wait_ms": 0.0,
+        "execute_ms": 1.606625,
+        "submit_ms": 0.477723244147157,
+        "total_ms": 2.12694230769231
+      },
+      "DogAnchor": {
+        "prepare_ms": 0.143029264214046,
+        "dispatch_ms": 0.000267628205128205,
+        "wait_ms": 0.0438878205128205,
+        "execute_ms": 0.00145150501672238,
+        "submit_ms": 0.00220986622073572,
+        "total_ms": 0.193549331103679
+      },
+      "Dog": {
+        "prepare_ms": 3.12538942307693,
+        "dispatch_ms": 0.0,
+        "wait_ms": 0.0,
+        "execute_ms": 1.3968762541806,
+        "submit_ms": 0.315877090301003,
+        "total_ms": 4.82138782051282
+      },
+      "Grid": {
+        "prepare_ms": 0.18281856187291,
+        "dispatch_ms": 0.0384280936454849,
+        "wait_ms": 0.772527591973244,
+        "execute_ms": 0.0,
+        "submit_ms": 0.367026755852843,
+        "total_ms": 1.37885869565217
+      }
+    },
+    "runs": [
+      {
+        "label": "jobs_final_parallel_r1",
+        "evidence_path": "output\\performance\\2026-11-16T15-00-25_jobs_final_parallel_r1_42284_1838923\\result.json",
+        "initial_counts": [
+          824,
+          87,
+          43
+        ],
+        "final_counts": [
+          809,
+          87,
+          43
+        ],
+        "step_mean_ms": 25.2132403508772,
+        "step_p95_ms": 35.695,
+        "average_fps": 9.4815186238983,
+        "simulation_per_frame_mean_ms": 100.852961403509
+      },
+      {
+        "label": "jobs_final_parallel_r2",
+        "evidence_path": "output\\performance\\2026-11-16T15-01-41_jobs_final_parallel_r2_40368_2150025\\result.json",
+        "initial_counts": [
+          824,
+          87,
+          43
+        ],
+        "final_counts": [
+          808,
+          87,
+          43
+        ],
+        "step_mean_ms": 23.7862844551282,
+        "step_p95_ms": 31.272,
+        "average_fps": 10.3978511107704,
+        "simulation_per_frame_mean_ms": 95.1451378205128
+      },
+      {
+        "label": "jobs_final_parallel_r3",
+        "evidence_path": "output\\performance\\2026-11-16T15-02-55_jobs_final_parallel_r3_17996_1922682\\result.json",
+        "initial_counts": [
+          824,
+          87,
+          43
+        ],
+        "final_counts": [
+          808,
+          87,
+          43
+        ],
+        "step_mean_ms": 23.933881270903,
+        "step_p95_ms": 29.862,
+        "average_fps": 9.95859854208116,
+        "simulation_per_frame_mean_ms": 95.7355250836119
+      }
+    ]
+  },
+  "step_time_reduction_pct": 9.895093923181541,
+  "step_throughput_ratio": 1.109817482243925,
+  "protocol": {
+    "engine": {
+      "build": "official",
+      "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+      "hex": 263938,
+      "major": 4,
+      "minor": 7,
+      "patch": 2,
+      "status": "stable",
+      "string": "4.7.2-stable (official)",
+      "timestamp": 0
+    },
+    "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+    "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+    "renderer": "gl_compatibility",
+    "viewport": [
+      1280,
+      720
+    ],
+    "arena_size": [
+      2560.0,
+      1440.0
+    ],
+    "configured_counts": [
+      870,
+      87,
+      43
+    ],
+    "seed": 1337,
+    "max_fps": 60,
+    "vsync": false,
+    "visibility": {
+      "animals": true,
+      "hud": true,
+      "overlay": "on"
+    },
+    "warmup_wall_seconds": 5.0,
+    "job_workers": 4,
+    "job_stages": {
+      "Dog": false,
+      "DogAnchor": true,
+      "Grid": true,
+      "Sheep": true,
+      "Wolf": false
+    }
+  },
+  "source_sha256": {
+    "Scripts\\Core\\JobService.gd": "fc0baab0c2e7a6c47a4355375ecd172b1a9ad6babc185464cc1883b0b8405410",
+    "Scripts\\Core\\GameplayEngine.gd": "01658dcb2ca18e484ecf1af830e9834630858777384118e6aaab9661e5b3ec63",
+    "Scripts\\Core\\GridService.gd": "36e3769eb8da412cfbcf99eedd0c09713fed05128c9d3a8738706797d1aa81a3",
+    "Scripts\\Job\\DogAnchorJob.gd": "82924dd500bf62d2d3b59650623eaea03d7aa49291f06e7a5d8cfc5a381c7dd4",
+    "Scripts\\Job\\DogPerceptionJob.gd": "7a2af6deff7251dcec898c86b8fdcd530e671568707a5857f80c4a4ba4a26b92",
+    "Scripts\\Job\\GridAggregateJob.gd": "cf7b9b8e5b4c4c1302a15ead9d7ef1d849dad33ca2015e54b5280b701d2e639f",
+    "Scripts\\Job\\Job.gd": "8529ac3bf4337eb87907f13238e41081f8eaa5755a9c46948d1b0ae83b81dc09",
+    "Scripts\\Job\\SheepPerceptionJob.gd": "094bbf7a390ac97e2fc9846b9bc3a0d3f2a74e2ae41e0a27b13b7d46fa260efc",
+    "Scripts\\Job\\WolfPerceptionJob.gd": "7ba9a4d4a19c95e5ffa84ba21184b416c22fe08af0649c22e450eaef6621af28",
+    "Scripts\\ECS\\Systems\\AnimalSystem.gd": "c80a9cdb17f7aa5ce36cb3c01bb717945fd753382ae00b5031666c1293e41fc4",
+    "Scripts\\ECS\\Systems\\SheepdogSystem.gd": "cf1eec2ac554d59ea54d9ed82ae6c3a6dc8a2d57de507e463dd95bedfc5c5c17",
+    "Scripts\\ECS\\Systems\\SheepSystem.gd": "cc79cd0f661856f8ad26d0a5aa76e6369d560ee3e6e672c002c4848b65d6f0e3",
+    "Scripts\\ECS\\Systems\\WolfSystem.gd": "e565756404fed350096da3d35a8daaacefcbbce04f17a10445dbe58325818d25"
+  },
+  "tests": {
+    "JobVerification": [
+      "JOB_VERIFICATION checks=716 failures=0"
+    ],
+    "SimulationVerification": [
+      "SIMULATION_VERIFICATION checks=234 failures=0"
+    ],
+    "PerformanceVerification": [
+      "PERFORMANCE_VERIFICATION checks=84 failures=0"
+    ],
+    "DebugVisualVerification": [
+      "DEBUG_VISUAL_VERIFICATION checks=27 failures=0 captures=res://output/ecs-visuals/2026-11-16T14-59-39_71384"
+    ]
+  }
+}

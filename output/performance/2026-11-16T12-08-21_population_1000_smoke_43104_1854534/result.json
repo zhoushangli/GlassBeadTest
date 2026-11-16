@@ -1,0 +1,62 @@
+{
+	"arena_size": [
+		2560.0,
+		1440.0
+	],
+	"captures": 3,
+	"configured_counts": [
+		870,
+		87,
+		43
+	],
+	"cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"final_counts": [
+		851,
+		87,
+		43
+	],
+	"headless": true,
+	"initial_counts": [
+		854,
+		87,
+		43
+	],
+	"label": "population_1000_smoke",
+	"layout": "uniform_v1",
+	"limboai": {
+		"binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+		"binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+		"version": "v1.8.1"
+	},
+	"max_fps": 0,
+	"measured_steps": 2,
+	"mode": "fixed_steps",
+	"renderer": "gl_compatibility",
+	"sampling": "stages",
+	"scenario": "fixed",
+	"seed": 1337,
+	"simulation_hz": 60.0,
+	"stages_mean_ms": {
+		"Cleanup": 6.753,
+		"Decision": 16.689,
+		"Interaction": 1.9945,
+		"Movement": 0.752,
+		"Perception": 29.813,
+		"SpatialBuild": 5.7925,
+		"TaskAssignment": 1.5455
+	},
+	"step_mean_ms": 63.384,
+	"step_p95_ms": 63.96,
+	"warmup_steps": 1
+}

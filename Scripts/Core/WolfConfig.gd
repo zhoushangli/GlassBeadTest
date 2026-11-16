@@ -1,61 +1,66 @@
 class_name WolfConfig
 extends Resource
 
+@export_group("Decision")
+## 后台感知与决策请求的最高频率（Hz）；忙碌时不堆积请求。
+## e.g. decision_hz = 30 表示最多每秒请求 30 次。
+@export_range(1, 240, 1) var decision_hz: int = 30
+
 @export_group("Movement")
 ## 常态移动速度（px/s）。
-## 例如：move_speed = 70.0。
+## e.g. move_speed = 70.0。
 @export_range(0, 300, 1) var move_speed: float = 70.0
 ## 冲刺速度（px/s）。
-## 例如：chase_speed = 135.0。
+## e.g. chase_speed = 135.0。
 @export_range(0, 400, 1) var chase_speed: float = 135.0
 ## 避狗撤退速度（px/s）。
-## 例如：retreat_speed = 160.0。
+## e.g. retreat_speed = 160.0。
 @export_range(0, 400, 1) var retreat_speed: float = 160.0
 ## 巡逻速度比例。
-## 例如：patrol_speed_scale = 0.6。
+## e.g. patrol_speed_scale = 0.6。
 @export_range(0, 1, 0.05) var patrol_speed_scale: float = 0.6
 
 @export_group("Vision")
 ## 视觉距离（px）。
-## 例如：perception_radius = 260.0。
+## e.g. perception_radius = 260.0。
 @export_range(20, 700, 1) var perception_radius: float = 260.0
 ## 完整扇形角度（度）。
-## 例如：vision_angle = 130.0。
+## e.g. vision_angle = 130.0。
 @export_range(1, 360, 1) var vision_angle: float = 130.0
 ## 最后可见位置的记忆时间（秒）。
-## 例如：memory_duration = 3.0。
+## e.g. memory_duration = 3.0。
 @export_range(0, 20, 0.1) var memory_duration: float = 3.0
 ## 狗触发全向撤退的距离（px）。
-## 例如：dog_threat_distance = 90.0。
+## e.g. dog_threat_distance = 90.0。
 @export_range(0, 400, 1) var dog_threat_distance: float = 90.0
 
 @export_group("Hunting")
 ## 单次猎捕总时限（秒）。
-## 例如：hunt_duration = 10.0。
+## e.g. hunt_duration = 10.0。
 @export_range(0.1, 60, 0.1) var hunt_duration: float = 10.0
 ## 猎捕或撤退后的休息时间（秒）。
-## 例如：rest_duration = 3.0。
+## e.g. rest_duration = 3.0。
 @export_range(0, 30, 0.1) var rest_duration: float = 3.0
 ## 冲刺即时捕获距离（px）。
-## 例如：capture_distance = 22.0。
+## e.g. capture_distance = 22.0。
 @export_range(1, 80, 1) var capture_distance: float = 22.0
 ## 冲刺触发距离相对捕获距离的倍数。
-## 例如：charge_distance_scale = 4.0。
+## e.g. charge_distance_scale = 4.0。
 @export_range(1, 10, 0.1) var charge_distance_scale: float = 4.0
 ## 侧面或后方接近偏移（px）。
-## 例如：strategy_offset = 40.0。
+## e.g. strategy_offset = 40.0。
 @export_range(0, 200, 1) var strategy_offset: float = 40.0
 ## 每秒减少的策略失败计数。
-## 例如：strategy_decay = 0.05。
+## e.g. strategy_decay = 0.05。
 @export_range(0, 2, 0.01) var strategy_decay: float = 0.05
 
 @export_group("Howling")
 ## 嚎叫刺激半径（px）。
-## 例如：howl_radius = 200.0。
+## e.g. howl_radius = 200.0。
 @export_range(1, 600, 1) var howl_radius: float = 200.0
 ## 可见猎物触发嚎叫的距离（px）。
-## 例如：howl_trigger_distance = 200.0。
+## e.g. howl_trigger_distance = 200.0。
 @export_range(1, 600, 1) var howl_trigger_distance: float = 200.0
 ## 嚎叫冷却时间（秒）。
-## 例如：howl_cooldown = 5.0。
+## e.g. howl_cooldown = 5.0。
 @export_range(0, 30, 0.1) var howl_cooldown: float = 5.0

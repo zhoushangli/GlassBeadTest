@@ -1,12 +1,12 @@
-[gd_resource type="BehaviorTree" format=3]
+[gd_resource type="BehaviorTree" format=3 uid="uid://bkunlju66qnnl"]
 
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/AnimalCondition.gd" id="1"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/WolfRetreat.gd" id="action_0"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/WolfRest.gd" id="action_1"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/WolfSearch.gd" id="action_2"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/WolfChase.gd" id="action_3"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/WolfStalk.gd" id="action_4"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/WolfPatrol.gd" id="action_5"]
+[ext_resource type="Script" uid="uid://dan5ub1d5qnqt" path="res://Scripts/AI/Tasks/AnimalCondition.gd" id="1"]
+[ext_resource type="Script" uid="uid://ca6j8re3qe0hm" path="res://Scripts/AI/Tasks/WolfRetreat.gd" id="action_0"]
+[ext_resource type="Script" uid="uid://b3gdivot5aua7" path="res://Scripts/AI/Tasks/WolfRest.gd" id="action_1"]
+[ext_resource type="Script" uid="uid://dyqhnmkbvgudh" path="res://Scripts/AI/Tasks/WolfSearch.gd" id="action_2"]
+[ext_resource type="Script" uid="uid://p24ethj0f7hl" path="res://Scripts/AI/Tasks/WolfChase.gd" id="action_3"]
+[ext_resource type="Script" uid="uid://jukj5v2vde5c" path="res://Scripts/AI/Tasks/WolfStalk.gd" id="action_4"]
+[ext_resource type="Script" uid="uid://bqnamoqe4t3s5" path="res://Scripts/AI/Tasks/WolfPatrol.gd" id="action_5"]
 
 [sub_resource type="BTCondition" id="Condition_0"]
 script = ExtResource("1")

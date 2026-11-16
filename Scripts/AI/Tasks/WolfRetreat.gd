@@ -12,7 +12,4 @@ func _execute(delta: float) -> void:
 	wolf_system.end_hunt(wolf, false)
 	data.wolf_retreating[wolf.row] = 1
 	if common.is_live(wolf, data.live(data.wolf_nearest_threat[wolf.row])):
-		var away := (data.motion_position[wolf.row] - data.motion_position[data.live(data.wolf_nearest_threat[wolf.row]).row]).normalized()
-		if away.is_zero_approx():
-			away = data.motion_facing[wolf.row]
-		common.move_towards(wolf, data.motion_position[wolf.row] + away * 100.0, settings.retreat_speed, delta)
+		common.move_towards(wolf, data.motion_position[wolf.row], settings.retreat_speed, delta)

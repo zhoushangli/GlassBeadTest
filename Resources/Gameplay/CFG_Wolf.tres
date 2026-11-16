@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="WolfConfig" format=3]
+[gd_resource type="Resource" script_class="WolfConfig" format=3 uid="uid://coc0tmxd3m3dq"]
 
-[ext_resource type="Script" path="res://Scripts/Core/WolfConfig.gd" id="1"]
+[ext_resource type="Script" uid="uid://fgjv308pq0dl" path="res://Scripts/Core/WolfConfig.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
+decision_hz = 12

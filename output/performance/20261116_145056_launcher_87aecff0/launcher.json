@@ -1,0 +1,11 @@
+﻿{
+    "pid":  67088,
+    "executable":  "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+    "arguments":  "--path \"C:\\Work\\Godot\\Project\\glass-bead-test\" --script res://Tests/RunWithAutoload.gd  -- --entry=res://Tests/RunBenchmark.gd --main-scene=on --stats=on --duration=8 --warmup=2 --max-fps=60 --sampling=stages --hud=on --overlay=on --animals=on --label=jobs_service_p8_probe --jobs=parallel --job-workers=8 --job-stages=all",
+    "timeout_seconds":  120,
+    "state":  "exited",
+    "exit_code":  0,
+    "wall_seconds":  12.912834499999999,
+    "has_result":  true,
+    "result_path":  "res://output/performance/2026-11-16T14-50-58_jobs_service_p8_probe_59868_2282871/result.json"
+}

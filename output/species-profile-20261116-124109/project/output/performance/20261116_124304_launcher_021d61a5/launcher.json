@@ -1,0 +1,11 @@
+﻿{
+    "pid":  65872,
+    "executable":  "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+    "arguments":  "--path \"C:\\Work\\Godot\\Project\\glass-bead-test\\output\\species-profile-20261116-124109\\project\" --script res://Tests/RunWithAutoload.gd  -- --entry=res://Tests/RunBenchmark.gd --main-scene=on --stats=on --duration=30 --warmup=5 --max-fps=60 --sampling=stages --hud=on --overlay=on --animals=on --label=species_main_r2",
+    "timeout_seconds":  120,
+    "state":  "exited",
+    "exit_code":  0,
+    "wall_seconds":  37.6943347,
+    "has_result":  true,
+    "result_path":  "res://output/performance/2026-11-16T12-43-06_species_main_r2_33524_2260585/result.json"
+}

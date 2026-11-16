@@ -1,0 +1,11 @@
+﻿{
+    "pid":  68916,
+    "executable":  "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+    "arguments":  "--path \"C:\\Work\\Godot\\Project\\glass-bead-test\\output\\multimesh-20261116-152555\\before\" --script res://Tests/RunWithAutoload.gd --headless -- --entry=res://Tests/RunBenchmark.gd --entities=1000 --scenario=fixed --stats=on --duration=30 --warmup=3 --max-fps=0 --sampling=stages --hud=on --overlay=off --animals=on --label=before_state --steps=180 --warmup-steps=0 --jobs=default --job-workers=4 --job-stages=default --motion=random",
+    "timeout_seconds":  30,
+    "state":  "exited",
+    "exit_code":  0,
+    "wall_seconds":  2.4176972,
+    "has_result":  true,
+    "result_path":  "res://output/performance/2026-11-16T15-30-54_before_state_61864_1133764/result.json"
+}

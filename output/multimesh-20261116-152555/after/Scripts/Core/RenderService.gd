@@ -1,0 +1,149 @@
+class_name RenderService
+extends Service
+
+@export_group("Sheep")
+@export var sheep_visual: Dictionary = {
+	"texture": preload("res://Art/Placeholder/TEX_WhiteCircle.svg"), "scale": Vector2(0.4285714, 0.4285714),
+	"base_color": Color(0.7215686, 0.8509804, 0.2941176, 1),
+	"behavior_colors": {"Flock": Color(0.72, 0.85, 0.29, 1), "Herded": Color(0.4, 0.8, 1, 1), "Flee": Color(0.98, 0.8, 0.08, 1)},
+	"vision_color": Color(0.7, 0.8, 0.7, 0.08), "debug_line_width": 1.0,
+	"howl_visual_duration": 0.8, "howl_color": Color(1.0, 0.65, 0.2, 0.65),
+}
+
+@export_group("Wolf")
+@export var wolf_visual: Dictionary = {
+	"texture": preload("res://Art/Placeholder/TEX_WhiteTriangle.svg"), "scale": Vector2(0.4285714, 0.4285714),
+	"base_color": Color(0.9372549, 0.3254902, 0.3137255, 1),
+	"behavior_colors": {"Patrol": Color(0.94, 0.33, 0.31, 1), "Stalk": Color(1, 0.65, 0.2, 1),
+		"Chase": Color(1, 0.25, 0.37, 1), "Search": Color(0.8, 0.5, 1, 1), "Retreat": Color(0.99, 0.65, 0.65, 1), "Rest": Color(0.5, 0.5, 0.6, 1)},
+	"vision_color": Color(0.94, 0.33, 0.31, 0.08), "debug_line_width": 1.0,
+	"howl_visual_duration": 0.8, "howl_color": Color(1.0, 0.65, 0.2, 0.65),
+}
+
+@export_group("Sheepdog")
+@export var dog_visual: Dictionary = {
+	"texture": preload("res://Art/Placeholder/TEX_WhiteSquare.svg"), "scale": Vector2(0.4285714, 0.4285714),
+	"base_color": Color(0.2313725, 0.5098039, 0.9647059, 1),
+	"behavior_colors": {"Patrol": Color(0.3, 0.6, 1, 1), "Collect": Color(0.3, 1, 0.7, 1), "Drive off": Color(0.8, 0.4, 1, 1), "Return": Color(0.6, 0.8, 1, 1)},
+	"vision_color": Color(0.3, 0.6, 1, 0.08), "debug_line_width": 1.0,
+	"howl_visual_duration": 0.8, "howl_color": Color(1.0, 0.65, 0.2, 0.65),
+}
+
+var container: Node2D
+var instances: Array[MultiMeshInstance2D] = []
+var buffers: Array[PackedFloat32Array] = []
+var dirty: bool = false
+var last_fill_ms: float = 0.0
+var last_submit_ms: float = 0.0
+
+var _visuals: Array[Dictionary] = []
+var _colors: Array[PackedColorArray] = []
+
+func _startup() -> void:
+	_visuals = [sheep_visual, wolf_visual, dog_visual]
+	for kind in range(3):
+		var visual := _visuals[kind]
+		var instance := MultiMeshInstance2D.new()
+		instance.name = AnimalEntity.KIND_NAMES[kind] + "MultiMesh"
+		instance.texture = visual.texture
+		var half_size := instance.texture.get_size() * 0.5
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = PackedVector3Array([Vector3(-half_size.x, -half_size.y, 0), Vector3(half_size.x, -half_size.y, 0), Vector3(half_size.x, half_size.y, 0), Vector3(-half_size.x, half_size.y, 0)])
+		arrays[Mesh.ARRAY_TEX_UV] = PackedVector2Array([Vector2.ZERO, Vector2.RIGHT, Vector2.ONE, Vector2.DOWN])
+		arrays[Mesh.ARRAY_INDEX] = PackedInt32Array([0, 1, 2, 0, 2, 3])
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		instance.multimesh = MultiMesh.new()
+		instance.multimesh.transform_format = MultiMesh.TRANSFORM_2D
+		instance.multimesh.use_colors = true
+		instance.multimesh.mesh = mesh
+		container.add_child(instance)
+		instances.append(instance)
+		buffers.append(PackedFloat32Array())
+		var colors := PackedColorArray()
+		for behavior in AnimalEntity.BEHAVIOR_NAMES:
+			colors.append(visual.behavior_colors.get(behavior, visual.base_color))
+		_colors.append(colors)
+	mark_dirty()
+
+func _reset() -> void:
+	for instance in instances:
+		instance.multimesh.visible_instance_count = 0
+	last_fill_ms = 0.0
+	last_submit_ms = 0.0
+	mark_dirty()
+
+func _shutdown() -> void:
+	for instance in instances:
+		instance.get_parent().remove_child(instance)
+		instance.queue_free()
+	instances.clear()
+	buffers.clear()
+	_visuals.clear()
+	_colors.clear()
+	container = null
+	dirty = false
+
+func mark_dirty() -> void:
+	dirty = true
+
+func get_visual_settings(kind: AnimalEntity.Kind) -> Dictionary:
+	return _visuals[kind]
+
+func sync() -> void:
+	if not started:
+		return
+
+	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var counts := Vector3i.ZERO
+	for row in range(data.retained_count):
+		counts[data.identity_kind[row]] += 1
+	last_fill_ms = 0.0
+	last_submit_ms = 0.0
+	for kind in range(3):
+		var started_at := Time.get_ticks_usec()
+		var multimesh := instances[kind].multimesh
+		var buffer := buffers[kind]
+		buffers[kind] = PackedFloat32Array()
+		if counts[kind] > multimesh.instance_count:
+			multimesh.instance_count = counts[kind]
+			buffer.resize(counts[kind] * 12)
+		var scale: Vector2 = _visuals[kind].scale
+		var colors := _colors[kind]
+		var index := 0
+
+		# 1) Pack transforms and colors without updating individual scene nodes.
+		for row in range(data.retained_count):
+			if data.identity_kind[row] != kind:
+				continue
+
+			var point := data.motion_position[row]
+			var facing := data.motion_facing[row].normalized()
+			var color := colors[data.brain_current_behavior[row]]
+			if not data.identity_alive[row]:
+				color = Color("#7b8794")
+			elif kind == AnimalEntity.Kind.SHEEP:
+				color = colors[AnimalEntity.Behavior.FLOCK].lerp(colors[AnimalEntity.Behavior.HERDED], minf(1.0, data.sheep_dog_pressure[row].length()))
+				color = color.lerp(colors[AnimalEntity.Behavior.FLEE], maxf(data.sheep_threat_strength[row], data.sheep_panic_strength[row]))
+			buffer[index] = -facing.y * scale.x
+			buffer[index + 1] = -facing.x * scale.y
+			buffer[index + 3] = point.x
+			buffer[index + 4] = facing.x * scale.x
+			buffer[index + 5] = -facing.y * scale.y
+			buffer[index + 7] = point.y
+			buffer[index + 8] = color.r
+			buffer[index + 9] = color.g
+			buffer[index + 10] = color.b
+			buffer[index + 11] = color.a
+			index += 12
+		last_fill_ms += (Time.get_ticks_usec() - started_at) / 1000.0
+
+		# 2) Submit one contiguous buffer per species and hide the unused suffix.
+		started_at = Time.get_ticks_usec()
+		if multimesh.instance_count > 0:
+			multimesh.buffer = buffer
+		multimesh.visible_instance_count = counts[kind]
+		buffers[kind] = buffer
+		last_submit_ms += (Time.get_ticks_usec() - started_at) / 1000.0
+	dirty = false

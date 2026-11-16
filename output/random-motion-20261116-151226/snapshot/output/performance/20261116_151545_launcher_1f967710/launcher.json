@@ -1,0 +1,11 @@
+﻿{
+    "pid":  65768,
+    "executable":  "C:\\Work\\Godot\\Editor\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe",
+    "arguments":  "--path \"C:\\Work\\Godot\\Project\\glass-bead-test\\output\\random-motion-20261116-151226\\snapshot\" --script res://Tests/RunWithAutoload.gd  -- --entry=res://Tests/RunBenchmark.gd --entities=1000 --scenario=fixed --stats=on --duration=30 --warmup=5 --max-fps=0 --sampling=stages --hud=on --overlay=off --animals=on --label=random_final_r3 --jobs=default --job-workers=4 --job-stages=default",
+    "timeout_seconds":  60,
+    "state":  "exited",
+    "exit_code":  0,
+    "wall_seconds":  37.9309911,
+    "has_result":  true,
+    "result_path":  "res://output/performance/2026-11-16T15-15-48_random_final_r3_17388_2469446/result.json"
+}

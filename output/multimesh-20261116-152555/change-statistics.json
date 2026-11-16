@@ -1,0 +1,110 @@
+[
+  {
+    "path": "Prefabs/Runtime/Core/SCN_GameplayEngine.tscn",
+    "status": "modified",
+    "added": 4,
+    "deleted": 2
+  },
+  {
+    "path": "Prefabs/Runtime/Objects/SCN_Sheep.tscn",
+    "status": "deleted",
+    "added": 0,
+    "deleted": 18
+  },
+  {
+    "path": "Prefabs/Runtime/Objects/SCN_Wolf.tscn",
+    "status": "modified",
+    "added": 3,
+    "deleted": 19
+  },
+  {
+    "path": "Prefabs/Runtime/Objects/SCN_Sheepdog.tscn",
+    "status": "modified",
+    "added": 3,
+    "deleted": 17
+  },
+  {
+    "path": "Scripts/AnimalAgent.gd",
+    "status": "renamed",
+    "added": 2,
+    "deleted": 35
+  },
+  {
+    "path": "Scripts/Core/DebugService.gd",
+    "status": "modified",
+    "added": 10,
+    "deleted": 10
+  },
+  {
+    "path": "Scripts/Core/EntityService.gd",
+    "status": "modified",
+    "added": 25,
+    "deleted": 19
+  },
+  {
+    "path": "Scripts/Core/GameplayEngine.gd",
+    "status": "modified",
+    "added": 13,
+    "deleted": 2
+  },
+  {
+    "path": "Scripts/Core/ProfileService.gd",
+    "status": "modified",
+    "added": 5,
+    "deleted": 2
+  },
+  {
+    "path": "Scripts/Core/RenderService.gd",
+    "status": "added",
+    "added": 149,
+    "deleted": 0
+  },
+  {
+    "path": "Scripts/ECS/AnimalData.gd",
+    "status": "modified",
+    "added": 6,
+    "deleted": 6
+  },
+  {
+    "path": "Tests/DebugVisualVerification.gd",
+    "status": "modified",
+    "added": 31,
+    "deleted": 8
+  },
+  {
+    "path": "Tests/JobVerification.gd",
+    "status": "modified",
+    "added": 1,
+    "deleted": 1
+  },
+  {
+    "path": "Tests/PerformanceGuide.txt",
+    "status": "modified",
+    "added": 6,
+    "deleted": 0
+  },
+  {
+    "path": "Tests/PerformanceVerification.gd",
+    "status": "modified",
+    "added": 3,
+    "deleted": 2
+  },
+  {
+    "path": "Tests/RunBenchmark.gd",
+    "status": "modified",
+    "added": 92,
+    "deleted": 3
+  },
+  {
+    "path": "Tests/RunBenchmark.ps1",
+    "status": "modified",
+    "added": 2,
+    "deleted": 0
+  },
+  {
+    "path": "Tests/SimulationVerification.gd",
+    "status": "modified",
+    "added": 75,
+    "deleted": 9
+  }
+]

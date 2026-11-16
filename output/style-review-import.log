@@ -1,0 +1,21 @@
+Godot Engine v4.8.dev.mono.custom_build.fb1821384 (2026-07-24 14:18:53 UTC) - https://godotengine.org
+
+ERROR: .NET: Assemblies not found
+   at: GDMono::initialize (modules\mono\mono_gd\gd_mono.cpp:650)
+
+================================================================
+CrashHandlerException: Program crashed
+Engine version: Godot Engine v4.8.dev.mono.custom_build (fb1821384214b901c86793b09150d3e74b37153d)
+Dumping the backtrace. Please include this when reporting the bug on: https://github.com/godotengine/godot/issues
+Load address: 7ff7b6ff0000
+
+[1] 7ff7b7f4bcea (main+f5bcea) - <couldn't map PC to fn name>
+[2] 7ff7b8d6f3e5 (main+1d7f3e5) - <couldn't map PC to fn name>
+[3] 7ff7b70ba721 (main+ca721) - <couldn't map PC to fn name>
+[4] 7ff7b707e3ef (main+8e3ef) - <couldn't map PC to fn name>
+[5] 7ff7b707e217 (main+8e217) - <couldn't map PC to fn name>
+[6] 7ff7b707e489 (main+8e489) - <couldn't map PC to fn name>
+[7] 7ff7bcd88239 (main+5d98239) - <couldn't map PC to fn name>
+[8] 7ffb0cbfdda7 (kernel32.dll+2dda7) - <couldn't map PC to fn name>
+-- END OF C++ BACKTRACE --
+================================================================

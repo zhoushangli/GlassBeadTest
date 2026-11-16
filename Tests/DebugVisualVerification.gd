@@ -20,9 +20,17 @@ func _capture(name: String) -> void:
 	await process_frame
 	if DisplayServer.get_name() == "headless":
 		return
+
 	await RenderingServer.frame_post_draw
 	var error := root.get_texture().get_image().save_png(capture_directory + "/" + name + ".png")
 	_check(error == OK, "rendered capture " + name)
+
+func _check_camera_fit(label: String) -> void:
+	scene.camera.force_update_scroll()
+	var viewport_bounds := root.get_visible_rect().grow(0.1)
+	var world_transform: Transform2D = scene.world.get_global_transform_with_canvas()
+	var arena: Vector2 = engine.config.arena_size
+	_check(viewport_bounds.has_point(world_transform * Vector2.ZERO) and viewport_bounds.has_point(world_transform * arena), label)
 
 func _click(control: Control) -> void:
 	var point := root.get_final_transform() * control.get_global_rect().get_center()
@@ -58,15 +66,41 @@ func _run() -> void:
 	engine.set_process(false)
 	engine.paused = true
 	await _capture("default")
-	engine.config.initial_sheep = 0
-	engine.config.initial_wolves = 0
-	engine.config.initial_sheepdogs = 0
+	_check_camera_fit("startup camera fits the full authored arena")
+	var original_window_size := root.size
+	root.size = Vector2i(1000, 800)
+	await _capture("resized")
+	_check_camera_fit("viewport resize retains the complete arena")
+	root.size = original_window_size
+	await process_frame
+	await process_frame
+	var settings: SimulationConfig = engine.config.copy_config()
+	settings.initial_total = 0
+	settings.arena_size = Vector2(1800, 900)
+	engine.request_config_apply(settings)
+	engine._process(0.0)
+	await _capture("applied-arena")
+	_check_camera_fit("applying an arena size refits the camera")
+	engine.config.initial_total = 0
+	engine.config.arena_size = Vector2(1280, 720)
+	scene._refresh_world(false)
 	engine.reset_simulation()
 	engine.paused = true
 	var service: EntityService = engine.entity_service
 	var sheep := service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(600, 300))[0]
 	var wolf := service.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(410, 300))[0]
 	var dog := service.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(650, 500))[0]
+	var sheep_visual: Dictionary = engine.render_service.get_visual_settings(AnimalEntity.Kind.SHEEP)
+	data.sheep_dog_pressure[sheep.row] = Vector2.RIGHT
+	data.sheep_panic_strength[sheep.row] = 0.5
+	var rng_state: int = engine.rng.state
+	engine.render_service.sync()
+	var expected_color: Color = sheep_visual.behavior_colors["Herded"].lerp(sheep_visual.behavior_colors["Flee"], 0.5)
+	_check(data.brain_agent[sheep.row] == null and _render_color(sheep).is_equal_approx(expected_color), "sheep blends continuous pressure colors without a behavior tree")
+	_check(engine.rng.state == rng_state, "continuous sheep presentation does not consume simulation RNG")
+
+	data.sheep_dog_pressure[sheep.row] = Vector2.ZERO
+	data.sheep_panic_strength[sheep.row] = 0.0
 	data.motion_facing[wolf.row] = Vector2.RIGHT
 	data.memory_target[wolf.row] = sheep
 	data.memory_target_visible[wolf.row] = int(false)
@@ -80,21 +114,23 @@ func _run() -> void:
 	data.dog_protection_center[dog.row] = Vector2(600, 420)
 	data.dog_guard_point[dog.row] = Vector2(680, 480)
 	data.motion_movement_goal[dog.row] = Vector2(675, 330)
-	for animal in service.entities:
-		data.brain_view[animal.row].sync()
+	engine.render_service.sync()
 	var debug: DebugService = engine.debug_service
 	debug.selected = wolf
 	var panel: DebugPanel = scene.hud.debug_panel
 	await _key(KEY_F3)
 	_check(panel.visible, "F3 routes through actual input to open DebugPanel")
+
 	await _click(panel.enabled_toggle)
 	_check(debug.show_details and debug.selected == wolf, "panel click enables visuals without changing selection")
 	_check(scene.hud.get_node("Screen").get_global_rect().encloses(panel.get_global_rect()), "DebugPanel fits the viewport")
+
 	debug.record_howl(wolf)
 	debug.advance_visuals(0.3)
 	await _capture("selected-wolf")
 	await _click(panel.controls["tracking"])
 	_check(not debug.visual_options["tracking"] and debug.selected == wolf, "checkbox input updates tracking without click-through")
+
 	await _click(panel.controls["tracking"])
 	panel.scope.select(1)
 	panel.scope.item_selected.emit(1)
@@ -103,24 +139,65 @@ func _run() -> void:
 	await _capture("all-animals")
 	await _key(KEY_F2)
 	_check(scene.hud.parameters.visible and not panel.visible, "F2 input switches to parameters")
+	_check(scene.hud.parameters.editors.has("World.grid_cell_size") and not scene.hud.parameters.editors.has("Sheep.vision_angle"), "parameters expose grid sizing without sheep FOV")
+
+	await _capture("parameters")
+	_check(scene.hud.parameters.editors.has("World.sheep_ratio") and scene.hud.parameters.editors.has("World.wolf_ratio") and scene.hud.parameters.editors.has("World.sheepdog_ratio") and not scene.hud.parameters.editors.has("World.initial_sheep"), "parameters expose total and species ratios instead of species counts")
+
+	scene.hud.parameters.editors["World.initial_total"].value = 1000
+	_check(scene.hud.parameters.apply_button.text == "Apply & restart" and scene.hud.parameters.message.text.contains("870 sheep, 87 wolves, 43 dogs"), "total input previews the exact allocation without spawning")
+
+	await _capture("population-preview")
+	scene.hud.parameters.set_draft(engine.config)
+	scene.hud.parameters.tabs.current_tab = 1
+	await _capture("sheep-parameters")
 	await _key(KEY_ESCAPE)
 	_check(not scene.hud.parameters.visible, "Escape input closes parameters")
+
 	await _key(KEY_F3)
 	await _key(KEY_ESCAPE)
 	_check(not panel.visible and debug.show_details, "closing DebugPanel keeps overlays enabled")
+
 	await _key(KEY_F1)
 	_check(not debug.show_details and debug.howl_events.is_empty(), "F1 input disables visuals and clears pulses")
+
 	var retained: int = data.row_to_slot.size()
 	service.capture(sheep)
 	engine.request_single_step()
 	engine._process(0.0)
-	_check(not sheep.enabled and data.brain_view[sheep.row].visible, "single-step disables simulation while showing the corpse")
+	_check(not sheep.enabled and _render_visible(sheep), "single-step disables simulation while showing the corpse")
+
 	for index in range(20):
 		engine.simulate_step(1.0 / 60.0)
-	_check(not data.brain_view[sheep.row].visible and data.row_to_slot.size() == retained, "corpse returns to pool without growing retained objects")
+	_check(not _render_visible(sheep) and data.row_to_slot.size() == retained, "corpse returns to pool without growing retained objects")
+
 	await _capture("recycled")
 	engine.stop_simulation()
 	scene.queue_free()
 	await process_frame
 	print("DEBUG_VISUAL_VERIFICATION checks=%d failures=%d captures=%s" % [checks, failures, capture_directory])
 	quit(0 if failures == 0 else 1)
+
+func _render_index(animal: AnimalEntity) -> int:
+	var data: AnimalData = engine.entity_service.data
+	var index := 0
+	for row in range(animal.row):
+		if data.identity_kind[row] == data.identity_kind[animal.row]:
+			index += 1
+	return index
+
+func _render_visible(animal: AnimalEntity) -> bool:
+	var data: AnimalData = engine.entity_service.data
+	return animal.row >= 0 and animal.row < data.retained_count and data.handles[animal.row] == animal
+
+func _render_transform(animal: AnimalEntity) -> Transform2D:
+	var data: AnimalData = engine.entity_service.data
+	var buffer: PackedFloat32Array = engine.render_service.buffers[data.identity_kind[animal.row]]
+	var index := _render_index(animal) * 12
+	return Transform2D(Vector2(buffer[index], buffer[index + 4]), Vector2(buffer[index + 1], buffer[index + 5]), Vector2(buffer[index + 3], buffer[index + 7]))
+
+func _render_color(animal: AnimalEntity) -> Color:
+	var data: AnimalData = engine.entity_service.data
+	var buffer: PackedFloat32Array = engine.render_service.buffers[data.identity_kind[animal.row]]
+	var index := _render_index(animal) * 12 + 8
+	return Color(buffer[index], buffer[index + 1], buffer[index + 2], buffer[index + 3])

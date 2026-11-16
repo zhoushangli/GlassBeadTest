@@ -1,0 +1,17 @@
+[
+  "project.godot",
+  "Tests\\RunBenchmark.gd",
+  "Tests\\SimulationVerification.gd",
+  "Scripts\\Core\\GameplayEngine.gd",
+  "Scripts\\Core\\JobService.gd",
+  "Scripts\\Core\\SheepdogConfig.gd",
+  "Scripts\\Core\\SimulationConfig.gd",
+  "Scripts\\Core\\WolfConfig.gd",
+  "Scripts\\Job\\DogPerceptionJob.gd",
+  "Scripts\\Job\\WolfPerceptionJob.gd",
+  "Scripts\\UI\\DebugHUD.gd",
+  "Scripts\\UI\\RuntimeConfigPanel.gd",
+  "Scripts\\ECS\\Systems\\AnimalSystem.gd",
+  "Scripts\\ECS\\Systems\\SheepdogSystem.gd",
+  "Scripts\\ECS\\Systems\\WolfSystem.gd"
+]

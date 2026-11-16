@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/AnimalView.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Art/Placeholder/TEX_WhiteSquare.svg" id="2"]
+[ext_resource type="BehaviorTree" path="res://Resources/AI/BT_Sheepdog.tres" id="3"]
+
+[node name="Sheepdog" type="Node2D"]
+script = ExtResource("1")
+vision_color = Color(0.3, 0.6, 1, 0.08)
+base_color = Color(0.2313725, 0.5098039, 0.9647059, 1)
+behavior_colors = {
+"Patrol": Color(0.3, 0.6, 1, 1),
+"Collect": Color(0.3, 1, 0.7, 1),
+"Drive off": Color(0.8, 0.4, 1, 1),
+"Return": Color(0.6, 0.8, 1, 1)
+}
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+self_modulate = Color(0.2313725, 0.5098039, 0.9647059, 1)
+scale = Vector2(0.4285714, 0.4285714)
+texture = ExtResource("2")
+
+[node name="BTPlayer" type="BTPlayer" parent="."]
+behavior_tree = ExtResource("3")
+update_mode = 2

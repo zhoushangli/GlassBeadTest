@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="SimulationConfig" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Core/SimulationConfig.gd" id="1_n2mn1"]
+[ext_resource type="Script" path="res://Scripts/Core/SheepConfig.gd" id="2_whjup"]
+[ext_resource type="Script" path="res://Scripts/Core/SheepdogConfig.gd" id="3_xy1fs"]
+[ext_resource type="Script" path="res://Scripts/Core/WolfConfig.gd" id="4_b0w2r"]
+
+[sub_resource type="Resource" id="Resource_8q7l7"]
+script = ExtResource("2_whjup")
+move_speed = 0.0
+flee_speed = 0.0
+wolf_pressure_distance = 250.0
+
+[sub_resource type="Resource" id="Resource_xru58"]
+script = ExtResource("3_xy1fs")
+move_speed = 0.0
+drive_speed = 0.0
+return_speed = 0.0
+
+[sub_resource type="Resource" id="Resource_tv0pm"]
+script = ExtResource("4_b0w2r")
+move_speed = 0.0
+chase_speed = 0.0
+retreat_speed = 0.0
+
+[resource]
+script = ExtResource("1_n2mn1")
+preset_version = 4
+arena_size = Vector2(2560, 1440)
+initial_total = 0
+perception_interval = 0.0
+sheep = SubResource("Resource_8q7l7")
+wolf = SubResource("Resource_tv0pm")
+sheepdog = SubResource("Resource_xru58")

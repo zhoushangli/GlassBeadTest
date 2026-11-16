@@ -1,0 +1,2224 @@
+--- before/Scripts/AnimalView.gd
++++ Scripts/AnimalView.gd
+@@ -20,4 +20,5 @@
+ 	if global_position != data.motion_position[entity.row]:
+ 		global_position = data.motion_position[entity.row]
++
+ 	var angle := data.motion_facing[entity.row].angle() + PI * 0.5
+ 	if not is_equal_approx(sprite.rotation, angle):
+@@ -30,4 +31,5 @@
+ 		sprite.self_modulate = color if data.identity_alive[entity.row] else Color("#7b8794")
+ 		return
++
+ 	var behavior := data.brain_current_behavior[entity.row]
+ 	var alive: bool = data.identity_alive[entity.row] != 0
+@@ -40,4 +42,5 @@
+ 	if bt_player == null:
+ 		return
++
+ 	bt_player.restart()
+ 	bt_player.active = false
+--- before/Scripts/Core/DebugService.gd
++++ Scripts/Core/DebugService.gd
+@@ -139,4 +139,5 @@
+ 	if selected_only and selected != animal:
+ 		return
++
+ 	var view := data.brain_view[row]
+ 	howl_events.append({
+@@ -151,4 +152,5 @@
+ 		howl_events.clear()
+ 		return
++
+ 	for index in range(howl_events.size() - 1, -1, -1):
+ 		howl_events[index]["elapsed"] += delta
+@@ -160,4 +162,5 @@
+ 	if not started or not g_gameplayEngine.running or not overlay_enabled:
+ 		return
++
+ 	var started_at := Time.get_ticks_usec() if g_gameplayEngine.profile_service.performance_stats_enabled else 0
+ 	if selected != null:
+@@ -175,4 +178,5 @@
+ 				if selected_only and (selected == null or selected.uid != event["uid"]):
+ 					continue
++
+ 				var progress: float = clampf(event["elapsed"] / event["duration"], 0.0, 1.0)
+ 				var color: Color = event["color"]
+--- before/Scripts/Core/EntityService.gd
++++ Scripts/Core/EntityService.gd
+@@ -125,7 +125,9 @@
+ 	if data.live(prey) == null:
+ 		return false
++
+ 	var row := prey.row
+ 	if data.identity_kind[row] != AnimalEntity.Kind.SHEEP:
+ 		return false
++
+ 	data.identity_alive[row] = int(false)
+ 	data.identity_death_remaining[row] = g_gameplayEngine.config.death_duration
+@@ -150,4 +152,5 @@
+ 			data.swap_rows(row, data.active_count)
+ 			changed = true
++
+ 	row = data.active_count
+ 	while row < data.retained_count:
+@@ -159,4 +162,5 @@
+ 		else:
+ 			row += 1
++
+ 	if changed:
+ 		_refresh_rows()
+--- before/Scripts/Core/GameplayEngine.gd
++++ Scripts/Core/GameplayEngine.gd
+@@ -118,4 +118,5 @@
+ 	if not FileAccess.file_exists(path):
+ 		return null
++
+ 	var loaded := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as SimulationConfig
+ 	if loaded == null or loaded.preset_version != SimulationConfig.PRESET_VERSION or not loaded.validate().is_empty():
+@@ -158,4 +159,5 @@
+ 		_clock_error_reported = true
+ 		return
++
+ 	_clock_error_reported = false
+ 	if paused:
+@@ -177,9 +179,10 @@
+ 	profile_service.begin_step()
+ 	entity_service.remove_expired()
+-	
++
+ 	# 1) Sample one shared position/velocity snapshot, then resolve dog claims.
+ 	grid_service.rebuild()
+ 	dog_system.begin_spatial_step()
+ 	profile_service.end_stage("SpatialBuild")
++
+ 	wolf_system.accumulate_sheep_pressure()
+ 	dog_system.accumulate_sheep_pressure()
+@@ -188,4 +191,5 @@
+ 	dog_system.perceive_batch(delta)
+ 	profile_service.end_stage("Perception")
++
+ 	dog_system.assign_tasks()
+ 	profile_service.end_stage("TaskAssignment")
+@@ -205,4 +209,5 @@
+ 		wolf_system.resolve_interactions(entity_service.data.handles[row], delta)
+ 	profile_service.end_stage("Interaction")
++
+ 	entity_service.remove_expired(delta)
+ 	for row in range(entity_service.data.active_count):
+--- before/Scripts/Core/GridService.gd
++++ Scripts/Core/GridService.gd
+@@ -53,4 +53,5 @@
+ 	height = ceili(config.arena_size.y / cell_size)
+ 	var cells := width * height
++
+ 	reset_spatial_stats()
+ 	_prepare_pressure_nodes()
+@@ -92,4 +93,5 @@
+ 		members[_cursors[bucket]] = row
+ 		_cursors[bucket] += 1
++
+ 	if spatial_stats_enabled:
+ 		for cell in range(cells):
+@@ -114,4 +116,5 @@
+ 	alignment_velocity_sums.resize(cells)
+ 	alignment_velocity_sums.fill(Vector2.ZERO)
++
+ 	var started_at := Time.get_ticks_usec()
+ 	var occupied := PackedInt32Array()
+@@ -119,4 +122,5 @@
+ 		if cell_counts[cell * 3 + AnimalEntity.Kind.SHEEP] > 0:
+ 			occupied.append(cell)
++
+ 	var context := {"width": width, "height": height, "shared_min_sheep": PRESSURE_SHARED_MIN_SHEEP, "counts": cell_counts, "position_sums": sheep_position_sums,
+ 		"velocity_sums": sheep_velocity_sums, "flock_offsets": _flock_offsets, "alignment_offsets": _alignment_offsets}
+@@ -134,4 +138,5 @@
+ 		alignment_counts[cell] = result.alignment_counts[index]
+ 		alignment_velocity_sums[cell] = result.alignment_sums[index]
++
+ 	for node in result.nodes:
+ 		if not _pressure_needed[node]:
+@@ -163,7 +168,9 @@
+ 	else:
+ 		data.sheep_dog_pressure.fill(Vector2.ZERO)
++
+ 	var affected := PackedInt32Array()
+ 	var in_range := PackedByteArray()
+ 	in_range.resize(data.active_count)
++
+ 	# 1) Accumulate only sample points needed by sheep this step.
+ 	for source_row in sources:
+@@ -178,8 +185,10 @@
+ 					if not _pressure_needed[node]:
+ 						continue
++
+ 					var offset := Vector2(x, y) * cell_size - source
+ 					var distance_squared := offset.length_squared()
+ 					if distance_squared > radius_squared:
+ 						continue
++
+ 					var distance := sqrt(distance_squared)
+ 					var direction := offset / distance if distance > 0.0 else Vector2.ZERO
+@@ -187,4 +196,5 @@
+ 					field[node] += direction * strength
+ 					pressure_source_pairs += 1
++
+ 		# 2) Keep the actual influence radius independent of the sampled vector.
+ 		var first_cell := Vector2i(((source - Vector2.ONE * radius) / cell_size).floor()).max(Vector2i.ZERO)
+@@ -200,4 +210,5 @@
+ 						if distance_squared > radius_squared:
+ 							continue
++
+ 						var distance := sqrt(distance_squared)
+ 						var direction := offset / distance if distance > 0.0 else Vector2.ZERO
+@@ -221,4 +232,5 @@
+ 	else:
+ 		dog_pressure = field
++
+ 	# 3) Interpolate the field, but never create a threat outside the true radius.
+ 	for row in affected:
+@@ -266,8 +278,10 @@
+ 			for member in range(begin, end):
+ 				nearby.append(members[member])
++
+ 	if spatial_stats_enabled:
+ 		spatial_query_count += 1
+ 		spatial_candidate_count += nearby.size()
+ 		spatial_max_candidates = maxi(spatial_max_candidates, nearby.size())
++
+ 	if g_gameplayEngine.profile_service.detailed_stats_enabled:
+ 		g_gameplayEngine.profile_service.record_hotspot("NearbyQuery", started_at)
+@@ -296,8 +310,10 @@
+ 			for member in range(begin, end):
+ 				nearby.append(packed_members[member])
++
+ 	if stats.enabled:
+ 		stats.queries += 1
+ 		stats.candidates += nearby.size()
+ 		stats.max_candidates = maxi(stats.max_candidates, nearby.size())
++
+ 	if stats.detailed:
+ 		stats.hotspots.NearbyQuery += (Time.get_ticks_usec() - started_at) / 1000.0
+@@ -351,4 +367,5 @@
+ 	alignment_counts.clear()
+ 	alignment_velocity_sums.clear()
++
+ 	reset_spatial_stats()
+ 
+--- before/Scripts/Core/JobService.gd
++++ Scripts/Core/JobService.gd
+@@ -8,4 +8,5 @@
+ var minimum_parallel_items: int = 32
+ var parallel_stages: Dictionary = {"Sheep": true, "Wolf": true, "DogAnchor": true, "Dog": true, "Grid": true}
++
+ var pending: Array[Job] = []
+ var working: Dictionary = {}
+@@ -21,4 +22,5 @@
+ 	if _stage != &"" and job.stage != _stage:
+ 		return false
++
+ 	_stage = job.stage
+ 	job.state = Job.State.PENDING
+@@ -57,9 +59,12 @@
+ 		if not working.is_empty():
+ 			_retrieve(working.keys()[0])
++
+ 	completed.sort_custom(_batch_before)
++
+ 	for job in completed:
+ 		job.apply_result()
+ 		job.state = Job.State.APPLIED
+ 		job.release_input()
++
+ 	completed.clear()
+ 	_stage = &""
+@@ -83,4 +88,5 @@
+ 		var accepted := add_job(job)
+ 		assert(accepted)
++
+ 	var prepared_at := Time.get_ticks_usec()
+ 	var parallel: bool = parallel_enabled and parallel_stages.get(String(stage), false) and rows.size() >= minimum_parallel_items
+@@ -105,4 +111,5 @@
+ 				_retrieve(working.keys()[0])
+ 			wait_ms += (Time.get_ticks_usec() - wait_started) / 1000.0
++
+ 	var finished_at := Time.get_ticks_usec()
+ 	finish_stage()
+@@ -121,9 +128,12 @@
+ 		job.release_input()
+ 	pending.clear()
++
+ 	for task_id: int in working.keys():
+ 		_retrieve(task_id)
++
+ 	for job in completed:
+ 		job.state = Job.State.DISCARDED
+ 		job.release_input()
++
+ 	completed.clear()
+ 	_records.clear()
+--- before/Scripts/Core/ProfileService.gd
++++ Scripts/Core/ProfileService.gd
+@@ -70,4 +70,5 @@
+ 	if performance_stats_enabled:
+ 		last_stages_ms[metric] = (finished - _stage_started) / 1000.0
++
+ 	match metric:
+ 		"Perception":
+@@ -92,6 +93,8 @@
+ 	detailed_stats_enabled = enabled and detailed
+ 	g_gameplayEngine.grid_service.spatial_stats_enabled = enabled
++
+ 	for metric in STAGE_NAMES:
+ 		performance_monitors["SimStages/" + metric + "Mean"] = 0.0
++
+ 	for metric in HOTSPOT_NAMES:
+ 		for suffix in ["Mean", "CallsPerStep"]:
+@@ -102,7 +105,9 @@
+ 			if detailed_stats_enabled:
+ 				performance_monitors[id] = 0.0
++
+ 	for metric in debug_totals_ms:
+ 		performance_monitors["Debug/" + metric + "Mean"] = 0.0
+ 	reset()
++
+ 	for id in performance_monitors:
+ 		if Performance.has_custom_monitor(id):
+@@ -138,11 +143,15 @@
+ 	last_decision_ms = 0.0
+ 	last_movement_ms = 0.0
++
+ 	for id in performance_monitors:
+ 		performance_monitors[id] = 0.0
++
+ 	for metric in STAGE_NAMES:
+ 		last_stages_ms[metric] = 0.0
++
+ 	for metric in HOTSPOT_NAMES:
+ 		last_hotspots_ms[metric] = 0.0
+ 		last_hotspot_calls[metric] = 0
++
+ 	for metric in debug_totals_ms:
+ 		debug_totals_ms[metric] = 0.0
+@@ -162,9 +171,12 @@
+ 	_stats_cells = 0
+ 	_stats_max_occupancy = 0
++
+ 	for metric in STAGE_NAMES:
+ 		_stats_stages[metric] = 0.0
++
+ 	for metric in HOTSPOT_NAMES:
+ 		_stats_hotspots[metric] = 0.0
+ 		_stats_hotspot_calls[metric] = 0
++
+ 	for metric in debug_totals_ms:
+ 		_stats_debug_ms[metric] = 0.0
+@@ -176,4 +188,5 @@
+ 	_stats_step_max = maxf(_stats_step_max, last_step_ms)
+ 	_stats_step_times.append(last_step_ms)
++
+ 	for metric in STAGE_NAMES:
+ 		_stats_stages[metric] += last_stages_ms[metric]
+@@ -182,4 +195,5 @@
+ 			_stats_hotspots[metric] += last_hotspots_ms[metric]
+ 			_stats_hotspot_calls[metric] += last_hotspot_calls[metric]
++
+ 	_stats_queries += g_gameplayEngine.grid_service.spatial_query_count
+ 	_stats_candidates += g_gameplayEngine.grid_service.spatial_candidate_count
+@@ -192,4 +206,5 @@
+ 	if Time.get_ticks_usec() - _stats_window_started < 1000000:
+ 		return
++
+ 	var counts: Vector3i = g_gameplayEngine.entity_service.get_counts()
+ 	performance_monitors["Simulation/AliveEntities"] = counts.x + counts.y + counts.z
+@@ -198,4 +213,5 @@
+ 	_stats_step_times.sort()
+ 	performance_monitors["Simulation/StepP95"] = _stats_step_times[ceili(_stats_step_times.size() * 0.95) - 1] if not _stats_step_times.is_empty() else 0.0
++
+ 	for metric in STAGE_NAMES:
+ 		performance_monitors["SimStages/" + metric + "Mean"] = _stats_stages[metric] / maxi(1, _stats_steps)
+@@ -204,4 +220,5 @@
+ 			performance_monitors["Hotspots/" + metric + "Mean"] = _stats_hotspots[metric] / maxi(1, _stats_steps)
+ 			performance_monitors["Hotspots/" + metric + "CallsPerStep"] = float(_stats_hotspot_calls[metric]) / maxi(1, _stats_steps)
++
+ 	for metric in debug_totals_ms:
+ 		performance_monitors["Debug/" + metric + "Mean"] = _stats_debug_ms[metric] / maxi(1, _stats_debug_calls[metric])
+--- before/Scripts/Core/Service.gd
++++ Scripts/Core/Service.gd
+@@ -7,4 +7,5 @@
+ 	if started:
+ 		return
++
+ 	started = true
+ 	_startup()
+@@ -17,4 +18,5 @@
+ 	if not started:
+ 		return
++
+ 	started = false
+ 	_shutdown()
+--- before/Scripts/ECS/AnimalData.gd
++++ Scripts/ECS/AnimalData.gd
+@@ -215,4 +215,5 @@
+ 	if first == second:
+ 		return
++
+ 	var intent := motion_intent[first]
+ 	motion_intent[first] = motion_intent[second]
+--- before/Scripts/ECS/Systems/AnimalSystem.gd
++++ Scripts/ECS/Systems/AnimalSystem.gd
+@@ -33,8 +33,10 @@
+ 				if index == row or kinds[index] != data.identity_kind[row]:
+ 					continue
++
+ 				var offset := data.motion_position[row] - positions[index]
+ 				var squared := offset.length_squared()
+ 				if squared >= distance_limit * distance_limit:
+ 					continue
++
+ 				var distance := sqrt(squared)
+ 				var direction := offset.normalized()
+@@ -48,4 +50,5 @@
+ 		if not data.memory_perception_ready[row]:
+ 			remaining *= fmod(data.identity_entity_id[row] * 0.618034, 1.0)
++
+ 	return {"row": row, "remaining": remaining, "refresh": refresh, "nearby": nearby, "separation": separation}
+ 
+@@ -74,4 +77,5 @@
+ 	var lower := Vector2(12.0, 94.0)
+ 	var upper: Vector2 = g_gameplayEngine.config.arena_size - Vector2(12.0, 58.0)
++
+ 	for row in range(data.active_count):
+ 		var previous := data.motion_position[row]
+@@ -82,4 +86,5 @@
+ 		var position := (previous + velocity * delta).clamp(lower, upper)
+ 		velocity = (position - previous) / maxf(delta, 0.00001)
++
+ 		data.motion_position[row] = position
+ 		data.motion_velocity[row] = velocity
+@@ -106,4 +111,5 @@
+ 		memory_unseen_elapsed[row] = 0.0
+ 		return
++
+ 	memory_target_visible[row] = int(can_see(animal, data.motion_position[target.row]))
+ 	if memory_target_visible[row]:
+@@ -146,4 +152,5 @@
+ 			memory_perception_remaining[row] *= fmod(data.identity_entity_id[row] * 0.618034, 1.0)
+ 		memory_perception_ready[row] = 1
++
+ 	if data.identity_kind[row] == AnimalEntity.Kind.SHEEP:
+ 		var started := Time.get_ticks_usec() if g_gameplayEngine.profile_service.detailed_stats_enabled else 0
+@@ -179,4 +186,5 @@
+ 			direction = Vector2.RIGHT if entity_id < data.identity_entity_id[index] else Vector2.LEFT
+ 		separation += direction * (1.0 - distance / distance_limit)
++
+ 	data.motion_separation[row] = separation
+ 
+@@ -184,4 +192,5 @@
+ 	if data.identity_kind[animal.row] == AnimalEntity.Kind.SHEEP:
+ 		return
++
+ 	var row := animal.row
+ 	var settings: Resource = data.settings[row]
+@@ -213,7 +222,9 @@
+ 	g_gameplayEngine.wolf_system.prepare_motion_goals()
+ 	g_gameplayEngine.dog_system.prepare_motion_goals()
++
+ 	for row in range(data.active_count):
+ 		if data.motion_intent[row] != AnimalData.MotionIntent.POINT:
+ 			continue
++
+ 		var difference := data.motion_movement_goal[row] - data.motion_position[row]
+ 		data.motion_desired_velocity[row] = difference.normalized() * minf(data.motion_speed_limit[row], difference.length() / maxf(delta, 0.00001))
+--- before/Scripts/ECS/Systems/SheepdogSystem.gd
++++ Scripts/ECS/Systems/SheepdogSystem.gd
+@@ -8,4 +8,5 @@
+ var _protection_radius: float = -1.0
+ var _protection_cell_size: float = -1.0
++
+ var shared_candidate_groups: int = 0
+ var shared_group_count: int = 0
+@@ -28,4 +29,5 @@
+ 		if data.identity_alive[dog.row]:
+ 			assignments[dog] = [null, null]
++
+ 	# 1) Resolve nearest wolf proposals, then farthest stray proposals.
+ 	for kind in range(2):
+@@ -44,4 +46,5 @@
+ 					if claimed.has(animal):
+ 						continue
++
+ 					var score := motion_position[dog.row].distance_squared_to(task_point(dog, animal)) if kind == 0 else -data.dog_protection_center[dog.row].distance_squared_to(motion_position[animal.row])
+ 					if score < best_score or (is_equal_approx(score, best_score) and best != null and identity_entity_id[animal.row] < identity_entity_id[best.row]):
+@@ -50,4 +53,5 @@
+ 				if best == null:
+ 					continue
++
+ 				var previous: AnimalEntity = proposals.get(best)
+ 				var distance := motion_position[dog.row].distance_squared_to(task_point(dog, best))
+@@ -62,4 +66,5 @@
+ 				claimed[animal] = dog
+ 				waiting.erase(dog)
++
+ 	for dog: AnimalEntity in assignments:
+ 		apply_assignment(dog, assignments[dog][0], assignments[dog][1])
+@@ -83,11 +88,24 @@
+ 		if anchor == null or data.dog_assignment_remaining[row] <= 0.0:
+ 			choosing.append(row)
++
+ 	context.merge({"common": common, "dogs": rows, "sheep": g_gameplayEngine.entity_service.sheep_rows,
+ 		"anchors": anchors, "radius": settings.local_flock_radius, "coverage_weight": settings.coverage_weight,
+ 		"improvement": settings.reassignment_improvement, "complete_ratio": settings.collect_complete_ratio,
+ 		"memory_duration": settings.memory_duration})
++	var coverage := PackedInt32Array()
++	coverage.resize(data.active_count)
++	if not choosing.is_empty():
++		var radius_squared := settings.local_flock_radius * settings.local_flock_radius
++		for sheep_row in context.sheep:
++			var count := 0
++			for dog_row in rows:
++				if anchors[dog_row] >= 0 and data.motion_position[anchors[dog_row]].distance_squared_to(data.motion_position[sheep_row]) < radius_squared:
++					count += 1
++			coverage[sheep_row] = count
++	context.coverage = coverage
+ 	var prepared_at := Time.get_ticks_usec()
+ 	jobs.run_batches(&"DogAnchor", choosing, DogAnchorJob, context, self)
+ 	jobs.record_stage(&"DogAnchor", started_at, prepared_at)
++
+ 	started_at = Time.get_ticks_usec()
+ 	var groups: Dictionary = {}
+@@ -98,4 +116,5 @@
+ 		if anchor != null and not data.dog_returning[row]:
+ 			groups[row] = _local_group(anchor, true)
++
+ 	context.groups = groups
+ 	prepared_at = Time.get_ticks_usec()
+@@ -125,18 +144,18 @@
+ 	var entries: Array[Dictionary] = []
+ 	var stats := AnimalSystem.batch_stats(context)
++	var positions: PackedVector2Array = context.grid.positions
++	var coverage: PackedInt32Array = context.coverage
++	var radius: float = context.radius
++	var weight: float = context.coverage_weight
+ 	for row in rows:
+ 		var current: int = context.anchors[row]
+-		if current >= 0 and data.dog_assignment_remaining[row] > 0.0:
+-			continue
+ 		var started_at := Time.get_ticks_usec() if stats.detailed else 0
+-		var anchors := PackedVector2Array()
+-		for dog_row in context.dogs:
+-			if dog_row != row and context.anchors[dog_row] >= 0:
+-				anchors.append(data.motion_position[context.anchors[dog_row]])
++		var own_anchor := positions[current] if current >= 0 else Vector2.INF
++		var point := positions[row]
+ 		var best := current
+-		var current_score := _snapshot_anchor_score(row, current, anchors, context) if current >= 0 else INF
++		var current_score := _snapshot_anchor_score(point, positions[current], coverage[current], own_anchor, radius, weight) if current >= 0 else INF
+ 		var best_score := current_score
+ 		for sheep_row in context.sheep:
+-			var score := _snapshot_anchor_score(row, sheep_row, anchors, context)
++			var score := _snapshot_anchor_score(point, positions[sheep_row], coverage[sheep_row], own_anchor, radius, weight)
+ 			if score < best_score:
+ 				best = sheep_row
+@@ -149,11 +168,8 @@
+ 	output.stats = stats
+ 
+-func _snapshot_anchor_score(row: int, sheep_row: int, anchors: PackedVector2Array, context: Dictionary) -> float:
+-	var point := data.motion_position[sheep_row]
+-	var coverage := 0
+-	for anchor in anchors:
+-		if anchor.distance_to(point) < context.radius:
+-			coverage += 1
+-	return data.motion_position[row].distance_to(point) / context.radius + coverage * context.coverage_weight
++static func _snapshot_anchor_score(point: Vector2, sheep_point: Vector2, coverage: int, own_anchor: Vector2, radius: float, weight: float) -> float:
++	if own_anchor.distance_squared_to(sheep_point) < radius * radius:
++		coverage -= 1
++	return point.distance_to(sheep_point) / radius + coverage * weight
+ 
+ func calculate_batch(output: Dictionary, rows: PackedInt32Array, context: Dictionary) -> void:
+@@ -170,7 +186,9 @@
+ 				if common.can_see(data.handles[row], data.motion_position[wolf_row]):
+ 					wolves.append(wolf_row)
++
+ 			var remembered := data.live(data.memory_target[row])
+ 			if remembered != null and not data.memory_target_visible[row] and data.memory_unseen_elapsed[row] < context.memory_duration:
+ 				wolves.append(remembered.row)
++
+ 			var anchor := data.live(data.dog_protected_sheep[row])
+ 			var collected := data.live(data.dog_collected_sheep[row])
+@@ -181,7 +199,9 @@
+ 				if data.motion_position[anchor.row].distance_to(point) <= context.radius * 2.0 and distance > threshold:
+ 					strays.append(sheep_row)
++
+ 		result.wolves = wolves
+ 		result.strays = strays
+ 		entries.append(result)
++
+ 	output.entries = entries
+ 	output.stats = stats
+@@ -203,4 +223,5 @@
+ 		_choose_protection_anchor(animal)
+ 		dog_assignment_remaining[row] = settings.reassignment_interval
++
+ 	_prepare_perception(animal, delta)
+ 	dog_wolf_candidates[row].clear()
+@@ -209,4 +230,5 @@
+ 	if dog_returning[row] or not common.is_live(animal, anchor):
+ 		return
++
+ 	var group := _local_group(anchor, true)
+ 	for wolf_row in group["wolves"]:
+@@ -214,7 +236,9 @@
+ 		if data.live(wolf) != null and common.can_see(animal, motion_position[wolf_row]):
+ 			dog_wolf_candidates[row].append(wolf)
++
+ 	var remembered := data.live(memory_target[row])
+ 	if remembered != null and not data.memory_target_visible[row] and data.memory_unseen_elapsed[row] < settings.memory_duration:
+ 		dog_wolf_candidates[row].append(remembered)
++
+ 	var radius: float = settings.local_flock_radius
+ 	var collected := data.live(data.dog_collected_sheep[row])
+@@ -236,4 +260,5 @@
+ 	var memory_target := data.memory_target
+ 	var motion_position := data.motion_position
++
+ 	_update_protection_center(animal)
+ 	data.dog_patrol_angle[row] += settings.patrol_angular_speed * delta * (1.0 if data.identity_entity_id[row] % 2 == 0 else -1.0)
+@@ -288,4 +313,5 @@
+ 		if dog != animal and data.identity_alive[dog.row] and anchor != null:
+ 			anchors.append(data.motion_position[anchor.row])
++
+ 	var best: AnimalEntity = data.live(dog_protected_sheep[row]) if common.is_live(animal, data.live(dog_protected_sheep[row])) else null
+ 	var current_score: float = _anchor_score(animal, best, anchors) if best != null else INF
+@@ -295,4 +321,5 @@
+ 		if not data.identity_alive[sheep.row]:
+ 			continue
++
+ 		var score: float = _anchor_score(animal, sheep, anchors)
+ 		if score < best_score:
+@@ -352,4 +379,5 @@
+ 			if nx < 0 or nx >= grid.width or ny < 0 or ny >= grid.height:
+ 				continue
++
+ 			var neighbor := ny * grid.width + nx
+ 			sum += grid.sheep_position_sums[neighbor]
+@@ -360,6 +388,8 @@
+ 		_local_groups[cell] = group
+ 		shared_group_count += 1
++
+ 	if not with_candidates or group.ready:
+ 		return group
++
+ 	# 1) Build target candidates only for dogs that are actively choosing a task.
+ 	var flock := PackedInt32Array()
+@@ -368,4 +398,5 @@
+ 		for member in range(grid.cell_offsets[bucket], grid.cell_offsets[bucket + 1]):
+ 			flock.append(grid.members[member])
++
+ 	var padding := grid.cell_size * sqrt(0.5)
+ 	var threat_radius_squared := pow(radius + padding + settings.threat_distance, 2)
+@@ -377,4 +408,5 @@
+ 			if center.distance_squared_to(point) > threat_radius_squared:
+ 				continue
++
+ 			for sheep_row in flock:
+ 				if point.distance_squared_to(grid.perception_positions[sheep_row]) < settings.threat_distance * settings.threat_distance:
+@@ -383,4 +415,5 @@
+ 		if threatening:
+ 			wolves.append(row)
++
+ 	group.wolves = wolves
+ 	group.sheep = grid.get_nearby_indices(center, radius * 2.0 + padding, AnimalEntity.Kind.SHEEP)
+--- before/Scripts/ECS/Systems/SheepSystem.gd
++++ Scripts/ECS/Systems/SheepSystem.gd
+@@ -13,4 +13,5 @@
+ 	context.panic_duration = g_gameplayEngine.config.sheep.panic_duration
+ 	context.common = common
++
+ 	var jobs: JobService = g_gameplayEngine.job_service
+ 	var prepared_at := Time.get_ticks_usec()
+@@ -51,4 +52,5 @@
+ 			stats.calls.NeighborScan += 1
+ 		entries.append(result)
++
+ 	output.entries = entries
+ 	output.stats = stats
+@@ -82,4 +84,5 @@
+ 	var lower := Vector2(12.0, 94.0) + Vector2.ONE * margin
+ 	var upper: Vector2 = g_gameplayEngine.config.arena_size - Vector2(12.0, 58.0) - Vector2.ONE * margin
++
+ 	for row in g_gameplayEngine.entity_service.sheep_rows:
+ 		var cohesion := (data.sheep_local_flock_center[row] - data.motion_position[row]).normalized() if data.sheep_neighbor_count[row] > 0 else Vector2.ZERO
+@@ -90,4 +93,5 @@
+ 		if danger > 0.0 and escape.is_zero_approx():
+ 			escape = Vector2.from_angle(data.identity_entity_id[row] * 2.399963) * danger
++
+ 		var dog := data.sheep_dog_pressure[row]
+ 		var speed := lerpf(lerpf(settings.move_speed * settings.idle_speed_scale, settings.move_speed, minf(1.0, dog.length())), settings.flee_speed, danger)
+@@ -97,6 +101,8 @@
+ 		steering += (data.motion_wander_point[row] - data.motion_position[row]).normalized() * speed * settings.wander_weight * (1.0 - danger)
+ 		steering += data.motion_separation[row] * settings.move_speed * settings.separation_weight
++
+ 		var boundary := (lower - data.motion_position[row]).max(Vector2.ZERO) - (data.motion_position[row] - upper).max(Vector2.ZERO)
+ 		steering += boundary / margin * speed * 2.0
++
+ 		data.motion_desired_velocity[row] = data.motion_velocity[row].lerp(steering.limit_length(speed), minf(1.0, settings.steering_rate * delta))
+ 		data.motion_speed_limit[row] = speed
+--- before/Scripts/ECS/Systems/WolfSystem.gd
++++ Scripts/ECS/Systems/WolfSystem.gd
+@@ -18,4 +18,5 @@
+ 		if not data.identity_alive[dog.row]:
+ 			continue
++
+ 		var distance := data.motion_position[row].distance_to(data.motion_position[dog.row])
+ 		if distance < best or (is_equal_approx(distance, best) and result != null and data.identity_entity_id[dog.row] < data.identity_entity_id[result.row]):
+@@ -40,4 +41,5 @@
+ 		wolf_resting[row] = int(data.wolf_rest_elapsed[row] < settings.rest_duration)
+ 	data.wolf_nearest_threat[row] = find_dog(animal, settings.dog_threat_distance * (2.0 if data.wolf_retreating[row] else 1.0)) if result.is_empty() else (data.handles[result.threat] if result.threat >= 0 else null)
++
+ 	if data.wolf_hunting[row]:
+ 		data.wolf_hunt_elapsed[row] += delta
+@@ -48,4 +50,5 @@
+ 		if not common.is_live(animal, data.live(data.memory_target[row])) or data.wolf_hunt_elapsed[row] >= settings.hunt_duration or (not data.memory_target_visible[row] and data.memory_unseen_elapsed[row] >= settings.memory_duration):
+ 			end_hunt(animal, false)
++
+ 	if not data.wolf_hunting[row] and not wolf_resting[row] and not common.is_live(animal, data.live(data.wolf_nearest_threat[row])) and not data.wolf_retreating[row]:
+ 		if result.is_empty():
+@@ -62,4 +65,5 @@
+ 		"threat_distance": settings.dog_threat_distance, "rest_duration": settings.rest_duration,
+ 		"radius": settings.perception_radius})
++
+ 	var jobs: JobService = g_gameplayEngine.job_service
+ 	var prepared_at := Time.get_ticks_usec()
+@@ -86,4 +90,5 @@
+ 				best = dog_row
+ 				distance = next_distance
++
+ 		result.threat = best
+ 		result.observation = common.calculate_observation(row, context.delta)
+@@ -97,4 +102,5 @@
+ 				if not common.can_see(data.handles[row], point):
+ 					continue
++
+ 				var next_distance := data.motion_position[row].distance_squared_to(point)
+ 				if next_distance < distance or (is_equal_approx(next_distance, distance) and result.prey >= 0 and data.identity_entity_id[index] < data.identity_entity_id[result.prey]):
+@@ -104,5 +110,7 @@
+ 				stats.hotspots.WolfTarget += (Time.get_ticks_usec() - started_at) / 1000.0
+ 				stats.calls.WolfTarget += 1
++
+ 		entries.append(result)
++
+ 	output.entries = entries
+ 	output.stats = stats
+@@ -119,7 +127,9 @@
+ 		if service.perception_kinds[index] != AnimalEntity.Kind.SHEEP:
+ 			continue
++
+ 		var point := service.perception_positions[index]
+ 		if not common.can_see(animal, point):
+ 			continue
++
+ 		var candidate := data.handles[index] as AnimalEntity
+ 		var next_distance := data.motion_position[row].distance_squared_to(point)
+@@ -140,4 +150,5 @@
+ 	data.wolf_charging[row] = 0
+ 	data.wolf_howled[row] = 0
++
+ 	var total: float = 0.0
+ 	for index in range(4):
+@@ -155,4 +166,5 @@
+ 	if not data.wolf_hunting[row]:
+ 		return
++
+ 	data.wolf_strategy_failures[row][data.wolf_strategy[row]] = maxf(0.0, data.wolf_strategy_failures[row][data.wolf_strategy[row]] + (-1.5 if success else 1.0))
+ 	data.wolf_hunting[row] = 0
+@@ -186,4 +198,5 @@
+ 		end_hunt(animal, false)
+ 		return
++
+ 	data.wolf_nearest_threat[row] = find_dog(animal, settings.dog_threat_distance)
+ 	if common.is_live(animal, data.live(data.wolf_nearest_threat[row])):
+@@ -201,4 +214,5 @@
+ 		if data.motion_intent[row] != AnimalData.MotionIntent.POINT:
+ 			continue
++
+ 		match data.brain_current_behavior[row]:
+ 			AnimalEntity.Behavior.STALK:
+--- before/Scripts/Job/GridAggregateJob.gd
++++ Scripts/Job/GridAggregateJob.gd
+@@ -12,4 +12,5 @@
+ 	var columns: int = context.width
+ 	var height: int = context.height
++
+ 	var local_counts: PackedInt32Array = output.get("flock_counts", PackedInt32Array())
+ 	var local_sums: PackedVector2Array = output.get("flock_sums", PackedVector2Array())
+@@ -20,4 +21,5 @@
+ 	aligned_counts.resize(cells.size())
+ 	aligned_sums.resize(cells.size())
++
+ 	var nodes := PackedInt32Array()
+ 	for index in range(cells.size()):
+@@ -29,4 +31,5 @@
+ 			for node in [base, base + 1, base + columns + 1, base + columns + 2]:
+ 				nodes.append(node)
++
+ 		var count := 0
+ 		var sum := Vector2.ZERO
+@@ -40,4 +43,5 @@
+ 		local_counts[index] = count
+ 		local_sums[index] = sum
++
+ 		count = 0
+ 		sum = Vector2.ZERO
+@@ -51,4 +55,5 @@
+ 		aligned_counts[index] = count
+ 		aligned_sums[index] = sum
++
+ 	output.merge({"cells": cells, "flock_counts": local_counts, "flock_sums": local_sums,
+ 		"alignment_counts": aligned_counts, "alignment_sums": aligned_sums, "nodes": nodes}, true)
+--- before/Scripts/UI/DebugHUD.gd
++++ Scripts/UI/DebugHUD.gd
+@@ -50,4 +50,5 @@
+ 		Engine.get_frames_per_second(), gameplay_engine.profile_service.last_step_ms,
+ 		counts.x + counts.y + counts.z, counts.x, counts.y, counts.z]
++
+ 	var hunters: int = 0
+ 	for wolf_row in gameplay_engine.entity_service.wolf_rows:
+@@ -55,4 +56,5 @@
+ 		if data.identity_alive[wolf.row] and data.wolf_hunting[wolf.row]:
+ 			hunters += 1
++
+ 	status.text = "%s    |    Seed %d    |    Sim %.1f s    |    Captured %d    |    %s    |    Debug %s" % [
+ 		"PAUSED" if gameplay_engine.paused else "RUNNING", gameplay_engine.config.random_seed,
+--- before/Scripts/UI/DebugPanel.gd
++++ Scripts/UI/DebugPanel.gd
+@@ -20,7 +20,9 @@
+ 		margin.add_theme_constant_override("margin_" + side, 12)
+ 	add_child(margin)
++
+ 	var column := VBoxContainer.new()
+ 	column.add_theme_constant_override("separation", 6)
+ 	margin.add_child(column)
++
+ 	var header := HBoxContainer.new()
+ 	column.add_child(header)
+@@ -30,4 +32,5 @@
+ 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+ 	header.add_child(title)
++
+ 	var close_button := Button.new()
+ 	close_button.text = "X"
+@@ -35,8 +38,10 @@
+ 	close_button.pressed.connect(close)
+ 	header.add_child(close_button)
++
+ 	enabled_toggle = CheckBox.new()
+ 	enabled_toggle.text = "Enable overlays [F1]"
+ 	enabled_toggle.toggled.connect(_set_enabled)
+ 	column.add_child(enabled_toggle)
++
+ 	scope = OptionButton.new()
+ 	scope.add_item("Selected animal only")
+@@ -44,4 +49,5 @@
+ 	scope.item_selected.connect(_set_scope)
+ 	column.add_child(scope)
++
+ 	for key: String in OPTIONS:
+ 		var checkbox := CheckBox.new()
+@@ -50,4 +56,5 @@
+ 		controls[key] = checkbox
+ 		column.add_child(checkbox)
++
+ 	var hint := Label.new()
+ 	hint.text = "Visuals only; changes apply immediately.\nSelect an animal by clicking in the arena."
+@@ -74,4 +81,5 @@
+ 	if service == null:
+ 		return
++
+ 	enabled_toggle.set_pressed_no_signal(service.show_details)
+ 	scope.select(0 if service.selected_only else 1)
+--- before/Scripts/UI/RuntimeConfigPanel.gd
++++ Scripts/UI/RuntimeConfigPanel.gd
+@@ -167,4 +167,5 @@
+ 	var error := draft.validate()
+ 	apply_button.disabled = not error.is_empty()
++
+ 	var restart := draft.requires_restart(gameplay_engine.config)
+ 	apply_button.text = "Apply & restart" if restart else "Apply"
+@@ -181,4 +182,5 @@
+ 	for spin in editors.values():
+ 		spin.apply()
++
+ 	var error: String = gameplay_engine.request_config_apply(draft)
+ 	if error.is_empty():
+@@ -206,4 +208,5 @@
+ 		message.text = "Preset missing or incompatible. Only behavior preset version %d is supported; other files are preserved." % SimulationConfig.PRESET_VERSION
+ 		return
++
+ 	set_draft(loaded)
+ 	message.text = "Saved preset loaded into the form. Apply when ready."
+--- before/Tests/DebugVisualVerification.gd
++++ Tests/DebugVisualVerification.gd
+@@ -21,4 +21,5 @@
+ 	if DisplayServer.get_name() == "headless":
+ 		return
++
+ 	await RenderingServer.frame_post_draw
+ 	var error := root.get_texture().get_image().save_png(capture_directory + "/" + name + ".png")
+@@ -98,4 +99,5 @@
+ 	_check(sheep_view.bt_player == null and sheep_view.sprite.self_modulate.is_equal_approx(expected_color), "sheep blends continuous pressure colors without a behavior tree")
+ 	_check(engine.rng.state == rng_state, "continuous sheep presentation does not consume simulation RNG")
++
+ 	data.sheep_dog_pressure[sheep.row] = Vector2.ZERO
+ 	data.sheep_panic_strength[sheep.row] = 0.0
+@@ -120,7 +122,9 @@
+ 	await _key(KEY_F3)
+ 	_check(panel.visible, "F3 routes through actual input to open DebugPanel")
++
+ 	await _click(panel.enabled_toggle)
+ 	_check(debug.show_details and debug.selected == wolf, "panel click enables visuals without changing selection")
+ 	_check(scene.hud.get_node("Screen").get_global_rect().encloses(panel.get_global_rect()), "DebugPanel fits the viewport")
++
+ 	debug.record_howl(wolf)
+ 	debug.advance_visuals(0.3)
+@@ -128,4 +132,5 @@
+ 	await _click(panel.controls["tracking"])
+ 	_check(not debug.visual_options["tracking"] and debug.selected == wolf, "checkbox input updates tracking without click-through")
++
+ 	await _click(panel.controls["tracking"])
+ 	panel.scope.select(1)
+@@ -137,8 +142,11 @@
+ 	_check(scene.hud.parameters.visible and not panel.visible, "F2 input switches to parameters")
+ 	_check(scene.hud.parameters.editors.has("World.grid_cell_size") and not scene.hud.parameters.editors.has("Sheep.vision_angle"), "parameters expose grid sizing without sheep FOV")
++
+ 	await _capture("parameters")
+ 	_check(scene.hud.parameters.editors.has("World.sheep_ratio") and scene.hud.parameters.editors.has("World.wolf_ratio") and scene.hud.parameters.editors.has("World.sheepdog_ratio") and not scene.hud.parameters.editors.has("World.initial_sheep"), "parameters expose total and species ratios instead of species counts")
++
+ 	scene.hud.parameters.editors["World.initial_total"].value = 1000
+ 	_check(scene.hud.parameters.apply_button.text == "Apply & restart" and scene.hud.parameters.message.text.contains("870 sheep, 87 wolves, 43 dogs"), "total input previews the exact allocation without spawning")
++
+ 	await _capture("population-preview")
+ 	scene.hud.parameters.set_draft(engine.config)
+@@ -147,9 +155,12 @@
+ 	await _key(KEY_ESCAPE)
+ 	_check(not scene.hud.parameters.visible, "Escape input closes parameters")
++
+ 	await _key(KEY_F3)
+ 	await _key(KEY_ESCAPE)
+ 	_check(not panel.visible and debug.show_details, "closing DebugPanel keeps overlays enabled")
++
+ 	await _key(KEY_F1)
+ 	_check(not debug.show_details and debug.howl_events.is_empty(), "F1 input disables visuals and clears pulses")
++
+ 	var retained: int = data.row_to_slot.size()
+ 	service.capture(sheep)
+@@ -157,7 +168,9 @@
+ 	engine._process(0.0)
+ 	_check(not sheep.enabled and data.brain_view[sheep.row].visible, "single-step disables simulation while showing the corpse")
++
+ 	for index in range(20):
+ 		engine.simulate_step(1.0 / 60.0)
+ 	_check(not data.brain_view[sheep.row].visible and data.row_to_slot.size() == retained, "corpse returns to pool without growing retained objects")
++
+ 	await _capture("recycled")
+ 	engine.stop_simulation()
+--- before/Tests/JobVerification.gd
++++ Tests/JobVerification.gd
+@@ -41,7 +41,10 @@
+ 	first.applied = applied
+ 	_check(not service.add_job(first), "stopped service rejects jobs")
++
+ 	service.startup()
++
+ 	service.finish_stage()
+ 	_check(service.pending.is_empty() and service.working.is_empty() and service.completed.is_empty(), "empty stage completes")
++
+ 	var second := ProbeJob.new()
+ 	second.stage = &"Probe"
+@@ -50,29 +53,39 @@
+ 	_check(service.add_job(first) and service.add_job(second), "jobs enter pending")
+ 	_check(not service.add_job(first), "duplicate pending job rejected")
++
+ 	var other := ProbeJob.new()
+ 	other.stage = &"Other"
+ 	_check(not service.add_job(other), "different stage cannot enter frozen stage")
++
+ 	service.dispatch_pending()
+ 	_check(service.pending.is_empty() and service.working.size() == 2, "dispatch moves pending to working")
++
+ 	while not WorkerThreadPool.is_task_completed(second.task_id):
+ 		OS.delay_msec(1)
+ 	service.collect_completed()
+ 	_check(second.state == Job.State.COMPLETED and applied.is_empty(), "completed result is held until barrier")
++
+ 	service.finish_stage()
+ 	_check(applied == [0, 1], "out of order completion applies in batch order")
+ 	_check(first.main_thread and second.main_thread and first.worker_thread and second.worker_thread, "execution uses workers and application uses main thread")
+ 	_check(first.task_id == -1 and second.task_id == -1, "task handles reclaimed once")
++
+ 	service.finish_stage()
+ 	_check(applied.size() == 2, "repeated finish does not apply twice")
+ 	_check(service.add_job(first), "applied job can be reused")
++
+ 	service.dispatch_pending()
+ 	_check(service.add_job(second), "another job can remain pending during shutdown")
++
+ 	service.shutdown()
+ 	_check(first.state == Job.State.DISCARDED and second.state == Job.State.DISCARDED and applied.size() == 2, "shutdown waits working and discards pending results")
+ 	_check(service.working.is_empty() and service.completed.is_empty() and service.pending.is_empty(), "shutdown clears queues")
++
+ 	service.startup()
+ 	_check(service.add_job(first), "service can restart")
++
+ 	service.reset()
+ 	_check(service.started and first.state == Job.State.DISCARDED, "reset drains while retaining started state")
++
+ 	service.queue_free()
+ 
+@@ -117,4 +130,5 @@
+ 		if name.begins_with("identity_") or name.begins_with("motion_") or name.begins_with("memory_") or name.begins_with("sheep_") or name.begins_with("wolf_") or name.begins_with("dog_") or name == "brain_current_behavior":
+ 			result[name] = _value(data.get(name))
++
+ 	var grid: GridService = engine.grid_service
+ 	for name in ["cell_counts", "cell_offsets", "members", "flock_counts", "flock_position_sums", "alignment_counts", "alignment_velocity_sums", "pressure_nodes", "wolf_pressure", "dog_pressure"]:
+@@ -151,4 +165,5 @@
+ 		engine.simulate_step(1.0 / 60.0)
+ 		states.append(_state())
++
+ 	for workers in [2, 4, 8]:
+ 		_setup(total, true, workers == 8)
+@@ -159,4 +174,5 @@
+ 			var observed := _state()
+ 			_check(observed == states[step], "exact serial/parallel state total=%d workers=%d step=%d" % [total, workers, step])
++
+ 			if observed != states[step]:
+ 				for key in observed:
+@@ -175,4 +191,5 @@
+ 	engine.dog_system.perceive_batch(1.0 / 60.0)
+ 	_check(entities.data.dog_protected_sheep[dogs[0].row] == sheep and entities.data.dog_protected_sheep[dogs[1].row] == sheep, "simultaneous anchor choice allows shared protection")
++
+ 	var other := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(500, 300))[0]
+ 	engine.config.sheepdog.local_flock_radius = 80.0
+@@ -197,4 +214,5 @@
+ 			var animal := entities.spawn(AnimalEntity.Kind.SHEEP, 1, point)[0]
+ 			entities.data.motion_velocity[animal.row] = Vector2(index, -index)
++
+ 	var grid: GridService = engine.grid_service
+ 	grid.rebuild()
+@@ -204,5 +222,7 @@
+ 		if sheep_count == 0:
+ 			_check(grid.flock_counts[cell] == 0 and grid.alignment_counts[cell] == 0, "empty grid has no aggregate")
++
+ 			continue
++
+ 		var coordinate := Vector2i(cell % grid.width, cell / grid.width)
+ 		var count := 0
+@@ -221,4 +241,5 @@
+ 		_check(grid.flock_counts[cell] == count and grid.flock_position_sums[cell] == sum, "flock aggregate matches brute force")
+ 		_check(grid.alignment_counts[cell] == aligned and grid.alignment_velocity_sums[cell] == velocity, "alignment aggregate matches brute force")
++
+ 		if sheep_count >= GridService.PRESSURE_SHARED_MIN_SHEEP:
+ 			var base := coordinate.y * (grid.width + 1) + coordinate.x
+@@ -251,4 +272,5 @@
+ 	for total in [0, 1, 137]:
+ 		_equivalence(total)
++
+ 	_dog_snapshot()
+ 	_grid_oracle()
+@@ -256,4 +278,5 @@
+ 	engine.stop_simulation()
+ 	_check(not engine.job_service.started, "job service participates in engine shutdown")
++
+ 	scene.queue_free()
+ 	print("JOB_VERIFICATION checks=%d failures=%d" % [checks, failures])
+--- before/Tests/PerformanceVerification.gd
++++ Tests/PerformanceVerification.gd
+@@ -41,4 +41,5 @@
+ 		var counts := distribution.get_initial_counts()
+ 		_check(counts.x + counts.y + counts.z == total, "exact total %d" % total)
++
+ 		for kind in range(3):
+ 			_check(absf(counts[kind] - float(total) * Vector3i(20, 2, 1)[kind] / 23.0) < 1.0, "species rounding %d/%d" % [total, kind])
+@@ -49,7 +50,9 @@
+ 			_prepare_exact_settings(settings)
+ 			_check(settings.validate().is_empty(), "exact configuration validates %d/%s" % [total, mode])
++
+ 			var expected_ratio := float(total) / defaults.initial_total if mode == "scaled" else 1.0
+ 			_check(is_equal_approx(settings.arena_size.x * settings.arena_size.y / (original_size.x * original_size.y), expected_ratio), "area scaling %d/%s" % [total, mode])
+ 	_check(defaults.arena_size == original_size, "default resources preserved")
++
+ 	var tied := defaults.copy_config()
+ 	tied.initial_total = 2
+@@ -58,4 +61,5 @@
+ 	tied.sheepdog_ratio = 1.0
+ 	_check(tied.get_initial_counts() == Vector3i(1, 1, 0), "largest remainder ties follow species order")
++
+ 	entities_count = 0
+ 	scenario = ""
+@@ -67,13 +71,17 @@
+ 	_check(engine.entity_service.get_counts() == configured_counts, "expanded species counts")
+ 	_check(engine.config.arena_size == original_size * 2.0, "expanded area")
++
+ 	var entity_count: int = engine.entity_service.entities.size()
+ 	for item: Service in [engine.entity_service, engine.grid_service, engine.debug_service, engine.profile_service]:
+ 		_check(item.started, "service is started")
++
+ 		item.startup()
+ 	_check(engine.entity_service.entities.size() == entity_count, "repeated startup preserves entities")
+ 	_check(Performance.has_custom_monitor("Simulation/StepMean"), "repeated startup preserves monitor registration")
++
+ 	engine.debug_service.selected = engine.entity_service.entities[0]
+ 	engine.debug_service.reset()
+ 	_check(engine.debug_service.selected == null, "debug reset releases selected animal")
++
+ 	var positions: Array[Vector2] = []
+ 	var bounds := Rect2(Vector2.ZERO, engine.config.arena_size)
+@@ -83,4 +91,5 @@
+ 		in_bounds = in_bounds and bounds.has_point(data.motion_position[animal.row])
+ 	_check(in_bounds, "spawned animals stay inside arena")
++
+ 	engine.entity_service.clear()
+ 	engine.rng.seed = engine.config.random_seed
+@@ -90,4 +99,5 @@
+ 		repeated.append(data.motion_position[animal.row])
+ 	_check(positions == repeated, "layout positions reproduce with fixed seed")
++
+ 	engine.entity_service.clear()
+ 	layout = "cluster"
+@@ -98,4 +108,5 @@
+ 		clustered = clustered and central.has_point(data.motion_position[animal.row])
+ 	_check(clustered and engine.entity_service.entities.size() == configured_counts.x + configured_counts.y + configured_counts.z, "cluster preserves population in one central region")
++
+ 	engine.entity_service.clear()
+ 	var old_counts := configured_counts
+@@ -108,4 +119,5 @@
+ 	_spawn_layout(original_size)
+ 	_check(engine.entity_service.get_counts() == Vector3i(3, 3, 2), "tiled layout preserves total and ratios when species counts do not divide evenly")
++
+ 	engine.entity_service.clear()
+ 	var exact_config := defaults.copy_config()
+@@ -114,4 +126,5 @@
+ 	_spawn_exact_layout()
+ 	_check(engine.entity_service.get_counts() == configured_counts, "exact layout spawns requested species counts")
++
+ 	var exact_positions: Array[Vector2] = []
+ 	var exact_bounds := Rect2(Vector2(12, 94), engine.config.arena_size - Vector2(24, 152))
+@@ -121,4 +134,5 @@
+ 		exact_inside = exact_inside and exact_bounds.has_point(data.motion_position[animal.row])
+ 	_check(exact_inside, "uniform animal positions inside movement boundaries")
++
+ 	engine.entity_service.clear()
+ 	_spawn_exact_layout()
+@@ -127,4 +141,5 @@
+ 		exact_repeated.append(data.motion_position[animal.row])
+ 	_check(exact_positions == exact_repeated, "uniform layout independent of animal initialization RNG")
++
+ 	engine.entity_service.clear()
+ 	configured_counts = old_counts
+@@ -140,4 +155,5 @@
+ 	_check(engine.grid_service.get_nearby_indices(Vector2(2000, 1000), 1.0).is_empty(), "empty query")
+ 	_check(engine.grid_service.spatial_query_count == 2 and engine.grid_service.spatial_candidate_count == 2, "empty query contributes denominator")
++
+ 	engine.profile_service.reset()
+ 	engine.profile_service.last_step_ms = 2.0
+@@ -158,13 +174,17 @@
+ 	_check(Performance.get_custom_monitor("Spatial/QueriesPerStep") == 2.0 and Performance.get_custom_monitor("Spatial/NonemptyCells") == 4.0, "per-step means")
+ 	_check(Performance.get_custom_monitor("Spatial/MaxCellOccupancy") == 4.0, "window occupancy maximum")
++
+ 	engine._process(1.0 / 60.0)
+ 	_check(engine.step_count == 0 and Performance.get_custom_monitor("Simulation/StepMean") == 0.004, "pause preserves window until next publication")
++
+ 	engine.profile_service._stats_window_started = Time.get_ticks_usec() - 1000000
+ 	engine.profile_service._process(0.0)
+ 	_check(Performance.get_custom_monitor("Simulation/StepMean") == 0.0, "paused empty window publishes zero")
++
+ 	engine.profile_service.reset()
+ 	engine.profile_service._stats_window_started = Time.get_ticks_usec() - 1000000
+ 	engine.profile_service._record_performance_step()
+ 	_check(Performance.get_custom_monitor("Spatial/CandidatesPerQuery") == 0.0, "zero-query window is finite zero")
++
+ 	var debug: DebugService = engine.debug_service
+ 	var hud_calls: int = engine.profile_service.debug_calls["HUDRefresh"]
+@@ -172,7 +192,9 @@
+ 	debug._process(0.0)
+ 	_check(engine.profile_service.debug_calls["HUDRefresh"] == hud_calls, "disabled HUD skips debug service refresh")
++
+ 	debug.hud_enabled = true
+ 	debug._process(0.0)
+ 	_check(engine.profile_service.debug_calls["HUDRefresh"] == hud_calls + 1 and debug.hud.status.text.begins_with("PAUSED"), "debug service refreshes and profiles HUD while paused")
++
+ 	engine.config.initial_total = 30
+ 	engine.config.sheep_ratio = 24.0
+@@ -189,4 +211,5 @@
+ 		stage_sum += engine.profile_service.last_stages_ms[name]
+ 	_check(is_equal_approx(stage_sum, engine.profile_service.last_step_ms), "exclusive stages account for whole measured step")
++
+ 	var names := Performance.get_custom_monitor_names()
+ 	var types := Performance.get_custom_monitor_types()
+@@ -194,6 +217,8 @@
+ 	_check(types[names.find("Simulation/StepMean")] == Performance.MONITOR_TYPE_TIME, "step monitor registers native time unit")
+ 	_check(types[names.find("Spatial/QueriesPerStep")] == Performance.MONITOR_TYPE_QUANTITY, "query monitor registers quantity unit")
++
+ 	engine.profile_service.set_performance_stats_enabled(true, true)
+ 	_check(Performance.has_custom_monitor("Hotspots/WolfTargetMean"), "detailed mode registers hotspots")
++
+ 	engine.reset_simulation()
+ 	engine.paused = true
+@@ -202,8 +227,11 @@
+ 	_check(observed == _state(), "detailed timing preserves RNG and animal state")
+ 	_check(engine.profile_service.last_hotspot_calls["NearbyQuery"] > 0, "detailed mode counts queries")
++
+ 	engine.profile_service.set_performance_stats_enabled(true)
+ 	_check(not Performance.has_custom_monitor("Hotspots/WolfTargetMean"), "stages mode unregisters hotspots")
++
+ 	engine.profile_service.set_performance_stats_enabled(false)
+ 	_check(not Performance.has_custom_monitor("Simulation/StepMean"), "disable unregisters monitors")
++
+ 	engine.reset_simulation()
+ 	engine.paused = true
+@@ -212,7 +240,9 @@
+ 	_check(observed == _state(), "statistics preserve RNG and animal state after equal simulation steps")
+ 	_check(engine.grid_service.spatial_query_count == 0 and engine.grid_service.spatial_max_occupancy == 0, "disabled statistics remain zero")
++
+ 	engine.profile_service.set_performance_stats_enabled(true)
+ 	engine.reset_simulation()
+ 	_check(Performance.get_custom_monitor("Simulation/StepMean") == 0.0 and engine.grid_service.spatial_query_count == 0, "reset clears counters and monitors")
++
+ 	engine.debug_service.selected = engine.entity_service.entities[0] if not engine.entity_service.entities.is_empty() else null
+ 	engine.stop_simulation()
+@@ -221,4 +251,5 @@
+ 	_check(engine.debug_service.selected == null and engine.debug_service.hud == null, "shutdown releases debug references")
+ 	_check(engine.entity_service.entities.is_empty() and engine.entity_service.container == null, "shutdown releases entities and container")
++
+ 	for item: Service in [engine.entity_service, engine.grid_service, engine.debug_service, engine.profile_service]:
+ 		item.reset()
+@@ -228,4 +259,5 @@
+ 	engine.paused = true
+ 	_check(Performance.has_custom_monitor("Spatial/QueriesPerStep"), "restart registers monitors again")
++
+ 	engine.stop_simulation()
+ 	scene.queue_free()
+--- before/Tests/RunBenchmark.gd
++++ Tests/RunBenchmark.gd
+@@ -5,4 +5,5 @@
+ var jobs_workers: int = 4
+ var jobs_stages: String = "all"
++
+ var main_scene: bool = false
+ var frame_steps: Array[float] = []
+@@ -10,4 +11,5 @@
+ var pending_frame_steps: int = 0
+ var pending_frame_simulation_ms: float = 0.0
++
+ var entities_count: int = 0
+ var scenario: String = ""
+@@ -21,7 +23,9 @@
+ var animals_visible: bool = true
+ var label: String = "benchmark"
++
+ var stage_totals: Dictionary = {}
+ var hotspot_totals: Dictionary = {}
+ var hotspot_calls: Dictionary = {}
++
+ var window_stage_totals: Dictionary = {}
+ var window_hotspot_totals: Dictionary = {}
+@@ -32,7 +36,9 @@
+ var window_debug_ms: Dictionary = {}
+ var window_debug_calls: Dictionary = {}
++
+ var configured_counts := Vector3i.ZERO
+ var capture_started: int = 0
+ var preprocessing_totals: Dictionary = {"pressure_samples": 0.0, "pressure_source_pairs": 0.0, "dog_groups": 0.0, "dog_group_hits": 0.0, "dog_candidate_groups": 0.0}
++
+ var spatial_queries: int = 0
+ var spatial_candidates: int = 0
+@@ -40,10 +46,13 @@
+ var spatial_max_occupancy: int = 0
+ var spatial_cells_total: int = 0
++
+ var run_directory: String
+ var duration: float = 30.0
+ var warmup: float = 3.0
+ var max_fps: int = 0
++
+ var engine: Node
+ var scene: Node
++
+ var ready_time: int = 0
+ var started: int = 0
+@@ -53,4 +62,5 @@
+ var sim_started: float = 0.0
+ var initial_counts := Vector3i.ZERO
++
+ var step_times: Array[float] = []
+ var frame_times: Array[float] = []
+@@ -58,6 +68,8 @@
+ var decision_total: float = 0.0
+ var movement_total: float = 0.0
++
+ var samples: Array[Dictionary] = []
+ var done: bool = false
++
+ var fixed_steps: int = 0
+ var warmup_steps: int = 180
+@@ -72,8 +84,10 @@
+ 		if argument.begins_with("--entry="):
+ 			continue
++
+ 		var parts := argument.split("=", true, 1)
+ 		if parts.size() != 2:
+ 			_fail("Expected --name=value: " + argument)
+ 			return
++
+ 		var value := parts[1]
+ 		match parts[0]:
+@@ -82,4 +96,5 @@
+ 					_fail("Expected --jobs=default|serial|parallel")
+ 					return
++
+ 				jobs_mode = value
+ 			"--job-workers":
+@@ -87,4 +102,5 @@
+ 					_fail("Expected --job-workers=2|4|8")
+ 					return
++
+ 				jobs_workers = value.to_int()
+ 			"--job-stages":
+@@ -92,4 +108,5 @@
+ 					_fail("Invalid job stage")
+ 					return
++
+ 				jobs_stages = value
+ 			"--main-scene":
+@@ -97,4 +114,5 @@
+ 					_fail("--main-scene must be on or off")
+ 					return
++
+ 				main_scene = value == "on"
+ 			"--steps", "--warmup-steps":
+@@ -110,4 +128,5 @@
+ 					_fail("Expected integer: " + argument)
+ 					return
++
+ 				match parts[0]:
+ 					"--entities":
+@@ -139,4 +158,5 @@
+ 					_fail("--sampling must be off, stages or detailed")
+ 					return
++
+ 				has_sampling = true
+ 				sampling = value
+@@ -145,4 +165,5 @@
+ 					_fail("Expected on or off: " + argument)
+ 					return
++
+ 				match parts[0]:
+ 					"--hud":
+@@ -154,4 +175,5 @@
+ 					_fail("--overlay must be off, on or details")
+ 					return
++
+ 				overlay = value
+ 			"--label":
+@@ -159,4 +181,5 @@
+ 					_fail("Invalid benchmark label")
+ 					return
++
+ 				label = value
+ 			"--stats":
+@@ -164,8 +187,10 @@
+ 					_fail("--stats must be on or off")
+ 					return
++
+ 				stats_enabled = value == "on"
+ 			_:
+ 				_fail("Unknown argument: " + argument)
+ 				return
++
+ 	if not has_sampling:
+ 		sampling = "stages" if stats_enabled else "off"
+@@ -178,4 +203,5 @@
+ 			_fail("Use --entities=1000|2000|3000|4000 --scenario=scaled|fixed without tier, tiles or layout")
+ 			return
++
+ 		layout = "uniform_v1"
+ 	if entities_count == 0 and ((has_tier and has_tiles) or (has_tiles and tiles not in [1, 2, 4, 6]) or (tiles == 0 and layout != "legacy") or (tiles != 0 and layout not in ["spread", "cluster"])):
+@@ -186,4 +212,5 @@
+ 			_fail("--main-scene=on cannot be combined with population/layout options")
+ 			return
++
+ 		tiles = 0
+ 		tier = 1
+@@ -213,5 +240,7 @@
+ 		scene.free()
+ 		return
++
+ 	configured_counts = settings.get_initial_counts()
++
+ 	if tiles > 0 or entities_count > 0:
+ 		settings.initial_total = 0
+@@ -225,4 +254,5 @@
+ 		for stage in engine.job_service.parallel_stages:
+ 			engine.job_service.parallel_stages[stage] = stage == jobs_stages
++
+ 	engine.profile_service.set_performance_stats_enabled(stats_enabled, sampling == "detailed")
+ 	engine.debug_service.hud_enabled = hud_visible
+@@ -232,4 +262,5 @@
+ 	engine.debug_service.show_details = overlay == "details"
+ 	scene.get_node("World/Animals").visible = animals_visible
++
+ 	for name in engine.profile_service.STAGE_NAMES:
+ 		stage_totals[name] = 0.0
+@@ -240,7 +271,9 @@
+ 		window_hotspot_totals[name] = 0.0
+ 		window_hotspot_calls[name] = 0
++
+ 	for name in engine.profile_service.debug_totals_ms:
+ 		window_debug_ms[name] = 0.0
+ 		window_debug_calls[name] = 0
++
+ 	if tiles > 0 or entities_count > 0:
+ 		if entities_count > 0:
+@@ -250,11 +283,14 @@
+ 		for config in [engine.config, engine.defaults, settings]:
+ 			config.initial_total = configured_counts.x + configured_counts.y + configured_counts.z
++
+ 	root.size = Vector2i(1280, 720)
+ 	root.content_scale_size = Vector2i(1280, 720)
+ 	engine.simulation_stepped.connect(_record_step)
+ 	DisplayServer.window_set_title("GlassBeadTest - %s %d animals" % [layout, configured_counts.x + configured_counts.y + configured_counts.z])
++
+ 	if DisplayServer.get_name() != "headless":
+ 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+ 	Engine.max_fps = max_fps
++
+ 	var stamp := Time.get_datetime_string_from_system().replace(":", "-")
+ 	run_directory = "res://output/performance/%s_%s_%d_%d" % [stamp, label, OS.get_process_id(), Time.get_ticks_usec()]
+@@ -275,4 +311,5 @@
+ 	for index in range(warmup_steps):
+ 		engine.simulate_step(interval)
++
+ 	initial_counts = engine.entity_service.get_counts()
+ 	capture_started = engine.entity_service.capture_count
+@@ -285,4 +322,5 @@
+ 		for stage in stage_totals:
+ 			stage_totals[stage] += engine.profile_service.last_stages_ms.get(stage, 0.0)
++
+ 	times.sort()
+ 	var total: float = 0.0
+@@ -291,4 +329,5 @@
+ 	for stage in stage_totals:
+ 		stage_totals[stage] /= fixed_steps
++
+ 	var result := {
+ 		"label": label, "mode": "fixed_steps", "job_timings_mean_ms": _job_means(),
+@@ -306,4 +345,5 @@
+ 		"cpu": OS.get_processor_name(), "limboai": _limboai_info(),
+ 	}
++
+ 	var file := FileAccess.open(run_directory.path_join("result.json"), FileAccess.WRITE)
+ 	file.store_string(JSON.stringify(result, "\t"))
+@@ -317,7 +357,9 @@
+ 	if scenario != "scaled":
+ 		return
++
+ 	var base_total := settings.initial_total
+ 	if base_total == 0:
+ 		return
++
+ 	var ratio := float(entities_count) / base_total
+ 	settings.arena_size *= sqrt(ratio)
+@@ -379,4 +421,5 @@
+ 	frame_times.append((now - last_frame) / 1000.0)
+ 	last_frame = now
++
+ 	var elapsed := (now - started) / 1000000.0
+ 	if now - last_sample >= 1000000:
+@@ -399,4 +442,5 @@
+ 		decision_total += engine.profile_service.last_decision_ms
+ 		movement_total += engine.profile_service.last_movement_ms
++
+ 		for name in stage_totals:
+ 			stage_totals[name] += engine.profile_service.last_stages_ms[name]
+@@ -404,4 +448,5 @@
+ 			hotspot_totals[name] += engine.profile_service.last_hotspots_ms[name]
+ 			hotspot_calls[name] += engine.profile_service.last_hotspot_calls[name]
++
+ 		var service: GridService = engine.grid_service
+ 		preprocessing_totals.pressure_samples += service.pressure_sample_count
+@@ -454,7 +499,9 @@
+ 		"process_ms": Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+ 		"physics_process_ms": Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0}
++
+ 	for name in stage_totals:
+ 		sample.stages_mean_ms[name] = (stage_totals[name] - window_stage_totals[name]) / maxi(1, steps)
+ 		window_stage_totals[name] = stage_totals[name]
++
+ 	for name in hotspot_totals:
+ 		var total: float = hotspot_totals[name] - window_hotspot_totals[name]
+@@ -463,4 +510,5 @@
+ 		window_hotspot_totals[name] = hotspot_totals[name]
+ 		window_hotspot_calls[name] = hotspot_calls[name]
++
+ 	for name in engine.profile_service.debug_totals_ms:
+ 		var total: float = engine.profile_service.debug_totals_ms[name] - window_debug_ms[name]
+@@ -469,4 +517,5 @@
+ 		window_debug_ms[name] = engine.profile_service.debug_totals_ms[name]
+ 		window_debug_calls[name] = engine.profile_service.debug_calls[name]
++
+ 	samples.append(sample)
+ 	window_step_index = step_times.size()
+@@ -495,16 +544,21 @@
+ 	var hotspots: Dictionary = {}
+ 	var debug: Dictionary = {}
++
+ 	for name in stage_totals:
+ 		stages_mean[name] = stage_totals[name] / maxi(1, step_times.size())
++
+ 	for name in hotspot_totals:
+ 		hotspots[name] = {"total_ms": hotspot_totals[name], "calls": hotspot_calls[name],
+ 			"mean_per_step_ms": hotspot_totals[name] / maxi(1, step_times.size()),
+ 			"mean_per_call_ms": hotspot_totals[name] / maxi(1, hotspot_calls[name])}
++
+ 	for name in engine.profile_service.debug_totals_ms:
+ 		debug[name] = {"total_ms": engine.profile_service.debug_totals_ms[name], "calls": engine.profile_service.debug_calls[name],
+ 			"mean_per_call_ms": engine.profile_service.debug_totals_ms[name] / maxi(1, engine.profile_service.debug_calls[name])}
++
+ 	var preprocessing_mean: Dictionary = {}
+ 	for name in preprocessing_totals:
+ 		preprocessing_mean[name] = preprocessing_totals[name] / maxi(1, step_times.size())
++
+ 	var result := {
+ 		"job_timings_mean_ms": _job_means(), "jobs_parallel_enabled": engine.job_service.parallel_enabled,
+@@ -559,9 +613,12 @@
+ 		"samples": samples
+ 	}
++
+ 	if DisplayServer.get_name() != "headless":
+ 		result["average_fps"] = frames / elapsed
+ 		result["frame_p95_ms"] = _percentile(frame_times, 0.95)
++
+ 	result["simulation_wall_ratio"] = (engine.simulation_time - sim_started) / elapsed
+ 	var path := run_directory + "/result.json"
++
+ 	var file := FileAccess.open(path, FileAccess.WRITE)
+ 	if file == null:
+@@ -569,4 +626,5 @@
+ 		quit(1)
+ 		return
++
+ 	file.store_string(JSON.stringify(result, "\t"))
+ 	file.close()
+--- before/Tests/RunBenchmark.ps1
++++ Tests/RunBenchmark.ps1
+@@ -57,4 +57,5 @@
+ }
+ $culture = [Globalization.CultureInfo]::InvariantCulture
++
+ $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+ $startInfo.FileName = $godotExecutable
+@@ -88,6 +89,8 @@
+ $completed = $process.WaitForExit($TimeoutSeconds * 1000)
+ if (-not $completed) {
++
+ 	# 1) Stop only the process tree created by this launcher.
+ 	& taskkill.exe /PID $process.Id /T /F | Out-Null
++
+ 	if ($LASTEXITCODE -ne 0 -or -not $process.WaitForExit(5000)) {
+ 		$status.state = 'cleanup_failed'
+@@ -96,4 +99,5 @@
+ 	}
+ }
++
+ if (-not $stdout.Wait(5000) -or -not $stderr.Wait(5000)) {
+ 	throw 'Benchmark output streams did not close after process exit.'
+--- before/Tests/RunWithAutoload.gd
++++ Tests/RunWithAutoload.gd
+@@ -13,4 +13,5 @@
+ 		quit(1)
+ 		return
++
+ 	var script := load(entry) as Script
+ 	if script == null or not script.can_instantiate() or script.get_instance_base_type() != &"SceneTree":
+@@ -18,4 +19,5 @@
+ 		quit(1)
+ 		return
++
+ 	set_script(script)
+ 	call("_initialize")
+--- before/Tests/SimulationVerification.gd
++++ Tests/SimulationVerification.gd
+@@ -53,7 +53,9 @@
+ 	_empty()
+ 	_check(authored.validate().is_empty(), "authored CFG validates")
++
+ 	var copy: SimulationConfig = authored.copy_config()
+ 	copy.sheep.move_speed = 19.0
+ 	_check(authored.sheep.move_speed == 70.0, "runtime resources are independent")
++
+ 	var sheep := _animal(AnimalEntity.Kind.SHEEP, Vector2(400, 300))
+ 	var wolf := _animal(AnimalEntity.Kind.WOLF, Vector2(400, 300))
+@@ -84,7 +86,9 @@
+ 	data.brain_view[wolf.row].sync()
+ 	_check(data.motion_facing[wolf.row].is_equal_approx(Vector2.DOWN) and is_equal_approx(data.brain_view[wolf.row].sprite.rotation, PI), "sprite and facing follow actual movement")
++
+ 	engine.debug_service.select_at(data.motion_position[sheep.row])
+ 	engine.entity_service.capture(sheep)
+ 	_check(not data.identity_alive[sheep.row] and not engine.entity_service.capture(sheep), "death is idempotent")
++
+ 	_step(20)
+ 	_check(not engine.entity_service.entities.has(sheep), "corpse removed from registry")
+@@ -116,12 +120,16 @@
+ 	settings.sheepdog_ratio = 0.0
+ 	_check(not settings.validate().is_empty(), "nonzero population rejects all-zero ratios")
++
+ 	settings.sheep_ratio = -1.0
+ 	_check(not settings.validate().is_empty(), "negative ratios rejected")
++
+ 	settings.sheep_ratio = NAN
+ 	_check(not settings.validate().is_empty(), "nonfinite ratios rejected")
++
+ 	settings = authored.copy_config()
+ 	var previous := settings.copy_config()
+ 	settings.initial_total += 1
+ 	_check(settings.requires_restart(previous), "total changes require restart")
++
+ 	settings.initial_total = previous.initial_total
+ 	settings.wolf_ratio += 1.0
+@@ -138,19 +146,25 @@
+ 	_step(1)
+ 	_check(maxf(data.sheep_threat_strength[sheep.row], data.sheep_panic_strength[sheep.row]) > 0.0, "wolf behind sheep causes omnidirectional pressure")
++
+ 	data.motion_position[wolf.row] = Vector2(380, 300)
+ 	_step(1)
+ 	_check(maxf(data.sheep_threat_strength[sheep.row], data.sheep_panic_strength[sheep.row]) > 0.0, "nearby wolf causes flight without vision")
++
+ 	data.motion_position[wolf.row] = Vector2(100, 500)
+ 	_step(1)
+ 	_check(data.sheep_threat_strength[sheep.row] == 0.0, "lost threat immediately clears direct pressure")
++
+ 	g_gameplayEngine.sheep_system.receive_howl(sheep, Vector2(350, 300))
+ 	_step(1)
+ 	_check(maxf(data.sheep_threat_strength[sheep.row], data.sheep_panic_strength[sheep.row]) > 0.0, "howl causes continuous panic")
++
+ 	data.sheep_panic_strength[sheep.row] = 0.5
+ 	g_gameplayEngine.sheep_system.receive_howl(sheep, Vector2(350, 300))
+ 	_check(data.sheep_panic_strength[sheep.row] == 1.0, "repeated howl refreshes panic")
++
+ 	engine.config.sheep.panic_duration = 0.01
+ 	_step(1)
+ 	_check(data.sheep_panic_strength[sheep.row] == 0.0, "panic decays to zero without alert state")
++
+ 	_empty(false)
+ 	sheep = _animal(AnimalEntity.Kind.SHEEP, Vector2(400, 300)) as AnimalEntity
+@@ -161,4 +175,5 @@
+ 	g_gameplayEngine.sheep_system.perceive(sheep, 1.0 / 60.0)
+ 	_check(data.sheep_neighbor_count[sheep.row] == 1 and data.sheep_alignment[sheep.row].y > 0.0, "BOID reads snapshot velocity")
++
+ 	var dog := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(350, 300))
+ 	engine.grid_service.rebuild()
+@@ -168,4 +183,5 @@
+ 	g_gameplayEngine.animal_system.update_steering(1.0 / 60.0)
+ 	_check(data.sheep_dog_pressure[sheep.row].length() > 0.0 and data.motion_desired_velocity[sheep.row].x > 0.0, "dog pushes sheep away")
++
+ 	data.motion_position[dog.row] = Vector2(100, 500)
+ 
+@@ -186,7 +202,9 @@
+ 	var near := data.sheep_threat_strength[sheep.row]
+ 	_check(near > far, "closer wolf continuously increases pressure")
++
+ 	data.wolf_hunting[wolf.row] = 1
+ 	engine.wolf_system.accumulate_sheep_pressure()
+ 	_check(is_equal_approx(data.sheep_threat_strength[sheep.row], minf(1.0, near * engine.config.sheep.hunting_pressure_multiplier)), "hunting multiplier strengthens local pressure")
++
+ 	data.sheep_threat_strength[sheep.row] = 1.0
+ 	data.sheep_threat_direction[sheep.row] = Vector2.LEFT
+@@ -194,10 +212,13 @@
+ 	engine.sheep_system.update_steering(1.0)
+ 	_check(data.motion_desired_velocity[sheep.row].x < 0.0 and data.motion_speed_limit[sheep.row] == engine.config.sheep.flee_speed, "maximum danger suppresses opposing dog pressure and selects escape speed")
++
+ 	data.sheep_threat_direction[sheep.row] = Vector2.ZERO
+ 	engine.sheep_system.update_steering(1.0)
+ 	_check(not data.motion_desired_velocity[sheep.row].is_zero_approx(), "opposed threats retain deterministic escape")
++
+ 	engine.sheep_system.receive_howl(sheep, Vector2(450, 300))
+ 	engine.sheep_system.perceive(sheep, engine.config.sheep.panic_duration * 0.5)
+ 	_check(is_equal_approx(data.sheep_panic_strength[sheep.row], 0.5), "panic decays linearly in simulation time")
++
+ 	var draft: SimulationConfig = engine.config.copy_config()
+ 	draft.sheep.panic_duration = 0.0
+@@ -205,6 +226,8 @@
+ 	engine._process(0.0)
+ 	_check(data.sheep_panic_strength[sheep.row] == 0.0, "paused hot apply of zero duration clears panic immediately")
++
+ 	engine.sheep_system.receive_howl(sheep, Vector2(450, 300))
+ 	_check(data.sheep_panic_strength[sheep.row] == 0.0, "zero duration ignores howl panic")
++
+ 	for key in ["Sheep.wander_weight", "Sheep.hunting_pressure_multiplier"]:
+ 		_check(scene.hud.parameters.editors.has(key), "continuous sheep parameter is exposed: " + key)
+@@ -218,4 +241,5 @@
+ 	grid.rebuild()
+ 	_check(grid.members.is_empty() and grid.get_nearby_indices(Vector2(300, 300), 10.0).is_empty(), "empty grid queries are safe")
++
+ 	var first := _animal(AnimalEntity.Kind.SHEEP, Vector2(299, 300))
+ 	var second := _animal(AnimalEntity.Kind.SHEEP, Vector2(300, 300))
+@@ -226,4 +250,5 @@
+ 	_check(grid.width == 43 and grid.height == 24, "grid dimensions round up at 30 pixels")
+ 	_check(grid.row_cells[second.row] == 10 * grid.width + 10, "flat index uses integer cell coordinates")
++
+ 	var candidates := grid.get_nearby_indices(Vector2(300, 300), 1.0, AnimalEntity.Kind.SHEEP)
+ 	_check(candidates.size() == 2 and candidates.has(first.row) and candidates.has(second.row) and not candidates.has(wolf.row), "species ranges cross cell boundaries without duplicates")
+@@ -231,8 +256,10 @@
+ 	_check(grid.get_nearby_indices(Vector2(-100, -100), 1.0).is_empty() and grid.get_nearby_indices(Vector2(2000, 1000), 1.0).is_empty(), "outside queries do not wrap grid rows")
+ 	_check(grid.cell_at(Vector2.ZERO) == 0 and grid.cell_at(engine.config.arena_size) == grid.width * grid.height - 1, "boundary cell mapping is clamped")
++
+ 	engine.sheep_system._scan_neighbors(first, grid)
+ 	_check(data.sheep_neighbor_count[first.row] == 1 and data.sheep_local_flock_center[first.row] == Vector2(300, 300), "shared flock sums exclude the reader")
+ 	_check(data.sheep_alignment[first.row] == Vector2(0, 20), "shared alignment sums exclude the reader velocity")
+ 	_check(grid.sheep_center(Vector2(300, 300), 60.0) == Vector2(299.5, 300), "protection center is weighted by sheep counts")
++
+ 	engine.config.sheep.flock_radius = 1.0
+ 	engine.config.sheep.alignment_radius = 1.0
+@@ -240,4 +267,5 @@
+ 	engine.sheep_system._scan_neighbors(first, grid)
+ 	_check(data.sheep_neighbor_count[first.row] == 0 and data.sheep_alignment[first.row] == Vector2.ZERO, "hot radius changes refresh shared stencils")
++
+ 	var old_uid := first.uid
+ 	engine.entity_service.capture(first)
+@@ -245,9 +273,12 @@
+ 	grid.rebuild()
+ 	_check(grid.members.size() == 2 and grid.get_nearby_indices(Vector2(300, 300), 1.0, AnimalEntity.Kind.SHEEP).size() == 1, "death and row swaps rebuild correct membership")
++
+ 	var replacement := _animal(AnimalEntity.Kind.SHEEP, Vector2(330, 300))
+ 	grid.rebuild()
+ 	_check(data.live(first) == null and replacement.uid != old_uid and grid.members.size() == 3, "slot reuse does not resurrect grid identities")
++
+ 	engine.entity_service.clear()
+ 	_check(grid.members.is_empty() and grid.width == 0, "entity clear releases the spatial snapshot")
++
+ 	_empty()
+ 	_animal(AnimalEntity.Kind.SHEEP, Vector2(300, 300))
+@@ -256,4 +287,5 @@
+ 	grid.rebuild()
+ 	_check(grid.sheep_center(Vector2(320, 300), 90.0).is_equal_approx(Vector2(950.0 / 3.0, 300)), "protection center weights occupied cells by sheep count")
++
+ 	_empty()
+ 	var sheep := _animal(AnimalEntity.Kind.SHEEP, Vector2(420, 300))
+@@ -269,21 +301,28 @@
+ 	_check(data.sheep_threat_direction[sheep.row].is_zero_approx() and data.sheep_threat_strength[sheep.row] != 0, "opposed wolves cancel force but retain danger")
+ 	_check(data.sheep_dog_pressure[sheep.row].is_equal_approx(Vector2(0, 1.0 - 50.0 / 90.0)), "dog pressure has its own distance-weighted channel")
++
+ 	_step(1)
+ 	_check(maxf(data.sheep_threat_strength[sheep.row], data.sheep_panic_strength[sheep.row]) > 0.0 and data.motion_desired_velocity[sheep.row].is_finite(), "canceled wolf pressure retains finite steering")
++
+ 	data.motion_position[right.row] = Vector2(320, 300)
+ 	_step(1)
+ 	_check(data.sheep_threat_direction[sheep.row].is_equal_approx(Vector2(2.0 - 150.0 / engine.config.sheep.wolf_pressure_distance, 0)), "multiple wolves add linear distance contributions")
++
+ 	_step(1)
+ 	_check(data.sheep_threat_direction[sheep.row].is_equal_approx(Vector2(2.0 - 150.0 / engine.config.sheep.wolf_pressure_distance, 0)), "pressure is cleared each step instead of accumulating over time")
++
+ 	data.motion_position[left.row] = Vector2(100, 500)
+ 	data.motion_position[right.row] = Vector2(100, 500)
+ 	_step(1)
+ 	_check(data.sheep_threat_strength[sheep.row] == 0 and data.sheep_threat_direction[sheep.row].is_zero_approx(), "departed wolves leave no pressure")
++
+ 	data.motion_position[left.row] = Vector2(420, 300)
+ 	_step(1)
+ 	_check(data.sheep_threat_strength[sheep.row] != 0 and data.sheep_threat_direction[sheep.row].is_finite(), "coincident wolf pressure remains finite and threatening")
++
+ 	data.motion_position[left.row] = Vector2(420 - engine.config.sheep.wolf_pressure_distance, 300)
+ 	_step(1)
+ 	_check(data.sheep_threat_strength[sheep.row] == 0, "linear wolf pressure reaches zero at its distance boundary")
++
+ 	data.motion_position[left.row].x -= 1.0
+ 	_step(1)
+@@ -298,4 +337,5 @@
+ 	_step(1)
+ 	_check(data.wolf_hunting[wolf.row] and data.live(data.memory_target[wolf.row]) == sheep and data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.STALK, "visible nearest sheep starts stalk")
++
+ 	data.wolf_strategy[wolf.row] = AnimalEntity.Strategy.FRONTAL
+ 	var seen := data.memory_last_seen_position[wolf.row]
+@@ -303,17 +343,22 @@
+ 	_step(1)
+ 	_check(data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.SEARCH and data.memory_last_seen_position[wolf.row] == seen and data.motion_movement_goal[wolf.row] == seen, "hidden prey only updates unseen timer")
++
+ 	data.motion_position[sheep.row] = Vector2(550, 310)
+ 	_step(1)
+ 	_check(data.memory_target_visible[wolf.row] and data.memory_unseen_elapsed[wolf.row] == 0.0 and data.memory_last_seen_position[wolf.row] == data.motion_position[sheep.row], "reacquired prey refreshes memory")
++
+ 	data.motion_position[sheep.row] = Vector2(300, 350)
+ 	engine.config.wolf.memory_duration = 0.02
+ 	_step(2)
+ 	_check(not data.wolf_hunting[wolf.row] and data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.REST and data.wolf_strategy_failures[wolf.row][0] > 0.9, "lost memory fails hunt once and rests")
++
+ 	var failures_before: float = data.wolf_strategy_failures[wolf.row][0]
+ 	g_gameplayEngine.wolf_system.end_hunt(wolf, false)
+ 	_check(data.wolf_strategy_failures[wolf.row][0] == failures_before, "failure feedback is idempotent")
++
+ 	engine.config.wolf.rest_duration = 0.01
+ 	_step(1)
+ 	_check(data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.PATROL, "rest ends into patrol without visible prey")
++
+ 	_empty()
+ 	sheep = _animal(AnimalEntity.Kind.SHEEP, Vector2(420, 300))
+@@ -322,4 +367,5 @@
+ 	_step(1)
+ 	_check(not data.identity_alive[sheep.row] and engine.entity_service.capture_count == 1 and data.wolf_resting[wolf.row], "charge immediately captures in range and rests")
++
+ 	_empty()
+ 	sheep = _animal(AnimalEntity.Kind.SHEEP, Vector2(420, 300))
+@@ -330,4 +376,5 @@
+ 	_step(1)
+ 	_check(engine.entity_service.capture_count == 1, "multiple wolves cannot double capture")
++
+ 	_empty()
+ 	sheep = _animal(AnimalEntity.Kind.SHEEP, Vector2(420, 300))
+@@ -339,9 +386,12 @@
+ 	g_gameplayEngine.wolf_system.resolve_interactions(wolf, 0.0)
+ 	_check(data.identity_alive[sheep.row] and not data.wolf_hunting[wolf.row] and data.wolf_retreating[wolf.row], "post-movement dog interrupts capture from behind")
++
+ 	_step(1)
+ 	_check(data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.RETREAT, "tree prioritizes retreat")
++
+ 	data.motion_position[dog.row] = Vector2(100, 500)
+ 	_step(1)
+ 	_check(data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.REST and not data.wolf_retreating[wolf.row], "cleared retreat starts rest")
++
+ 	_empty()
+ 	sheep = _animal(AnimalEntity.Kind.SHEEP, Vector2(550, 300))
+@@ -352,9 +402,12 @@
+ 	_step(1)
+ 	_check(data.wolf_howled[wolf.row] and data.sheep_panic_strength[(sheep as AnimalEntity).row] == 1.0 and data.sheep_threat_strength[sheep.row] == 0.0, "howl is delivered after decisions")
++
+ 	_step(1)
+ 	_check(maxf(data.sheep_threat_strength[sheep.row], data.sheep_panic_strength[sheep.row]) > 0.0, "howl strength decays on the next simulation step")
++
+ 	var elapsed: float = data.sheep_panic_strength[(sheep as AnimalEntity).row]
+ 	_step(1)
+ 	_check(data.sheep_panic_strength[(sheep as AnimalEntity).row] < elapsed, "one hunt does not howl repeatedly")
++
+ 	g_gameplayEngine.wolf_system.end_hunt(wolf, true)
+ 	_check(data.wolf_strategy_failures[wolf.row][AnimalEntity.Strategy.HOWL] == 0.0, "success feedback stays nonnegative")
+@@ -372,10 +425,13 @@
+ 	_check(data.live(data.dog_collected_sheep[dog.row]) == stray and data.brain_current_behavior[dog.row] == AnimalEntity.Behavior.COLLECT, "local stray is collected")
+ 	_check(data.motion_movement_goal[dog.row].x > data.motion_position[stray.row].x, "collect point is outside stray relative to flock")
++
+ 	data.motion_position[stray.row] = Vector2(570, 300)
+ 	_step(1)
+ 	_check(data.live(data.dog_collected_sheep[dog.row]) == null and data.brain_current_behavior[dog.row] == AnimalEntity.Behavior.PATROL, "collected sheep releases task")
++
+ 	var guard := data.dog_guard_point[dog.row]
+ 	_step(1)
+ 	_check(data.dog_guard_point[dog.row] != guard, "patrol target rotates over simulation time")
++
+ 	var wolf := _animal(AnimalEntity.Kind.WOLF, Vector2(700, 300)) as AnimalEntity
+ 	data.wolf_resting[wolf.row] = int(true)
+@@ -383,14 +439,18 @@
+ 	_step(1)
+ 	_check(data.live(data.memory_target[dog.row]) == wolf and data.brain_current_behavior[dog.row] == AnimalEntity.Behavior.DRIVE, "visible nearby wolf interrupts patrol")
++
+ 	var seen := data.memory_last_seen_position[dog.row]
+ 	data.motion_position[wolf.row] = Vector2(300, 500)
+ 	_step(1)
+ 	_check(data.live(data.memory_target[dog.row]) == wolf and data.memory_last_seen_position[dog.row] == seen and data.motion_movement_goal[dog.row] == seen, "dog pursues last visible position")
++
+ 	engine.config.sheepdog.memory_duration = 0.02
+ 	_step(2)
+ 	_check(data.live(data.memory_target[dog.row]) == null and data.brain_current_behavior[dog.row] == AnimalEntity.Behavior.RETURN, "dog returns when memory expires")
++
+ 	data.motion_position[dog.row] = Vector2(1000, 300)
+ 	_step(1)
+ 	_check(data.brain_current_behavior[dog.row] == AnimalEntity.Behavior.RETURN, "leash takes priority")
++
+ 	_empty()
+ 	anchor = _animal(AnimalEntity.Kind.SHEEP, Vector2(500, 300)) as AnimalEntity
+@@ -406,7 +466,9 @@
+ 	_step(1)
+ 	_check(data.live(data.memory_target[dog.row]) == wolf and data.live(data.memory_target[other.row]) == null, "equal distance wolf claim uses lower dog ID")
++
+ 	engine.entity_service.dog_rows.reverse()
+ 	_step(1)
+ 	_check(data.live(data.memory_target[dog.row]) == wolf and data.live(data.memory_target[other.row]) == null, "wolf claim independent of dog registry order")
++
+ 	data.motion_position[wolf.row] = Vector2(100, 500)
+ 	data.memory_target[dog.row] = null
+@@ -415,4 +477,5 @@
+ 	_step(1)
+ 	_check(data.live(data.dog_collected_sheep[dog.row]) == stray and data.live(data.dog_collected_sheep[other.row]) == null, "stray gets one responsible dog")
++
+ 	_empty()
+ 	dog = _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(400, 300)) as AnimalEntity
+@@ -428,10 +491,13 @@
+ 	_step(1)
+ 	_check(data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.CHASE, "close prey enters charge")
++
+ 	data.motion_position[sheep.row] = Vector2(550, 300)
+ 	_step(1)
+ 	_check(data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.CHASE, "charge persists when prey moves farther away")
++
+ 	data.wolf_hunt_elapsed[wolf.row] = engine.config.wolf.hunt_duration
+ 	_step(1)
+ 	_check(not data.wolf_hunting[wolf.row] and data.brain_current_behavior[wolf.row] == AnimalEntity.Behavior.REST, "hunt timeout interrupts charge")
++
+ 	_empty()
+ 	sheep = _animal(AnimalEntity.Kind.SHEEP, Vector2(550, 300))
+@@ -441,7 +507,9 @@
+ 	_step(1)
+ 	_check(data.live(data.memory_target[wolf.row]) == nearer, "nearest visible sheep selected")
++
+ 	engine.entity_service.capture(nearer)
+ 	_step(1)
+ 	_check(not data.wolf_hunting[wolf.row] and data.wolf_resting[wolf.row], "target death ends hunt immediately")
++
+ 	data.wolf_strategy_failures[wolf.row] = Vector4(1000.0, 0.0, 1000.0, 1000.0)
+ 	var sides: int = 0
+@@ -451,4 +519,5 @@
+ 			sides += 1
+ 	_check(sides > 190, "feedback strongly favors the strategy with fewer failures")
++
+ 	g_gameplayEngine.wolf_system.end_hunt(wolf, false)
+ 	data.wolf_strategy_failures[wolf.row][0] = 2.0
+@@ -456,4 +525,5 @@
+ 	_step(1)
+ 	_check(data.wolf_strategy_failures[wolf.row][0] < before, "strategy failures decay with simulation time")
++
+ 	_empty(false)
+ 	engine.config.sheep.idle_speed_scale = 0.0
+@@ -473,4 +543,5 @@
+ 			break
+ 	_check(collected, "dog pressure actually brings a stray back to local companions")
++
+ 	_empty()
+ 	anchor = _animal(AnimalEntity.Kind.SHEEP, Vector2(500, 300)) as AnimalEntity
+@@ -500,21 +571,28 @@
+ 	_check(panel.editors.has("World.grid_cell_size") and panel.editors.has("Sheep.wolf_pressure_distance") and not panel.editors.has("Sheep.vision_angle") and not panel.editors.has("Sheep.emergency_distance"), "pressure and grid settings replace sheep FOV controls")
+ 	_check(not engine.debug_service.visual_options.has("sheep_vision") and not scene.hud.debug_panel.controls.has("sheep_vision"), "sheep vision overlay is removed")
++
+ 	var draft: SimulationConfig = engine.config.copy_config()
+ 	draft.grid_cell_size = 0
+ 	_check(not draft.validate().is_empty(), "invalid grid size rejected")
++
+ 	draft = engine.config.copy_config()
+ 	draft.sheepdog.guard_distance = draft.sheepdog.leash_distance
+ 	_check(not draft.validate().is_empty(), "invalid leash rejected")
++
+ 	draft = engine.config.copy_config()
+ 	draft.sheepdog.collect_distance = draft.sheep.herding_distance
+ 	_check(not draft.validate().is_empty(), "collect point must exert sheep pressure")
++
+ 	draft = engine.config.copy_config()
+ 	draft.sheep.wolf_pressure_distance = 250.0
+ 	var elapsed := data.sheep_panic_strength[sheep.row]
+ 	_check(engine.request_config_apply(draft).is_empty(), "ordinary config accepted")
++
+ 	engine._process(0.0)
+ 	_check(data.settings[sheep.row].wolf_pressure_distance == 250.0 and data.sheep_panic_strength[sheep.row] == elapsed and engine.paused, "paused hot apply preserves timers")
++
+ 	var path := verification_directory.path_join("preset_v6.tres")
+ 	_check(engine.save_preset(path) == OK and engine.load_preset(path) != null, "new preset round trip")
++
+ 	var old: SimulationConfig = engine.config.copy_config()
+ 	old.preset_version = 5
+@@ -523,4 +601,5 @@
+ 	var before := FileAccess.get_file_as_string(old_path)
+ 	_check(engine.load_preset(old_path) == null and FileAccess.get_file_as_string(old_path) == before, "old preset rejected unchanged")
++
+ 	draft = engine.config.copy_config()
+ 	draft.initial_total = 1
+@@ -530,4 +609,5 @@
+ 	_check(engine.paused and engine.entity_service.get_counts() == Vector3i(1, 0, 0), "restart preserves pause and uses new counts")
+ 	_check(scene.get_node("Camera2D").position == Vector2(700, 400), "arena refresh independent of removed food system")
++
+ 	draft = engine.config.copy_config()
+ 	draft.grid_cell_size = 60
+@@ -535,6 +615,8 @@
+ 	engine._process(0.0)
+ 	_check(engine.paused and engine.step_count == 0 and engine.config.grid_cell_size == 60, "grid sizing restarts and preserves pause")
++
+ 	_step(1)
+ 	_check(engine.grid_service.cell_size == 60.0, "restarted grid uses applied cell size")
++
+ 	draft = engine.config.copy_config()
+ 	draft.initial_total = 10
+@@ -545,4 +627,5 @@
+ 	engine._process(0.0)
+ 	_check(engine.paused and engine.step_count == 0 and engine.entity_service.get_counts() == Vector3i(5, 5, 0), "total and ratios restart into exact species counts while paused")
++
+ 	panel.set_draft(engine.config)
+ 	panel.editors["World.wolf_ratio"].value = 0.0
+@@ -557,12 +640,16 @@
+ 	engine._process(0.0)
+ 	_check(engine.entity_service.get_counts() == Vector3i(1, 10, 1), "debug spawn and batch keys")
++
+ 	var before: int = engine.step_count
+ 	engine._process(1.0)
+ 	_check(engine.step_count == before, "pause freezes simulation")
++
+ 	_key(KEY_N)
+ 	engine._process(0.0)
+ 	_check(engine.step_count == before + 1 and engine.paused, "single step advances once")
++
+ 	engine._process(0.0)
+ 	_check(engine.step_count == before + 1, "single step is consumed")
++
+ 	_key(KEY_1, false, true)
+ 	engine._process(0.0)
+@@ -577,4 +664,5 @@
+ 	engine._process(0.0)
+ 	_check(engine.entity_service.get_counts() == Vector3i(1, 10, 1), "numeric field focus blocks gameplay shortcuts")
++
+ 	panel.close()
+ 	_key(KEY_F1)
+@@ -604,13 +692,18 @@
+ 	engine._process(interval * 0.4)
+ 	_check(engine.step_count == 0 and is_equal_approx(engine._accumulator, interval * 0.4), "fractional frame waits for a full step")
++
+ 	engine._process(interval * 0.6)
+ 	_check(engine.step_count == 1 and is_zero_approx(engine._accumulator), "accumulated full step advances once")
++
+ 	engine.reset_simulation()
+ 	engine._process(interval * 6.4)
+ 	_check(engine.step_count == 4 and is_equal_approx(engine._accumulator, interval * 0.4), "catch-up is bounded and retains only fractional remainder")
++
+ 	engine._process(0.0)
+ 	_check(engine.step_count == 4, "discarded backlog is not replayed")
++
+ 	engine._process(interval * 0.6)
+ 	_check(engine.step_count == 5, "fractional remainder carries into next frame")
++
+ 	engine.reset_simulation()
+ 	engine._process(interval * 0.4)
+@@ -618,9 +711,12 @@
+ 	engine._process(100.0)
+ 	_check(engine.step_count == 0 and engine._accumulator == 0.0, "pause discards fractional time and accrues no debt")
++
+ 	engine.paused = false
+ 	engine._process(interval * 0.6)
+ 	_check(engine.step_count == 0, "resume starts with a fresh accumulator")
++
+ 	engine._process(interval * 0.4)
+ 	_check(engine.step_count == 1, "resume advances after a new full interval")
++
+ 	engine.reset_simulation()
+ 	engine.simulation_hz = 30.0
+@@ -629,10 +725,13 @@
+ 	engine._process(0.0)
+ 	_check(engine.step_count == 1 and is_equal_approx(engine.simulation_time, 1.0 / 30.0), "single step uses configured interval")
++
+ 	engine._process(10.0)
+ 	_check(engine.step_count == 1, "single-step request is consumed once")
++
+ 	engine.paused = false
+ 	engine._process(0.01)
+ 	engine.reset_simulation()
+ 	_check(engine._accumulator == 0.0 and engine.step_count == 0, "reset clears accumulated time")
++
+ 	var errors_enabled := Engine.print_error_messages
+ 	Engine.print_error_messages = false
+@@ -655,4 +754,5 @@
+ 	engine._process(1.0 / 60.0)
+ 	_check(engine.step_count == 1 and not engine._clock_error_reported, "valid configuration resumes automatic stepping")
++
+ 	_empty(false)
+ 	engine.config.initial_total = 30
+@@ -674,4 +774,5 @@
+ 		actual.append([data.identity_entity_id[animal.row], data.motion_position[animal.row], data.motion_velocity[animal.row], data.brain_current_behavior[animal.row]])
+ 	_check(engine.step_count == 120 and expected == actual and is_zero_approx(engine._accumulator), "frame grouping preserves seeded simulation at equal step count")
++
+ 	engine.reset_simulation()
+ 	engine._process(interval * 0.4)
+@@ -701,4 +802,5 @@
+ 	var player := data.brain_player[prey.row]
+ 	_check(player == null, "sheep pooling needs no behavior tree")
++
+ 	data.sheep_panic_strength[prey.row] = 1
+ 	data.sheep_threat_strength[prey.row] = 0.6
+@@ -711,4 +813,5 @@
+ 	_check(service.capture(prey) and not service.capture(prey), "death captures exactly once")
+ 	_check(data.live(data.memory_target[wolf.row]) == null and engine.debug_service.selected == null, "death invalidates target and selection immediately")
++
+ 	service.remove_expired()
+ 	_check(not prey.enabled and view.visible and player == null, "disabled life keeps a short corpse presentation")
+@@ -717,4 +820,5 @@
+ 	_check(dog.row == 0 and dog.uid == dog_uid and data.motion_position[dog.row] == Vector2(900, 300) and data.motion_velocity[dog.row] == Vector2(7, 9) and data.dog_protection_center[dog.row] == Vector2(800, 250), "row swap preserves identity and independent component fields")
+ 	_check(data.brain_view[dog.row].entity == dog and data.live(data.dog_collected_sheep[dog.row]) == null, "row swap preserves scene association and invalidates dog references")
++
+ 	for row in range(data.row_to_slot.size()):
+ 		_check(data.slot_to_row[data.row_to_slot[row]] == row, "slot mapping follows row swap")
+@@ -722,8 +826,11 @@
+ 	engine._process(1.0)
+ 	_check(data.identity_death_remaining[prey.row] == remaining, "pause freezes corpse lifetime")
++
+ 	var extra := _animal(AnimalEntity.Kind.SHEEP, Vector2(700, 400))
+ 	_check(extra.slot != old_slot and view.visible, "spawning cannot reuse a visible corpse")
++
+ 	_step(20)
+ 	_check(not view.visible and data.retained_count == data.active_count, "expired corpse enters the reusable suffix")
++
+ 	var allocated := data.row_to_slot.size()
+ 	var replacement := _animal(AnimalEntity.Kind.SHEEP, Vector2(600, 400))
+@@ -734,12 +841,16 @@
+ 	_check(view.global_position == Vector2(600, 400) and replacement.enabled, "reuse synchronizes spawn presentation")
+ 	_check(service.capture(extra) and service.capture(replacement), "multiple deaths can be queued in one interaction phase")
++
+ 	service.remove_expired()
+ 	_check(data.active_count == 2 and service.get_counts() == Vector3i(0, 1, 1), "compaction does not skip consecutive deaths")
++
+ 	var last_uid := dog.uid
+ 	for index in range(3):
+ 		engine.reset_simulation()
+ 	_check(data.row_to_slot.size() == allocated and service.get_counts() == Vector3i.ZERO, "empty resets retain allocated storage without growth")
++
+ 	var new_dog := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(900, 300))
+ 	_check(new_dog.uid > last_uid and data.live(dog) == null, "reset does not recycle uid values")
++
+ 	service.clear()
+ 	var after_clear := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(900, 300))
+@@ -765,9 +876,12 @@
+ 	scene.hud._unhandled_key_input(event)
+ 	_check(panel.visible and not scene.hud.parameters.visible, "F3 opens DebugPanel separately from parameters")
++
+ 	panel.enabled_toggle.button_pressed = true
+ 	_check(debug.show_details, "panel enables auxiliary visuals immediately")
++
+ 	panel.scope.select(1)
+ 	panel.scope.item_selected.emit(1)
+ 	_check(not debug.selected_only, "panel supports all-animal scope")
++
+ 	var rng_state: int = engine.rng.state
+ 	var target_position := data.motion_position[sheep.row]
+@@ -776,4 +890,5 @@
+ 	engine.wolf_system.resolve_interactions(wolf, 0.0)
+ 	_check(debug.howl_events.size() == 1, "settled howl records a visual event")
++
+ 	var origin: Vector2 = debug.howl_events[0]["position"]
+ 	var radius: float = debug.howl_events[0]["radius"]
+@@ -784,26 +899,36 @@
+ 	engine._process(0.0)
+ 	_check(debug.howl_events[0]["position"] == origin and debug.howl_events[0]["radius"] == radius, "howl snapshots origin and range at settlement")
++
+ 	engine._process(1.0)
+ 	_check(debug.howl_events[0]["elapsed"] == 0.0, "pause freezes howl pulse")
++
+ 	debug.advance_visuals(0.1)
+ 	_check(is_equal_approx(debug.howl_events[0]["elapsed"], 0.1), "visual event advances with simulation delta")
++
+ 	panel.controls["howl"].button_pressed = false
+ 	_check(debug.howl_events.is_empty(), "disabling howl clears pending presentation")
++
+ 	panel.controls["howl"].button_pressed = true
+ 	_check(debug.howl_events.is_empty(), "reenabling does not replay old howls")
+ 	_check(engine.rng.state == rng_state and data.motion_position[sheep.row] == target_position and data.memory_last_seen_position[wolf.row] == remembered, "visual controls preserve RNG and hidden target memory")
++
+ 	panel.close()
+ 	_check(debug.show_details and not panel.visible, "closing panel preserves visual choices")
++
+ 	event.keycode = KEY_F2
+ 	scene.hud._unhandled_key_input(event)
+ 	_check(scene.hud.parameters.visible and not panel.visible, "F2 keeps panels mutually exclusive")
++
+ 	event.keycode = KEY_F3
+ 	scene.hud._unhandled_key_input(event)
+ 	_check(panel.visible and not scene.hud.parameters.visible, "opening DebugPanel closes parameters")
++
+ 	event.keycode = KEY_ESCAPE
+ 	scene.hud._unhandled_key_input(event)
+ 	_check(not panel.visible, "Escape closes DebugPanel")
++
+ 	engine.reset_simulation()
+ 	_check(debug.show_details and not debug.selected_only and debug.howl_events.is_empty(), "reset keeps visual preferences and clears effects")
++
+ 	debug.show_details = false
+ 	debug.selected_only = true
+@@ -825,4 +950,5 @@
+ 	engine.animal_system.move_towards(wolf, Vector2(600, 400), 50.0, 1.0 / 60.0)
+ 	_check(data.motion_desired_velocity[wolf.row] == Vector2.ZERO, "point intent defers velocity until steering stage")
++
+ 	data.brain_current_behavior[dog.row] = AnimalEntity.Behavior.COLLECT
+ 	data.dog_protection_center[dog.row] = Vector2(600, 400)
+@@ -834,4 +960,5 @@
+ 	_check(data.motion_movement_goal[dog.row].is_equal_approx(Vector2(700 + engine.config.sheepdog.collect_distance, 400)), "batch dog collect point stays outside sheep relative to flock")
+ 	_check(engine.rng.state == state, "steering does not consume RNG")
++
+ 	data.brain_current_behavior[wolf.row] = AnimalEntity.Behavior.RETREAT
+ 	data.wolf_nearest_threat[wolf.row] = dog
+@@ -839,12 +966,15 @@
+ 	engine.animal_system.update_steering(1.0 / 60.0)
+ 	_check(data.motion_desired_velocity[wolf.row].x < 0.0, "batch retreat moves away from actual threat")
++
+ 	data.motion_intent[wolf.row] = AnimalData.MotionIntent.STOP
+ 	data.motion_desired_velocity[wolf.row] = Vector2.ZERO
+ 	engine.animal_system.update_steering(1.0 / 60.0)
+ 	_check(data.motion_desired_velocity[wolf.row] == Vector2.ZERO, "stop intent cannot reuse previous point velocity")
++
+ 	data.motion_intent[dog.row] = AnimalData.MotionIntent.POINT
+ 	engine.entity_service.capture(sheep)
+ 	engine.entity_service.remove_expired(1.0)
+ 	_check(data.motion_intent[dog.row] == AnimalData.MotionIntent.POINT, "row compaction preserves motion intent")
++
+ 	var reused := _animal(AnimalEntity.Kind.SHEEP, Vector2(600, 400))
+ 	_check(data.motion_intent[reused.row] == AnimalData.MotionIntent.STOP, "reused row clears previous motion intent")
+@@ -865,8 +995,10 @@
+ 	engine.dog_system.accumulate_sheep_pressure()
+ 	_check(data.sheep_threat_strength[sheep.row] == 0 and data.sheep_threat_direction[sheep.row] == Vector2.ZERO, "interpolation does not create a wolf threat outside exact radius")
++
+ 	data.motion_position[wolf.row] = Vector2(302, 307)
+ 	grid.rebuild()
+ 	engine.wolf_system.accumulate_sheep_pressure()
+ 	_check(data.sheep_threat_strength[sheep.row] > 0 and data.sheep_threat_direction[sheep.row].x > 0.0, "sampled pressure points away inside exact radius")
++
+ 	var before := data.sheep_threat_direction[sheep.row]
+ 	data.motion_position[sheep.row] += Vector2(1, 0)
+@@ -874,8 +1006,10 @@
+ 	engine.wolf_system.accumulate_sheep_pressure()
+ 	_check(data.sheep_threat_strength[sheep.row] == 0 and not data.sheep_threat_direction[sheep.row].is_equal_approx(before), "within-cell motion reaches zero pressure at exact radius")
++
+ 	data.motion_position[sheep.row].x += 0.01
+ 	grid.rebuild()
+ 	engine.wolf_system.accumulate_sheep_pressure()
+ 	_check(data.sheep_threat_strength[sheep.row] == 0, "subpixel motion beyond true wolf radius clears threat")
++
+ 	data.motion_position[dog.row] = Vector2(401, 100)
+ 	grid.rebuild()
+@@ -883,4 +1017,5 @@
+ 	_check(data.sheep_dog_pressure[sheep.row] == Vector2.ZERO, "dog field is zero outside actual radius")
+ 	_check(grid.pressure_sample_count == 4, "one dense sheep cell shares four pressure nodes")
++
+ 	engine.entity_service.capture(wolf)
+ 	engine.entity_service.remove_expired(1.0)
+@@ -888,4 +1023,5 @@
+ 	engine.wolf_system.accumulate_sheep_pressure()
+ 	_check(data.sheep_threat_strength[sheep.row] == 0 and data.sheep_threat_direction[sheep.row] == Vector2.ZERO, "dead pressure source does not survive row compaction")
++
+ 	engine.entity_service.capture(neighbor)
+ 	engine.entity_service.remove_expired(1.0)
+@@ -918,8 +1054,10 @@
+ 	_check(data.dog_protection_center[dog.row].is_equal_approx(Vector2(610.5, 310.5)) and data.dog_protection_center[dog.row] == data.dog_protection_center[other.row], "shared patrol center uses actual sheep positions rather than grid center")
+ 	_check(data.dog_wolf_candidates[dog.row].has(wolf) and not data.dog_wolf_candidates[other.row].has(wolf), "shared wolf candidates do not share individual vision")
++
+ 	data.motion_position[neighbor.row] += Vector2(2, 0)
+ 	grid.rebuild()
+ 	engine.dog_system.perceive(dog, 1.0 / 60.0)
+ 	_check(data.dog_protection_center[dog.row].is_equal_approx(Vector2(611.5, 310.5)), "within-cell sheep movement updates shared patrol center")
++
+ 	data.motion_position[neighbor.row] = Vector2(640, 320)
+ 	grid.rebuild()
+@@ -927,4 +1065,5 @@
+ 	engine.dog_system.perceive(other, 1.0 / 60.0)
+ 	_check(engine.dog_system.shared_group_count == 2, "cross-cell anchors build separate protection groups")
++
+ 	data.motion_position[dog.row] = Vector2(1100, 600)
+ 	data.dog_returning[dog.row] = 1
+@@ -932,4 +1071,5 @@
+ 	engine.dog_system.perceive(dog, 1.0 / 60.0)
+ 	_check(engine.dog_system.shared_group_count == 1 and engine.dog_system.shared_candidate_groups == 0, "returning dog reads flock center without preparing target candidates")
++
+ 	engine.entity_service.clear()
+ 	_check(grid.members.is_empty(), "reset drops spatial data used by shared protection")
+@@ -945,4 +1085,5 @@
+ 	await process_frame
+ 	_check(not engine.debug_service.show_details and not scene.hud.debug_panel.visible and engine.debug_service.selected_only, "default presentation keeps overlays off with selected-only scope")
++
+ 	_verify_resources_and_vision()
+ 	_verify_population_config()

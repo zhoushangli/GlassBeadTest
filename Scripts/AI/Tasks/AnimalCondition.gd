@@ -20,11 +20,7 @@ func _tick(_delta: float) -> Status:
 	var met := false
 	match condition:
 		&"has_threat":
-			met = data.sheep_threatened[animal.row] or data.sheep_has_panic[animal.row] if data.identity_kind[animal.row] == AnimalEntity.Kind.SHEEP else data.live(data.memory_target[animal.row]) != null
-		&"is_alert":
-			met = data.sheep_has_alert[animal.row] != 0
-		&"is_herded":
-			met = not data.sheep_dog_pressure[animal.row].is_zero_approx()
+			met = data.live(data.memory_target[animal.row]) != null
 		&"has_nearby_dog":
 			met = data.live(data.wolf_nearest_threat[animal.row]) != null
 		&"needs_rest":

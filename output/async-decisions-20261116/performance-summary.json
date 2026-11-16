@@ -1,0 +1,188 @@
+[
+  {
+    "label": "async_before_default",
+    "result": "output\\performance\\2026-11-16T15-10-58_async_before_default_39156_2147702\\result.json",
+    "counts": [
+      870,
+      87,
+      43
+    ],
+    "arena": [
+      2560,
+      1440
+    ],
+    "warmup_seconds": 2,
+    "measured_seconds": 8.041442,
+    "visibility": {
+      "animals": true,
+      "hud": true,
+      "overlay": "on"
+    },
+    "max_fps": 0,
+    "fps": 10.694599301966,
+    "step_ms": 22.3149127906977,
+    "step_p95_ms": 27.746,
+    "actual_simulation_hz": 42.77839720786396,
+    "simulation_per_frame_ms": 89.2596511627907,
+    "async_decisions": null
+  },
+  {
+    "label": "async_after_default",
+    "result": "output\\performance\\2026-11-16T15-21-33_async_after_default_46120_2371026\\result.json",
+    "counts": [
+      870,
+      87,
+      43
+    ],
+    "arena": [
+      2560,
+      1440
+    ],
+    "warmup_seconds": 2,
+    "measured_seconds": 8.078987,
+    "visibility": {
+      "animals": true,
+      "hud": true,
+      "overlay": "on"
+    },
+    "max_fps": 0,
+    "fps": 12.2540115487251,
+    "step_ms": 19.3794949494949,
+    "step_p95_ms": 22.486,
+    "actual_simulation_hz": 49.016046194900426,
+    "simulation_per_frame_ms": 77.5179797979798,
+    "async_decisions": {
+      "Dog": {
+        "execute_ms": 17.3201846153846,
+        "latency_ms": 31.5878153846154,
+        "max_latency_ms": 78.973,
+        "prepare_ms": 2.36718461538462,
+        "requests": 195,
+        "submit_ms": 1.23773846153846
+      },
+      "Wolf": {
+        "execute_ms": 1.75922727272727,
+        "latency_ms": 11.4472222222222,
+        "max_latency_ms": 17.076,
+        "prepare_ms": 2.3960404040404,
+        "requests": 198,
+        "submit_ms": 1.76678787878788
+      }
+    }
+  },
+  {
+    "label": "async_after_1000",
+    "result": "output\\performance\\2026-11-16T15-22-52_async_after_1000_66988_2320154\\result.json",
+    "counts": [
+      870,
+      87,
+      43
+    ],
+    "arena": [
+      2560,
+      1440
+    ],
+    "warmup_seconds": 2,
+    "measured_seconds": 8.053391,
+    "visibility": {
+      "animals": true,
+      "hud": true,
+      "overlay": "on"
+    },
+    "max_fps": 0,
+    "fps": 11.7962731475474,
+    "step_ms": 20.128002631579,
+    "step_p95_ms": 24.137,
+    "actual_simulation_hz": 47.18509259018965,
+    "simulation_per_frame_ms": 80.5120105263158,
+    "async_decisions": {
+      "Dog": {
+        "execute_ms": 18.2238510638298,
+        "latency_ms": 32.5144468085106,
+        "max_latency_ms": 74.175,
+        "prepare_ms": 2.44154787234043,
+        "requests": 188,
+        "submit_ms": 1.25817553191489
+      },
+      "Wolf": {
+        "execute_ms": 2.05387368421053,
+        "latency_ms": 12.2225684210526,
+        "max_latency_ms": 23.914,
+        "prepare_ms": 2.47337368421053,
+        "requests": 190,
+        "submit_ms": 1.86917894736842
+      }
+    }
+  },
+  {
+    "label": "async_integrated_default",
+    "result": "output\\performance\\2026-11-16T15-29-11_async_integrated_default_43052_2039883\\result.json",
+    "counts": [
+      870,
+      87,
+      43
+    ],
+    "arena": [
+      2560,
+      1440
+    ],
+    "warmup_seconds": 2,
+    "measured_seconds": 8.007267,
+    "visibility": {
+      "animals": true,
+      "hud": true,
+      "overlay": "on"
+    },
+    "max_fps": 0,
+    "fps": 18.9827565385293,
+    "step_ms": 16.568060475162,
+    "step_p95_ms": 19.633,
+    "actual_simulation_hz": 57.82247550880968,
+    "simulation_per_frame_ms": 50.4671842105263,
+    "async_decisions": {
+      "Dog": {
+        "execute_ms": 18.4023422222222,
+        "latency_ms": 25.4989733333334,
+        "max_latency_ms": 78.132,
+        "prepare_ms": 2.28442222222222,
+        "requests": 225,
+        "submit_ms": 1.26619555555556
+      },
+      "Wolf": {
+        "execute_ms": 2.16375,
+        "latency_ms": 8.12253448275862,
+        "max_latency_ms": 28.131,
+        "prepare_ms": 2.45424568965517,
+        "requests": 232,
+        "submit_ms": 1.8946724137931
+      }
+    }
+  },
+  {
+    "label": "async_before_1000",
+    "result": "output\\async-decisions-20261116\\before\\output\\performance\\2026-11-16T15-21-56_async_before_1000_12204_2498467\\result.json",
+    "counts": [
+      870,
+      87,
+      43
+    ],
+    "arena": [
+      2560,
+      1440
+    ],
+    "warmup_seconds": 2,
+    "measured_seconds": 8.041729,
+    "visibility": {
+      "animals": true,
+      "hud": true,
+      "overlay": "on"
+    },
+    "max_fps": 0,
+    "fps": 9.69940668231919,
+    "step_ms": 24.6561987179487,
+    "step_p95_ms": 28.785,
+    "actual_simulation_hz": 38.79762672927675,
+    "simulation_per_frame_ms": 98.6247948717948,
+    "async_decisions": null
+  }
+]

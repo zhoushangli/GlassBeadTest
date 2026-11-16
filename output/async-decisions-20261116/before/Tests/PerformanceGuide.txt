@@ -1,0 +1,180 @@
+性能观测与扩图基准
+
+运行环境
+本次使用 Godot 4.7.2-stable、LimboAI 随包版本 v1.8.1。
+C:\Work\Godot\Editor\godot 的当前源码构建为 4.8，不能当成本次运行版本。
+无需重编译引擎；CFG 使用 initial_total 和羊狼狗相对比例，默认 276 与 20:2:1，仍生成 240/24/12。
+比例自动归一化，不要求总和为 100；最大余数法确保整数数量之和等于总数，同余时按羊、狼、狗顺序。
+总数或比例修改需要重启，面板预览实际分配；预设版本为 5，旧版不自动转换。
+
+1. Godot Profiler
+在编辑器运行项目，打开 Debugger > Profiler，开始短时采集。
+Inclusive 包含下级调用，Self 用于定位函数自身成本，Calls 是调用次数。
+重点查看网格重建、附近查询、羊 BOID 与感知、狼选目标、狗保护对象选择和 decide。
+父函数 Inclusive 与子函数时间有重叠，不能相加；一个循环帧可能包含多个模拟步。
+GDScript Profiler 不能完整细分 LimboAI 的 C++ 内部调用。
+命令行可用 --debug --profiling，使用 Godot 内置本地 Profiler 打印热点。
+正式帧率和模拟速度测试关闭 Profiler，热点采样单独保存。
+
+2. Custom Monitors
+调试运行默认开启阶段采样；在 Debugger > Monitors 查看分组。
+g_gameplayEngine.profile_service.set_performance_stats_enabled(false) 关闭；(true) 开阶段；(true, true) 开详细热点。
+时间指标通过 MONITOR_TYPE_TIME 注册，回调返回秒，编辑器直接显示 ms；内部和 JSON 仍用毫秒浮点数。
+不再使用旧的 Simulation/StepMeanMs 与 StepMaxMs 名称，改为 StepMean、StepP95、StepMax。
+Simulation：存活动物数，以及每模拟步耗时的平均、P95 和最大值。
+SimStages：SpatialBuild、TaskAssignment、Perception、Decision、Movement、Interaction、Cleanup。
+阶段互不重叠，采样与 Monitor 注册、发布、注销由 ProfileService 负责。
+旧 JSON perception_mean_ms 包含空间索引与感知；movement_interaction_mean_ms 仍包含移动、交互与清理。
+新增 stages_mean_ms 明确区分上述阶段，movement_mean_ms、interaction_mean_ms、cleanup_mean_ms 单独导出。
+Spatial：QueriesPerStep、CandidatesPerQuery、MaxCandidates、NonemptyCells、MaxCellOccupancy。
+候选尚未做圆形距离和物种筛选，不代表有效邻居数；候选均值按查询次数加权。
+Hotspots（仅详细档）：NearbyQuery、NeighborScan、Separation、WolfTarget、DogAnchor。
+Mean 是窗口内每模拟步累计耗时的平均，CallsPerStep 是每步调用次数；JSON 同时提供每次调用平均耗时。
+热点属于阶段内部，不能与阶段或其他 inclusive 父函数重复相加；热点记录开销会进入阶段和总步进时间。
+Debug：HUDRefreshMean、OverlayDrawCPUTimeMean，按实际执行次数平均，不按模拟步平均。
+OverlayDrawCPUTime 仅测提交调试绘制命令的 CPU 时间，不能代表完整渲染或 GPU 时间。
+按实际墙钟约一秒发布；暂停后无模拟步的完整窗口发布零，不延续旧耗时。重置清零，停止注销。
+总步进计时不包含窗口聚合、simulation_stepped 回调、HUD 和渲染；正式测试以未连接 Profiler 的桌面结果为准。
+
+新增基准参数（底层使用对应小写 --name=value）：
+-Sampling off|stages|detailed；旧 -Stats off 仍映射到关闭采样，显式 Sampling 优先。
+-Hud on|off；-Overlay on|off|details；-Animals on|off；-Label <英文标识>。
+关闭 HUD 会同时停止 HUD 刷新，关闭 Overlay 会同时停止调试刷新和绘制；隐藏动物只改变表现。
+例如：
+& ./Tests/RunBenchmark.ps1 -Entities 1000 -Scenario fixed -Sampling detailed -Warmup 5 -Duration 60 -Label fixed-detailed
+启动器默认超时改为 120 秒；result_version=4，JSON 每秒含阶段、热点、Debug 和渲染统计。
+采样关闭时阶段、热点和空间零值表示未采集。无窗口结果只代表循环频率，不称为桌面 FPS。
+1000 是初始动物总数（870 羊、87 狼、43 狗），测量前预热和测量中捕获均可能降低存活数。
+
+3. 命令（PowerShell，在项目根目录）
+$godotExe = 'C:\Work\Godot\Editor\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
+& $godotExe --headless --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/PerformanceVerification.gd
+& $godotExe --headless --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/SimulationVerification.gd
+& ./Tests/RunBenchmark.ps1 -GodotPath $godotExe -Headless -Tiles 2 -Layout spread
+& ./Tests/RunBenchmark.ps1 -GodotPath $godotExe -Headless -Tiles 2 -Layout cluster
+& ./Tests/RunBenchmark.ps1 -GodotPath $godotExe -Headless -Tiles 2 -Stats off
+& ./Tests/RunBenchmark.ps1 -GodotPath $godotExe -Headless -Tiles 2 -Profile -Warmup 1 -Duration 5
+& ./Tests/RunBenchmark.ps1 -GodotPath $godotExe -Tiles 1
+
+优先使用外部启动器：默认限制整个进程 120 秒，超时仅终止自己创建的进程树，退出码 124。
+-Headless 不创建游戏窗口。大型场景首次决策可能占住主线程，内部测量时长无法中断它。
+近万档尚无可交互性能，不建议直接桌面启动。只验证外部超时可用：
+& ./Tests/RunBenchmark.ps1 -GodotPath $godotExe -Headless -Tiles 6 -TimeoutSeconds 5
+
+启动器日志放在 output/performance/<时间>_launcher_<唯一标识>/，包含
+stdout.log、stderr.log 和 launcher.json；成功时 BENCHMARK_RESULT 给出实际结果目录。
+默认 GodotPath 为本次验证安装路径，其他机器请显式指定。
+
+正常主场景对照：
+& ./Tests/RunBenchmark.ps1 -GodotPath $godotExe -MainScene -Warmup 5 -Duration 30 -MaxFps 60 -Sampling stages -Hud on -Overlay on -Animals on
+-MainScene 使用主场景本身的出生布局，不可与 Entities/Scenario/Tiles/Layout 混用。
+result.json 同时记录 steps_per_frame_mean/p95 和 simulation_per_frame_mean_ms/p95_ms。
+前者是每渲染帧的模拟步数，后者是该帧所有模拟步的总耗时；不能用单步 Step 替代。
+
+4. 扩图规则和底层参数
+直接调用底层脚本不提供外部超时保护，例如：
+& $godotExe --headless --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/RunBenchmark.gd --tiles=2 --layout=spread
+
+--tiles 只接受 1、2、4、6，必须配合 --layout=spread 或 cluster。
+动物数为 CFG 的 initial_total * tiles²，地图为 CFG 的 arena_size * tiles；各物种按同一比例分配。
+spread 将原始出生模式平移到各区域，保持总体初始密度。
+cluster 保持相同地图，将动物集中到中央一个 1280×720 区域。
+位置使用独立固定种子 RNG；动物自身初始化仍使用引擎 RNG。
+布局仅用于基准启动。测试时不要生成、重置、暂停或 Apply 配置；正常重置不重建测试专用布局。
+旧 --tier=N 仍表示只加数量、不扩图，不能与 --tiles 同时使用。
+--stats=on|off 控制统计；--warmup=3、--duration=30 为墙钟秒。
+--max-fps=0 表示不限制循环频率，物理仍为 60 Hz。
+主线程完成当前工作后才能检查测量边界，重负载可能超出请求时长。
+桌面窗口 1280×720、Compatibility、关闭 VSync，相机展示完整地图。
+
+5. 结果解释
+每次独立输出 output/performance/<时间>_<进程>_<计数>_<布局>_<倍率>/result.json。
+记录数量、硬件与版本、模拟步平均/P95/最大耗时及空间统计。
+抓捕统计仅覆盖测量阶段；存活数量随猎捕下降，不能当作固定规模长期测试。
+headless 只有 loop_hz 和循环耗时，不输出渲染 FPS。
+桌面 average_fps 是 process 循环频率估计，不是 GPU 呈现时间测量。
+simulation_wall_ratio = 模拟秒 / 墙钟秒；约 1 是实时，小于 1 表示跟不上。
+60 Hz 单步预算约 16.67 ms，但还需留时间给 UI、渲染和其他引擎工作。
+limboai.version 来自随包版本文件；binary_sha256 标识实际 Windows 调试扩展二进制。
+script_profiler_active 通过 EngineDebugger.is_profiling("scripts") 记录导出时的状态。
+早期样本的 profiler_requested 字段不可靠；以原始 stdout 的 BEGIN PROFILING 为准。
+单组 on/off 墙钟样本不能给出稳定开销百分比，模拟进度不同也会影响测量。
+
+6. 精确数量布局（uniform_v1）
+& ./Tests/RunBenchmark.ps1 -Entities 1000 -Scenario scaled -Headless -TimeoutSeconds 90
+& ./Tests/RunBenchmark.ps1 -Entities 4000 -Scenario fixed -TimeoutSeconds 90
+
+-Entities 接受 1000、2000、3000、4000，必须同时指定 -Scenario scaled|fixed。
+不能与 -Tiles、-Layout 或底层 --tier 混用。scaled 按 sqrt(N / 276) 缩放场地边长；fixed 保持默认场地。
+三种动物按默认比例分配总数，余数按小数部分排序补齐。出生点由独立固定种子 RNG 生成。
+所有草系统、草参数与草指标已经删除；版本 3 的新玩法与旧玩法不能直接作等价性能比较。
+默认规模是 240 羊、24 狼、12 狗；这不是大型实体规模或 60 FPS 的性能承诺。
+
+
+固定步进与 Service 生命周期
+GameplayEngine 在 _process 中累计时间，默认 simulation_hz=60、max_steps_per_frame=4。
+每帧先计算完整步数，再执行有界 for 循环；超出上限的整步时间舍弃，只保留不足一步的余量。
+暂停切换、重置和重新启动清空累计值；单步使用当前 simulation_hz 对应的固定间隔。
+严重卡顿时模拟时间可能落后于墙钟时间；渲染帧数、模拟步数和模拟时长应分别报告。
+Service 统一提供无参数 startup/reset/shutdown；直接访问 g_gameplayEngine，不保存引擎引用。
+AnimalData 的 Packed 数值列保存模拟数据，所有列共享 row；System 直接遍历活动区，条件 Task 读取列，动作 Task 写入意图。
+AnimalEntity 是 slot、生命 uid 和当前 row 的轻量句柄；行交换更新映射与句柄 row，长期引用校验 uid，复用不创建组件对象。
+AnimalView 仅衔接生命句柄、BTPlayer 与表现；活动、尸体和可复用数据保留在同一存储，没有通用查询与额外 ECS Autoload。
+命令行 --script 在 Autoload 注册前编译入口，验证和基准通过 RunWithAutoload 延迟加载。
+RunBenchmark.ps1 已自动使用该入口，其他基准参数不变。
+JSON 增加 simulation_hz、max_steps_per_frame、simulation_steps；physics_steps 保留为 simulation_steps 的兼容别名，不再代表物理回调次数。
+
+ECS、对象池与辅助视觉
+F3 打开 DebugPanel，F1 开关辅助视觉，F2 保留运行参数；默认外观和初始数量不变。
+死亡立即退出交互，在安全阶段边界移出活动区；death_duration 后隐藏尸体，槽位可被相同物种复用；重置保留已分配数据和表现，停止模拟释放。
+结果 JSON 新增 retained_entities、pooled_entities、corpse_entities，区分保留对象、空闲对象和尸体。
+迁移前后采样应保持相同种子、场景、运行方式与统计档位；报告测量期间实际推进的模拟秒数。
+固定步数对照使用 -Steps 600 -WarmupSteps 180；它关闭自动步进，预热 3 模拟秒后测量 10 模拟秒，墙钟时间不限于 10 秒。
+例如：.\Tests\RunBenchmark.ps1 -Headless -Steps 600 -WarmupSteps 180 -Hud off -Overlay off -Label soa-default
+1000 实体追加 -Entities 1000 -Scenario scaled；两种规模各重复三次，比较平均步耗时的中位数并报告 P95、分阶段耗时和捕获数量。
+固定步数结果与旧墙钟时长采样分别报告；无窗口步耗时不是窗口渲染 FPS。
+辅助视觉不写入 CFG 预设；Prefab 保存颜色、线宽和嚎叫动画时长，范围读取已应用 CFG。
+窗口渲染与应用内输入检查：
+& $godotExe --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/DebugVisualVerification.gd
+相同入口加 --headless 可检查输入路由与生命周期，不导出图片；截图保存在 output/ecs-visuals/。
+
+?????????????? 4?
+???????????Steering ?????????????Movement ???????
+??????????? Decision + Steering + Movement?????? Decision?
+Grid dog_group_hits ???????????????dog_candidate_groups ????????????????dog_group_hits ???????????????dog_candidate_groups ?????????????????????
+dog_group_hits ???????????????dog_candidate_groups ????????????????dog_group_hits ???????????????dog_candidate_groups ??????????????????????????
+preprocessing_mean_per_step ?? pressure_samples?pressure_source_pairs?dog_groups?dog_group_hits?dog_candidate_groupsdog_group_hits ???????????????dog_candidate_groups ?????????????????
+?????? -MainScene???????????? CFG ????????????-Entities ????????????????
+?????? 5dog_group_hits ???????????????dog_candidate_groups ????????????????dog_group_hits ???????????????dog_candidate_groups ??????????????????????
+
+
+JobService ??????2026-11-16?
+
+JobService ?? Service?? GameplayEngine ?????????
+Scripts/Job ?? Job ??????? execute????? apply_result????????
+pending/working/completed ????????_process ???????
+finish_stage ?????????????????????????????????
+
+??????????????????????????? row ??????
+?/?????????????????????????????????????
+?????100????128????????????????????????32????????
+max_workers ?????????????????? Godot ???????????
+
+?????
+Godot --headless --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/JobVerification.gd
+
+???????? RunBenchmark.ps1?
+-MainScene -Warmup 5 -Duration 30 -MaxFps 60 -Sampling stages -Hud on -Overlay on -Animals on
+-Jobs serial|parallel|default -JobWorkers 2|4|8 -JobStages default|all|Sheep|Wolf|DogAnchor|Dog|Grid
+??????????????????????????????????????
+
+result.json ? job_timings_mean_ms ?????????????????????????
+???????? SpatialBuild/Perception ? StepMean ?????????
+????? CPU ????????????????????? wait_ms ??????????
+?????? prepare_ms ???????????????????????
+??????????????Steering?Movement??????????? RNG?
+
+?????????? output/jobs-20261116/????????????????????
+
+?????? Sheep?DogAnchor?Grid?Wolf ? Dog ?????????????????????????
+-JobStages all ?????????????default ???????????

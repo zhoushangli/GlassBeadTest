@@ -1,0 +1,2129 @@
+{
+  "medians": {
+    "baseline-276": {
+      "average_fps": 58.3858375420069,
+      "frame_p95_ms": 17.915,
+      "step_mean_ms": 10.4442130872483,
+      "step_p95_ms": 12.782,
+      "steps_per_frame_mean": 1.02054794520548,
+      "simulation_per_frame_mean_ms": 10.6588202054794,
+      "simulation_per_frame_p95_ms": 12.737,
+      "simulation_seconds_advanced": 29.7999999999993,
+      "simulation_wall_ratio": 0.993092442209912,
+      "spatial_queries_per_step": 92.076062639821,
+      "spatial_candidates_per_query": 4.80729141357695,
+      "stages_mean_ms": {
+        "Cleanup": 0.887573014991672,
+        "Decision": 3.75746700223713,
+        "Interaction": 0.0493965324384791,
+        "Movement": 0.17337807606264,
+        "Perception": 3.37497315436241,
+        "SpatialBuild": 2.04579138702461,
+        "TaskAssignment": 0.157830536912752
+      },
+      "decision_and_steering_ms": 3.75746700223713,
+      "preprocessing_mean_per_step": {}
+    },
+    "adaptive-276": {
+      "average_fps": 59.6720376831417,
+      "frame_p95_ms": 16.708,
+      "step_mean_ms": 10.3321514476615,
+      "step_p95_ms": 13.904,
+      "steps_per_frame_mean": 1.00502512562814,
+      "simulation_per_frame_mean_ms": 10.5494849346219,
+      "simulation_per_frame_p95_ms": 13.947,
+      "simulation_seconds_advanced": 29.9999999999993,
+      "simulation_wall_ratio": 0.999531619483087,
+      "spatial_queries_per_step": 41.3017817371938,
+      "spatial_candidates_per_query": 6.32068807463129,
+      "stages_mean_ms": {
+        "Cleanup": 0.923464999999998,
+        "Decision": 2.96138697104677,
+        "Interaction": 0.0507472222222228,
+        "Movement": 0.178075555555556,
+        "Perception": 3.39649888888889,
+        "SpatialBuild": 2.06469611111111,
+        "Steering": 0.610030623608017,
+        "TaskAssignment": 0.165394766146993
+      },
+      "decision_and_steering_ms": 3.571417594654787,
+      "preprocessing_mean_per_step": {
+        "dog_candidate_groups": 7.3470294280955,
+        "dog_group_hits": 0.0,
+        "dog_groups": 12.0,
+        "pressure_samples": 1.62416481069042,
+        "pressure_source_pairs": 1.53833333333333
+      }
+    },
+    "baseline-1000": {
+      "average_fps": 6.71057598069587,
+      "frame_p95_ms": 175.965,
+      "step_mean_ms": 36.7210275,
+      "step_p95_ms": 41.68,
+      "steps_per_frame_mean": 4.0,
+      "simulation_per_frame_mean_ms": 146.88411,
+      "simulation_per_frame_p95_ms": 171.027,
+      "simulation_seconds_advanced": 13.466666666667,
+      "simulation_wall_ratio": 0.447371732046403,
+      "spatial_queries_per_step": 336.4,
+      "spatial_candidates_per_query": 12.5110169368638,
+      "stages_mean_ms": {
+        "Cleanup": 3.376375,
+        "Decision": 12.1712219512195,
+        "Interaction": 0.207491336633663,
+        "Movement": 0.566480198019802,
+        "Perception": 15.7981585365854,
+        "SpatialBuild": 3.79812625,
+        "TaskAssignment": 0.512503658536585
+      },
+      "decision_and_steering_ms": 12.1712219512195,
+      "preprocessing_mean_per_step": {}
+    },
+    "adaptive-1000": {
+      "average_fps": 7.26051845963505,
+      "frame_p95_ms": 151.344,
+      "step_mean_ms": 34.1971456422019,
+      "step_p95_ms": 37.827,
+      "steps_per_frame_mean": 4.0,
+      "simulation_per_frame_mean_ms": 136.788582568807,
+      "simulation_per_frame_p95_ms": 150.391,
+      "simulation_seconds_advanced": 14.5333333333337,
+      "simulation_wall_ratio": 0.484034563975681,
+      "spatial_queries_per_step": 155.165137614679,
+      "spatial_candidates_per_query": 15.5898539772684,
+      "stages_mean_ms": {
+        "Cleanup": 3.34876605504587,
+        "Decision": 8.85586582568808,
+        "Interaction": 0.197158256880734,
+        "Movement": 0.545338302752293,
+        "Perception": 15.2239174311927,
+        "SpatialBuild": 3.67210714285715,
+        "Steering": 1.81891628440367,
+        "TaskAssignment": 0.531701834862386
+      },
+      "decision_and_steering_ms": 10.67478211009175,
+      "preprocessing_mean_per_step": {
+        "dog_candidate_groups": 19.838963963964,
+        "dog_group_hits": 0.0298165137614679,
+        "dog_groups": 42.9701834862385,
+        "pressure_samples": 68.3233944954128,
+        "pressure_source_pairs": 66.7167431192661
+      }
+    }
+  },
+  "runs": {
+    "baseline-276": [
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 58.3858375420069,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 12,
+        "cleanup_mean_ms": 0.88537639821029,
+        "configured_counts": [
+          240,
+          24,
+          12
+        ],
+        "corpse_entities": 0,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 1752,
+            "mean_per_call_ms": 0.121393264840183,
+            "total_ms": 212.681
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 1755,
+            "mean_per_call_ms": 0.0197521367521367,
+            "total_ms": 34.665
+          }
+        },
+        "decision_mean_ms": 3.75746700223713,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          215,
+          24,
+          12
+        ],
+        "frame_p95_ms": 17.915,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          227,
+          24,
+          12
+        ],
+        "interaction_mean_ms": 0.0493965324384791,
+        "label": "baseline_276_clean",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 58.3858375420069,
+        "loop_max_ms": 142.682,
+        "loop_mean_ms": 17.1274412100457,
+        "loop_p95_ms": 17.915,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.007277,
+        "movement_interaction_mean_ms": 1.10815100671141,
+        "movement_mean_ms": 0.17337807606264,
+        "perception_mean_ms": 5.42076454138703,
+        "physics_hz": 60,
+        "physics_steps": 1788,
+        "pooled_entities": 25,
+        "process_iterations": 1752,
+        "renderer": "gl_compatibility",
+        "result_version": 3,
+        "retained_entities": 276,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 10.6588202054794,
+        "simulation_per_frame_p95_ms": 12.737,
+        "simulation_seconds_advanced": 29.7999999999993,
+        "simulation_seconds_at_measurement_start": 5.01666666666665,
+        "simulation_steps": 1788,
+        "simulation_wall_ratio": 0.993092442209912,
+        "spatial_candidates": 791434,
+        "spatial_candidates_per_query": 4.80729141357695,
+        "spatial_max_candidates": 37,
+        "spatial_max_occupancy": 7,
+        "spatial_nonempty_cells_mean": 223.288590604027,
+        "spatial_queries": 164632,
+        "spatial_queries_per_step": 92.076062639821,
+        "stages_mean_ms": {
+          "Cleanup": 0.88537639821029,
+          "Decision": 3.75746700223713,
+          "Interaction": 0.0493965324384791,
+          "Movement": 0.17337807606264,
+          "Perception": 3.37497315436241,
+          "SpatialBuild": 2.04579138702461,
+          "TaskAssignment": 0.157830536912752
+        },
+        "stats_enabled": true,
+        "step_max_ms": 35.058,
+        "step_mean_ms": 10.4442130872483,
+        "step_p95_ms": 12.782,
+        "steps_per_frame_mean": 1.02054794520548,
+        "steps_per_frame_p95": 1.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "baseline-276/output/performance/2026-11-16T12-40-49_baseline_276_clean_50704_2401549/result.json"
+      },
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 59.9822392589554,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 12,
+        "cleanup_mean_ms": 0.887573014991672,
+        "configured_counts": [
+          240,
+          24,
+          12
+        ],
+        "corpse_entities": 0,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 1800,
+            "mean_per_call_ms": 0.115478333333333,
+            "total_ms": 207.861
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 1800,
+            "mean_per_call_ms": 0.00274722222222219,
+            "total_ms": 4.94499999999995
+          }
+        },
+        "decision_mean_ms": 3.71197612437535,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          215,
+          24,
+          12
+        ],
+        "frame_p95_ms": 16.689,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          227,
+          24,
+          12
+        ],
+        "interaction_mean_ms": 0.046836202109939,
+        "label": "baseline_276_fresh_2",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 59.9822392589554,
+        "loop_max_ms": 37.363,
+        "loop_mean_ms": 16.6716016666667,
+        "loop_p95_ms": 16.689,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.008883,
+        "movement_interaction_mean_ms": 1.09417157134925,
+        "movement_mean_ms": 0.15976235424764,
+        "perception_mean_ms": 5.14091116046641,
+        "physics_hz": 60,
+        "physics_steps": 1801,
+        "pooled_entities": 25,
+        "process_iterations": 1800,
+        "renderer": "gl_compatibility",
+        "result_version": 3,
+        "retained_entities": 276,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 10.1062438888889,
+        "simulation_per_frame_p95_ms": 11.589,
+        "simulation_seconds_advanced": 30.016666666666,
+        "simulation_seconds_at_measurement_start": 5.04999999999999,
+        "simulation_steps": 1801,
+        "simulation_wall_ratio": 1.00025937875348,
+        "spatial_candidates": 798917,
+        "spatial_candidates_per_query": 4.81850037997129,
+        "spatial_max_candidates": 38,
+        "spatial_max_occupancy": 7,
+        "spatial_nonempty_cells_mean": 223.184342032204,
+        "spatial_queries": 165802,
+        "spatial_queries_per_step": 92.0610771793448,
+        "stages_mean_ms": {
+          "Cleanup": 0.887573014991672,
+          "Decision": 3.71197612437535,
+          "Interaction": 0.046836202109939,
+          "Movement": 0.15976235424764,
+          "Perception": 3.1974869516935,
+          "SpatialBuild": 1.9434242087729,
+          "TaskAssignment": 0.153573570238756
+        },
+        "stats_enabled": true,
+        "step_max_ms": 17.807,
+        "step_mean_ms": 10.1006324264298,
+        "step_p95_ms": 11.589,
+        "steps_per_frame_mean": 1.00055555555556,
+        "steps_per_frame_p95": 1.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "baseline-276/output/performance/2026-11-16T12-45-22_baseline_276_fresh_2_55824_1916717/result.json"
+      },
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 54.1446099573904,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 12,
+        "cleanup_mean_ms": 0.967708683473389,
+        "configured_counts": [
+          240,
+          24,
+          12
+        ],
+        "corpse_entities": 0,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 1625,
+            "mean_per_call_ms": 0.118331692307692,
+            "total_ms": 192.289
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 1625,
+            "mean_per_call_ms": 0.00282584615384611,
+            "total_ms": 4.59199999999993
+          }
+        },
+        "decision_mean_ms": 4.14905602240896,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          215,
+          24,
+          12
+        ],
+        "frame_p95_ms": 28.615,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          227,
+          24,
+          12
+        ],
+        "interaction_mean_ms": 0.0545478991596642,
+        "label": "baseline_276_fresh_3",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 54.1446099573904,
+        "loop_max_ms": 148.74,
+        "loop_mean_ms": 18.4690590769231,
+        "loop_p95_ms": 28.615,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.012221,
+        "movement_interaction_mean_ms": 1.20747899159664,
+        "movement_mean_ms": 0.185222408963584,
+        "perception_mean_ms": 5.95480280112045,
+        "physics_hz": 60,
+        "physics_steps": 1785,
+        "pooled_entities": 25,
+        "process_iterations": 1625,
+        "renderer": "gl_compatibility",
+        "result_version": 3,
+        "retained_entities": 276,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 12.6122036923077,
+        "simulation_per_frame_p95_ms": 28.082,
+        "simulation_seconds_advanced": 29.7499999999993,
+        "simulation_seconds_at_measurement_start": 5.04999999999999,
+        "simulation_steps": 1785,
+        "simulation_wall_ratio": 0.991262859219893,
+        "spatial_candidates": 790134,
+        "spatial_candidates_per_query": 4.80727905476935,
+        "spatial_max_candidates": 37,
+        "spatial_max_occupancy": 7,
+        "spatial_nonempty_cells_mean": 223.277871148459,
+        "spatial_queries": 164362,
+        "spatial_queries_per_step": 92.0795518207283,
+        "stages_mean_ms": {
+          "Cleanup": 0.967708683473389,
+          "Decision": 4.14905602240896,
+          "Interaction": 0.0545478991596642,
+          "Movement": 0.185222408963584,
+          "Perception": 3.70984593837534,
+          "SpatialBuild": 2.2449568627451,
+          "TaskAssignment": 0.170360224089635
+        },
+        "stats_enabled": true,
+        "step_max_ms": 52.319,
+        "step_mean_ms": 11.4816980392157,
+        "step_p95_ms": 17.206,
+        "steps_per_frame_mean": 1.09846153846154,
+        "steps_per_frame_p95": 2.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "baseline-276/output/performance/2026-11-16T12-46-01_baseline_276_fresh_3_25308_2229431/result.json"
+      }
+    ],
+    "adaptive-276": [
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 59.9937326547287,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 13,
+        "cleanup_mean_ms": 0.975431982232094,
+        "configured_counts": [
+          240,
+          24,
+          12
+        ],
+        "corpse_entities": 0,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 1800,
+            "mean_per_call_ms": 0.122465555555556,
+            "total_ms": 220.438000000001
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 1800,
+            "mean_per_call_ms": 0.00303944444444442,
+            "total_ms": 5.47099999999995
+          }
+        },
+        "decision_mean_ms": 3.02899777901166,
+        "decision_steering_mean_ms": 3.65146585230427,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          215,
+          24,
+          12
+        ],
+        "frame_p95_ms": 16.708,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          228,
+          24,
+          12
+        ],
+        "interaction_mean_ms": 0.0526518600777351,
+        "label": "adaptive_276_1",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 59.9937326547287,
+        "loop_max_ms": 27.69,
+        "loop_mean_ms": 16.6684077777778,
+        "loop_p95_ms": 16.708,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.003134,
+        "movement_interaction_mean_ms": 1.21345252637424,
+        "movement_mean_ms": 0.185368684064408,
+        "perception_mean_ms": 5.61199333703497,
+        "physics_hz": 60,
+        "physics_steps": 1801,
+        "pooled_entities": 25,
+        "preprocessing_mean_per_step": {
+          "dog_candidate_groups": 7.3470294280955,
+          "dog_group_hits": 0.0,
+          "dog_groups": 12.0,
+          "pressure_samples": 1.63076068850639,
+          "pressure_source_pairs": 1.54580788450861
+        },
+        "process_iterations": 1800,
+        "renderer": "gl_compatibility",
+        "result_version": 4,
+        "retained_entities": 276,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 10.65328,
+        "simulation_per_frame_p95_ms": 14.286,
+        "simulation_seconds_advanced": 30.016666666666,
+        "simulation_seconds_at_measurement_start": 4.98333333333332,
+        "simulation_steps": 1801,
+        "simulation_wall_ratio": 1.00045104177004,
+        "spatial_candidates": 469990,
+        "spatial_candidates_per_query": 6.31825881214207,
+        "spatial_max_candidates": 41,
+        "spatial_max_occupancy": 6,
+        "spatial_nonempty_cells_mean": 221.676290949473,
+        "spatial_queries": 74386,
+        "spatial_queries_per_step": 41.3026096612993,
+        "stages_mean_ms": {
+          "Cleanup": 0.975431982232094,
+          "Decision": 3.02899777901166,
+          "Interaction": 0.0526518600777351,
+          "Movement": 0.185368684064408,
+          "Perception": 3.46429483620211,
+          "SpatialBuild": 2.14769850083287,
+          "Steering": 0.622468073292616,
+          "TaskAssignment": 0.170453081621321
+        },
+        "stats_enabled": true,
+        "steering_mean_ms": 0.622468073292616,
+        "step_max_ms": 26.779,
+        "step_mean_ms": 10.6473647973348,
+        "step_p95_ms": 14.235,
+        "steps_per_frame_mean": 1.00055555555556,
+        "steps_per_frame_p95": 1.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "adaptive-276/output/performance/2026-11-16T12-49-35_adaptive_276_1_58128_2114041/result.json"
+      },
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 58.6023502707452,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 13,
+        "cleanup_mean_ms": 0.917528396436524,
+        "configured_counts": [
+          240,
+          24,
+          12
+        ],
+        "corpse_entities": 0,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 1759,
+            "mean_per_call_ms": 0.116635019897669,
+            "total_ms": 205.161
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 1759,
+            "mean_per_call_ms": 0.0028135304150085,
+            "total_ms": 4.94899999999994
+          }
+        },
+        "decision_mean_ms": 2.96138697104677,
+        "decision_steering_mean_ms": 3.57141759465479,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          215,
+          24,
+          12
+        ],
+        "frame_p95_ms": 16.92,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          228,
+          24,
+          12
+        ],
+        "interaction_mean_ms": 0.0496314031180404,
+        "label": "adaptive_276_2",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 58.6023502707452,
+        "loop_max_ms": 125.488,
+        "loop_mean_ms": 17.0641620238772,
+        "loop_p95_ms": 16.92,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.015861,
+        "movement_interaction_mean_ms": 1.14075835189309,
+        "movement_mean_ms": 0.17359855233853,
+        "perception_mean_ms": 5.45458073496659,
+        "physics_hz": 60,
+        "physics_steps": 1796,
+        "pooled_entities": 25,
+        "preprocessing_mean_per_step": {
+          "dog_candidate_groups": 7.34910913140312,
+          "dog_group_hits": 0.0,
+          "dog_groups": 12.0,
+          "pressure_samples": 1.62416481069042,
+          "pressure_source_pairs": 1.53619153674833
+        },
+        "process_iterations": 1759,
+        "renderer": "gl_compatibility",
+        "result_version": 4,
+        "retained_entities": 276,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 10.5494849346219,
+        "simulation_per_frame_p95_ms": 13.947,
+        "simulation_seconds_advanced": 29.9333333333326,
+        "simulation_seconds_at_measurement_start": 5.03333333333332,
+        "simulation_steps": 1796,
+        "simulation_wall_ratio": 0.997250531421792,
+        "spatial_candidates": 468856,
+        "spatial_candidates_per_query": 6.32068807463129,
+        "spatial_max_candidates": 41,
+        "spatial_max_occupancy": 6,
+        "spatial_nonempty_cells_mean": 221.659799554566,
+        "spatial_queries": 74178,
+        "spatial_queries_per_step": 41.3017817371938,
+        "stages_mean_ms": {
+          "Cleanup": 0.917528396436524,
+          "Decision": 2.96138697104677,
+          "Interaction": 0.0496314031180404,
+          "Movement": 0.17359855233853,
+          "Perception": 3.39267483296213,
+          "SpatialBuild": 2.06190590200445,
+          "Steering": 0.610030623608017,
+          "TaskAssignment": 0.165394766146993
+        },
+        "stats_enabled": true,
+        "steering_mean_ms": 0.610030623608017,
+        "step_max_ms": 40.808,
+        "step_mean_ms": 10.3321514476615,
+        "step_p95_ms": 13.904,
+        "steps_per_frame_mean": 1.02103467879477,
+        "steps_per_frame_p95": 1.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "adaptive-276/output/performance/2026-11-16T12-50-13_adaptive_276_2_45316_2233791/result.json"
+      },
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 59.6720376831417,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 13,
+        "cleanup_mean_ms": 0.923464999999998,
+        "configured_counts": [
+          240,
+          24,
+          12
+        ],
+        "corpse_entities": 0,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 1791,
+            "mean_per_call_ms": 0.117812953657175,
+            "total_ms": 211.003000000001
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 1791,
+            "mean_per_call_ms": 0.00284087102177553,
+            "total_ms": 5.08799999999997
+          }
+        },
+        "decision_mean_ms": 2.94979222222222,
+        "decision_steering_mean_ms": 3.54654166666666,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          215,
+          24,
+          12
+        ],
+        "frame_p95_ms": 16.695,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          228,
+          24,
+          12
+        ],
+        "interaction_mean_ms": 0.0507472222222228,
+        "label": "adaptive_276_3",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 59.6720376831417,
+        "loop_max_ms": 98.727,
+        "loop_mean_ms": 16.7582680067001,
+        "loop_p95_ms": 16.695,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.014058,
+        "movement_interaction_mean_ms": 1.15228777777778,
+        "movement_mean_ms": 0.178075555555556,
+        "perception_mean_ms": 5.461195,
+        "physics_hz": 60,
+        "physics_steps": 1800,
+        "pooled_entities": 25,
+        "preprocessing_mean_per_step": {
+          "dog_candidate_groups": 7.34555555555556,
+          "dog_group_hits": 0.0,
+          "dog_groups": 12.0,
+          "pressure_samples": 1.62277777777778,
+          "pressure_source_pairs": 1.53833333333333
+        },
+        "process_iterations": 1791,
+        "renderer": "gl_compatibility",
+        "result_version": 4,
+        "retained_entities": 276,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 10.3753238414294,
+        "simulation_per_frame_p95_ms": 13.083,
+        "simulation_seconds_advanced": 29.9999999999993,
+        "simulation_seconds_at_measurement_start": 5.04999999999999,
+        "simulation_steps": 1800,
+        "simulation_wall_ratio": 0.999531619483087,
+        "spatial_candidates": 470094,
+        "spatial_candidates_per_query": 6.32356739305892,
+        "spatial_max_candidates": 41,
+        "spatial_max_occupancy": 6,
+        "spatial_nonempty_cells_mean": 221.624444444444,
+        "spatial_queries": 74340,
+        "spatial_queries_per_step": 41.3,
+        "stages_mean_ms": {
+          "Cleanup": 0.923464999999998,
+          "Decision": 2.94979222222222,
+          "Interaction": 0.0507472222222228,
+          "Movement": 0.178075555555556,
+          "Perception": 3.39649888888889,
+          "SpatialBuild": 2.06469611111111,
+          "Steering": 0.596749444444445,
+          "TaskAssignment": 0.163422777777778
+        },
+        "stats_enabled": true,
+        "steering_mean_ms": 0.596749444444445,
+        "step_max_ms": 29.845,
+        "step_mean_ms": 10.3234472222222,
+        "step_p95_ms": 13.002,
+        "steps_per_frame_mean": 1.00502512562814,
+        "steps_per_frame_p95": 1.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "adaptive-276/output/performance/2026-11-16T12-50-51_adaptive_276_3_54936_1940767/result.json"
+      }
+    ],
+    "baseline-1000": [
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 6.81071789052997,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 32,
+        "cleanup_mean_ms": 3.34753292682926,
+        "configured_counts": [
+          870,
+          87,
+          43
+        ],
+        "corpse_entities": 1,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 205,
+            "mean_per_call_ms": 0.249946341463414,
+            "total_ms": 51.239
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 205,
+            "mean_per_call_ms": 0.00330731707317073,
+            "total_ms": 0.678
+          }
+        },
+        "decision_mean_ms": 12.1712219512195,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          790,
+          87,
+          43
+        ],
+        "frame_p95_ms": 184.53,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          822,
+          87,
+          43
+        ],
+        "interaction_mean_ms": 0.20674756097561,
+        "label": "baseline_1000_fresh_1",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 6.81071789052997,
+        "loop_max_ms": 298.411,
+        "loop_mean_ms": 146.8274,
+        "loop_p95_ms": 184.53,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.099617,
+        "movement_interaction_mean_ms": 4.11953780487805,
+        "movement_mean_ms": 0.565257317073171,
+        "perception_mean_ms": 19.6588682926829,
+        "physics_hz": 60,
+        "physics_steps": 820,
+        "pooled_entities": 79,
+        "process_iterations": 205,
+        "renderer": "gl_compatibility",
+        "result_version": 3,
+        "retained_entities": 1000,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 145.848526829268,
+        "simulation_per_frame_p95_ms": 183.243,
+        "simulation_seconds_advanced": 13.666666666667,
+        "simulation_seconds_at_measurement_start": 1.73333333333333,
+        "simulation_steps": 820,
+        "simulation_wall_ratio": 0.454047859368676,
+        "spatial_candidates": 3451139,
+        "spatial_candidates_per_query": 12.5110169368638,
+        "spatial_max_candidates": 115,
+        "spatial_max_occupancy": 14,
+        "spatial_nonempty_cells_mean": 629.2,
+        "spatial_queries": 275848,
+        "spatial_queries_per_step": 336.4,
+        "stages_mean_ms": {
+          "Cleanup": 3.34753292682926,
+          "Decision": 12.1712219512195,
+          "Interaction": 0.20674756097561,
+          "Movement": 0.565257317073171,
+          "Perception": 15.7981585365854,
+          "SpatialBuild": 3.86070975609756,
+          "TaskAssignment": 0.512503658536585
+        },
+        "stats_enabled": true,
+        "step_max_ms": 184.465,
+        "step_mean_ms": 36.462131707317,
+        "step_p95_ms": 43.538,
+        "steps_per_frame_mean": 4.0,
+        "steps_per_frame_p95": 4.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "baseline-1000/output/performance/2026-11-16T12-46-39_baseline_1000_fresh_1_42232_2506217/result.json"
+      },
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 6.71057598069587,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 32,
+        "cleanup_mean_ms": 3.376375,
+        "configured_counts": [
+          870,
+          87,
+          43
+        ],
+        "corpse_entities": 1,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 202,
+            "mean_per_call_ms": 0.259316831683168,
+            "total_ms": 52.382
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 202,
+            "mean_per_call_ms": 0.00307425742574258,
+            "total_ms": 0.621
+          }
+        },
+        "decision_mean_ms": 12.1314071782178,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          790,
+          87,
+          43
+        ],
+        "frame_p95_ms": 175.965,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          822,
+          87,
+          43
+        ],
+        "interaction_mean_ms": 0.207491336633663,
+        "label": "baseline_1000_fresh_2",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 6.71057598069587,
+        "loop_max_ms": 291.656,
+        "loop_mean_ms": 149.018504950495,
+        "loop_p95_ms": 175.965,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.101738,
+        "movement_interaction_mean_ms": 4.15034653465347,
+        "movement_mean_ms": 0.566480198019802,
+        "perception_mean_ms": 20.0827673267327,
+        "physics_hz": 60,
+        "physics_steps": 808,
+        "pooled_entities": 79,
+        "process_iterations": 202,
+        "renderer": "gl_compatibility",
+        "result_version": 3,
+        "retained_entities": 1000,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 147.511242574257,
+        "simulation_per_frame_p95_ms": 171.027,
+        "simulation_seconds_advanced": 13.466666666667,
+        "simulation_seconds_at_measurement_start": 2.0,
+        "simulation_steps": 808,
+        "simulation_wall_ratio": 0.447371732046403,
+        "spatial_candidates": 3423487,
+        "spatial_candidates_per_query": 12.5494391495601,
+        "spatial_max_candidates": 115,
+        "spatial_max_occupancy": 14,
+        "spatial_nonempty_cells_mean": 627.67698019802,
+        "spatial_queries": 272800,
+        "spatial_queries_per_step": 337.623762376238,
+        "stages_mean_ms": {
+          "Cleanup": 3.376375,
+          "Decision": 12.1314071782178,
+          "Interaction": 0.207491336633663,
+          "Movement": 0.566480198019802,
+          "Perception": 16.3261782178218,
+          "SpatialBuild": 3.75658910891089,
+          "TaskAssignment": 0.513289603960395
+        },
+        "stats_enabled": true,
+        "step_max_ms": 182.293,
+        "step_mean_ms": 36.8778106435643,
+        "step_p95_ms": 41.68,
+        "steps_per_frame_mean": 4.0,
+        "steps_per_frame_p95": 4.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "baseline-1000/output/performance/2026-11-16T12-47-18_baseline_1000_fresh_2_67024_2544136/result.json"
+      },
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 6.66453068458226,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 31,
+        "cleanup_mean_ms": 3.45851125,
+        "configured_counts": [
+          870,
+          87,
+          43
+        ],
+        "corpse_entities": 3,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 200,
+            "mean_per_call_ms": 0.256375,
+            "total_ms": 51.275
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 200,
+            "mean_per_call_ms": 0.00312,
+            "total_ms": 0.624
+          }
+        },
+        "decision_mean_ms": 12.39828875,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          791,
+          87,
+          43
+        ],
+        "frame_p95_ms": 166.817,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          822,
+          87,
+          43
+        ],
+        "interaction_mean_ms": 0.21410625,
+        "label": "baseline_1000_fresh_3",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 6.66453068458226,
+        "loop_max_ms": 309.446,
+        "loop_mean_ms": 150.048075,
+        "loop_p95_ms": 166.817,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.009615,
+        "movement_interaction_mean_ms": 4.2489675,
+        "movement_mean_ms": 0.576350000000001,
+        "perception_mean_ms": 19.56331625,
+        "physics_hz": 60,
+        "physics_steps": 800,
+        "pooled_entities": 76,
+        "process_iterations": 200,
+        "renderer": "gl_compatibility",
+        "result_version": 3,
+        "retained_entities": 1000,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 146.88411,
+        "simulation_per_frame_p95_ms": 161.919,
+        "simulation_seconds_advanced": 13.3333333333337,
+        "simulation_seconds_at_measurement_start": 1.73333333333333,
+        "simulation_steps": 800,
+        "simulation_wall_ratio": 0.444302045638828,
+        "spatial_candidates": 3363749,
+        "spatial_candidates_per_query": 12.5087351996192,
+        "spatial_max_candidates": 115,
+        "spatial_max_occupancy": 14,
+        "spatial_nonempty_cells_mean": 629.95,
+        "spatial_queries": 268912,
+        "spatial_queries_per_step": 336.14,
+        "stages_mean_ms": {
+          "Cleanup": 3.45851125,
+          "Decision": 12.39828875,
+          "Interaction": 0.21410625,
+          "Movement": 0.576350000000001,
+          "Perception": 15.76519,
+          "SpatialBuild": 3.79812625,
+          "TaskAssignment": 0.510455
+        },
+        "stats_enabled": true,
+        "step_max_ms": 191.372,
+        "step_mean_ms": 36.7210275,
+        "step_p95_ms": 40.711,
+        "steps_per_frame_mean": 4.0,
+        "steps_per_frame_p95": 4.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "baseline-1000/output/performance/2026-11-16T12-47-58_baseline_1000_fresh_3_66008_3207441/result.json"
+      }
+    ],
+    "adaptive-1000": [
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 7.26051845963505,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 17,
+        "cleanup_mean_ms": 3.34876605504587,
+        "configured_counts": [
+          870,
+          87,
+          43
+        ],
+        "corpse_entities": 0,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 218,
+            "mean_per_call_ms": 0.252541284403669,
+            "total_ms": 55.0539999999999
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 218,
+            "mean_per_call_ms": 0.00307339449541285,
+            "total_ms": 0.67
+          }
+        },
+        "decision_mean_ms": 8.85586582568808,
+        "decision_steering_mean_ms": 10.6747821100917,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          805,
+          87,
+          43
+        ],
+        "frame_p95_ms": 150.713,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          822,
+          87,
+          43
+        ],
+        "interaction_mean_ms": 0.197158256880734,
+        "label": "adaptive_1000_1",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 7.26051845963505,
+        "loop_max_ms": 299.462,
+        "loop_mean_ms": 137.731211009174,
+        "loop_p95_ms": 150.713,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.025404,
+        "movement_interaction_mean_ms": 4.0912626146789,
+        "movement_mean_ms": 0.545338302752293,
+        "perception_mean_ms": 18.8993990825688,
+        "physics_hz": 60,
+        "physics_steps": 872,
+        "pooled_entities": 65,
+        "preprocessing_mean_per_step": {
+          "dog_candidate_groups": 19.769495412844,
+          "dog_group_hits": 0.0298165137614679,
+          "dog_groups": 42.9701834862385,
+          "pressure_samples": 68.3233944954128,
+          "pressure_source_pairs": 66.7167431192661
+        },
+        "process_iterations": 218,
+        "renderer": "gl_compatibility",
+        "result_version": 4,
+        "retained_entities": 1000,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 136.788582568807,
+        "simulation_per_frame_p95_ms": 149.842,
+        "simulation_seconds_advanced": 14.5333333333337,
+        "simulation_seconds_at_measurement_start": 2.06666666666666,
+        "simulation_steps": 872,
+        "simulation_wall_ratio": 0.484034563975681,
+        "spatial_candidates": 2108251,
+        "spatial_candidates_per_query": 15.581586649323,
+        "spatial_max_candidates": 146,
+        "spatial_max_occupancy": 14,
+        "spatial_nonempty_cells_mean": 618.551605504587,
+        "spatial_queries": 135304,
+        "spatial_queries_per_step": 155.165137614679,
+        "stages_mean_ms": {
+          "Cleanup": 3.34876605504587,
+          "Decision": 8.85586582568808,
+          "Interaction": 0.197158256880734,
+          "Movement": 0.545338302752293,
+          "Perception": 15.2239174311927,
+          "SpatialBuild": 3.67548165137614,
+          "Steering": 1.81891628440367,
+          "TaskAssignment": 0.531701834862386
+        },
+        "stats_enabled": true,
+        "steering_mean_ms": 1.81891628440367,
+        "step_max_ms": 190.709,
+        "step_mean_ms": 34.1971456422019,
+        "step_p95_ms": 37.457,
+        "steps_per_frame_mean": 4.0,
+        "steps_per_frame_p95": 4.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "adaptive-1000/output/performance/2026-11-16T12-51-31_adaptive_1000_1_54336_2983498/result.json"
+      },
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 7.36961263058655,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 18,
+        "cleanup_mean_ms": 3.24310135135135,
+        "configured_counts": [
+          870,
+          87,
+          43
+        ],
+        "corpse_entities": 1,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 222,
+            "mean_per_call_ms": 0.247117117117117,
+            "total_ms": 54.86
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 222,
+            "mean_per_call_ms": 0.00304054054054054,
+            "total_ms": 0.675
+          }
+        },
+        "decision_mean_ms": 8.78403490990991,
+        "decision_steering_mean_ms": 10.5703412162162,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          804,
+          87,
+          43
+        ],
+        "frame_p95_ms": 151.344,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          822,
+          87,
+          43
+        ],
+        "interaction_mean_ms": 0.191358108108108,
+        "label": "adaptive_1000_2",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 7.36961263058655,
+        "loop_max_ms": 273.984,
+        "loop_mean_ms": 135.692342342342,
+        "loop_p95_ms": 151.344,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.1237,
+        "movement_interaction_mean_ms": 3.97966103603603,
+        "movement_mean_ms": 0.545201576576576,
+        "perception_mean_ms": 18.6098164414414,
+        "physics_hz": 60,
+        "physics_steps": 888,
+        "pooled_entities": 65,
+        "preprocessing_mean_per_step": {
+          "dog_candidate_groups": 19.838963963964,
+          "dog_group_hits": 0.0292792792792793,
+          "dog_groups": 42.9707207207207,
+          "pressure_samples": 68.295045045045,
+          "pressure_source_pairs": 66.3220720720721
+        },
+        "process_iterations": 222,
+        "renderer": "gl_compatibility",
+        "result_version": 4,
+        "retained_entities": 1000,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 134.754193693694,
+        "simulation_per_frame_p95_ms": 150.391,
+        "simulation_seconds_advanced": 14.8000000000003,
+        "simulation_seconds_at_measurement_start": 2.06666666666666,
+        "simulation_steps": 888,
+        "simulation_wall_ratio": 0.491307508705781,
+        "spatial_candidates": 2153777,
+        "spatial_candidates_per_query": 15.6522216246857,
+        "spatial_max_candidates": 146,
+        "spatial_max_occupancy": 14,
+        "spatial_nonempty_cells_mean": 618.166666666667,
+        "spatial_queries": 137602,
+        "spatial_queries_per_step": 154.957207207207,
+        "stages_mean_ms": {
+          "Cleanup": 3.24310135135135,
+          "Decision": 8.78403490990991,
+          "Interaction": 0.191358108108108,
+          "Movement": 0.545201576576576,
+          "Perception": 14.9521734234234,
+          "SpatialBuild": 3.65764301801802,
+          "Steering": 1.78630630630631,
+          "TaskAssignment": 0.52872972972973
+        },
+        "stats_enabled": true,
+        "steering_mean_ms": 1.78630630630631,
+        "step_max_ms": 166.837,
+        "step_mean_ms": 33.6885484234234,
+        "step_p95_ms": 37.827,
+        "steps_per_frame_mean": 4.0,
+        "steps_per_frame_p95": 4.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "adaptive-1000/output/performance/2026-11-16T12-52-09_adaptive_1000_2_70736_2396876/result.json"
+      },
+      {
+        "arena_size": [
+          2560.0,
+          1440.0
+        ],
+        "average_fps": 6.98736451583387,
+        "camera_zoom": 0.5,
+        "captures_during_measurement": 17,
+        "cleanup_mean_ms": 3.40356785714286,
+        "configured_counts": [
+          870,
+          87,
+          43
+        ],
+        "corpse_entities": 0,
+        "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+        "debug": {
+          "HUDRefresh": {
+            "calls": 210,
+            "mean_per_call_ms": 0.257342857142857,
+            "total_ms": 54.042
+          },
+          "OverlayDrawCPUTime": {
+            "calls": 210,
+            "mean_per_call_ms": 0.00313333333333334,
+            "total_ms": 0.658
+          }
+        },
+        "decision_mean_ms": 9.07404166666667,
+        "decision_steering_mean_ms": 10.9156142857143,
+        "display_driver": "Windows",
+        "engine": {
+          "build": "official",
+          "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+          "hex": 263938,
+          "major": 4,
+          "minor": 7,
+          "patch": 2,
+          "status": "stable",
+          "string": "4.7.2-stable (official)",
+          "timestamp": 0
+        },
+        "entities": 0,
+        "final_counts": [
+          805,
+          87,
+          43
+        ],
+        "frame_p95_ms": 166.847,
+        "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+        "gpu_timing_available": false,
+        "headless": false,
+        "hotspots": {
+          "DogAnchor": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NearbyQuery": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "NeighborScan": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "Separation": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          },
+          "WolfTarget": {
+            "calls": 0,
+            "mean_per_call_ms": 0.0,
+            "mean_per_step_ms": 0.0,
+            "total_ms": 0.0
+          }
+        },
+        "initial_counts": [
+          822,
+          87,
+          43
+        ],
+        "interaction_mean_ms": 0.200453571428572,
+        "label": "adaptive_1000_3",
+        "layout": "main_scene",
+        "layout_version": 1,
+        "limboai": {
+          "binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+          "binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+          "version": "v1.8.1"
+        },
+        "loop_hz": 6.98736451583387,
+        "loop_max_ms": 304.844,
+        "loop_mean_ms": 143.115476190476,
+        "loop_p95_ms": 166.847,
+        "max_fps": 60,
+        "max_steps_per_frame": 4,
+        "measured_wall_seconds": 30.05425,
+        "movement_interaction_mean_ms": 4.16149404761905,
+        "movement_mean_ms": 0.557472619047619,
+        "perception_mean_ms": 19.1957345238095,
+        "physics_hz": 60,
+        "physics_steps": 840,
+        "pooled_entities": 65,
+        "preprocessing_mean_per_step": {
+          "dog_candidate_groups": 19.9535714285714,
+          "dog_group_hits": 0.030952380952381,
+          "dog_groups": 42.9690476190476,
+          "pressure_samples": 68.5773809523809,
+          "pressure_source_pairs": 67.2154761904762
+        },
+        "process_iterations": 210,
+        "renderer": "gl_compatibility",
+        "result_version": 4,
+        "retained_entities": 1000,
+        "sampling": "stages",
+        "scenario": "",
+        "script_profiler_active": false,
+        "seed": 1337,
+        "simulation_hz": 60.0,
+        "simulation_per_frame_mean_ms": 139.325009523809,
+        "simulation_per_frame_p95_ms": 157.978,
+        "simulation_seconds_advanced": 14.0000000000004,
+        "simulation_seconds_at_measurement_start": 2.26666666666666,
+        "simulation_steps": 840,
+        "simulation_wall_ratio": 0.465824301055603,
+        "spatial_candidates": 2042380,
+        "spatial_candidates_per_query": 15.5898539772684,
+        "spatial_max_candidates": 146,
+        "spatial_max_occupancy": 14,
+        "spatial_nonempty_cells_mean": 617.978571428571,
+        "spatial_queries": 131007,
+        "spatial_queries_per_step": 155.960714285714,
+        "stages_mean_ms": {
+          "Cleanup": 3.40356785714286,
+          "Decision": 9.07404166666667,
+          "Interaction": 0.200453571428572,
+          "Movement": 0.557472619047619,
+          "Perception": 15.5236273809524,
+          "SpatialBuild": 3.67210714285715,
+          "Steering": 1.84157261904762,
+          "TaskAssignment": 0.558409523809524
+        },
+        "stats_enabled": true,
+        "steering_mean_ms": 1.84157261904762,
+        "step_max_ms": 188.447,
+        "step_mean_ms": 34.8312523809524,
+        "step_p95_ms": 39.052,
+        "steps_per_frame_mean": 4.0,
+        "steps_per_frame_p95": 4.0,
+        "tier": 1,
+        "tiles": 0,
+        "viewport": [
+          1280,
+          720
+        ],
+        "visibility": {
+          "animals": true,
+          "hud": true,
+          "overlay": "on"
+        },
+        "vsync": false,
+        "warmup_wall_seconds": 5.0,
+        "evidence": "adaptive-1000/output/performance/2026-11-16T12-52-48_adaptive_1000_3_59196_2467259/result.json"
+      }
+    ]
+  },
+  "stderr": []
+}

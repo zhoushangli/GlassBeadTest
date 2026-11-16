@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="SheepConfig" format=3 uid="uid://dfedf7nu7dfer"]
+
+[ext_resource type="Script" uid="uid://cbqvejtkydx2o" path="res://Scripts/Core/SheepConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")

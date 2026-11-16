@@ -1,0 +1,41 @@
+Sheep continuous-force implementation and validation
+
+Godot 4.7.2; main scene; 1280x720 Compatibility; VSync off; 60 FPS cap; HUD, animals, overlay on; each run 5s warmup + 30s measurement; 2 before + 2 final runs; arithmetic means of run means.
+
+Metric | Before | After
+--- | --- | ---
+step_mean_ms | 37.052056 | 30.539528
+simulation_per_frame_mean_ms | 148.208225 | 122.158110
+average_fps | 6.646446 | 7.902802
+frame_p95_ms | 184.847000 | 177.080000
+steps_per_frame_mean | 4.000000 | 4.000000
+Cleanup ms/step | 3.601610 | 4.666757
+Decision ms/step | 9.486604 | 1.837671
+Interaction ms/step | 0.220968 | 0.209400
+Movement ms/step | 0.597901 | 0.617628
+Perception ms/step | 16.546011 | 16.137427
+SpatialBuild ms/step | 4.042247 | 4.044373
+Steering ms/step | 1.968714 | 2.500323
+TaskAssignment ms/step | 0.588000 | 0.525949
+
+Step reduction: 17.577%
+
+Validation: Simulation 234/234; Performance 84/84; Debug visual 27/27.
+Preset version is 6; version 5 is rejected without conversion.
+Wolf and dog behavior trees remain; sheep BTPlayer/tree/actions were removed.
+Panic is continuous with simulation-time linear decay. Zero-duration hot apply clears it immediately.
+
+Limits:
+Behavior redesign changes RNG consumption and capture trajectories: this is not an identical-workload microbenchmark.
+Live sheep population decreases during warmup and capture. Existing configured_counts can disagree with live counts; use initial_counts/final_counts.
+GPU time was not measured. Average FPS remains below real time.
+Scalar wolf danger is accumulated at exact sheep distances even for dense cells; shared nodes approximate only vector direction/magnitude. This preserves exact radius and noncanceling danger without a redundant scalar node field.
+Intermediate sheep_forces_after runs predate the final decision-order fix and are excluded.
+
+Not completed: Computer Use app approval timed out. Rendered test screenshots were reviewed.
+
+Raw result files:
+C:\Work\Godot\Project\glass-bead-test\output\sheep-forces-20261116-125647\baseline\output\performance\2026-11-16T12-56-52_before_r1_65620_2060381\result.json
+C:\Work\Godot\Project\glass-bead-test\output\sheep-forces-20261116-125647\baseline\output\performance\2026-11-16T12-57-30_before_r2_7072_2336883\result.json
+C:\Work\Godot\Project\glass-bead-test\output\performance\2026-11-16T13-02-21_sheep_forces_final_r1_9492_1924825\result.json
+C:\Work\Godot\Project\glass-bead-test\output\performance\2026-11-16T13-02-59_sheep_forces_final_r2_44948_2312499\result.json

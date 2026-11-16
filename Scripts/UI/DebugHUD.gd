@@ -6,6 +6,7 @@ extends CanvasLayer
 @onready var selection: Label = $Screen/Footer/Selection
 @onready var parameters: RuntimeConfigPanel = $Screen/Parameters
 @onready var debug_panel: DebugPanel = $Screen/DebugPanel
+
 var gameplay_engine: Node
 
 func initialize(engine: Node) -> void:
@@ -45,14 +46,17 @@ func _toggle_debug() -> void:
 func refresh() -> void:
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	var counts: Vector3i = gameplay_engine.entity_service.get_counts()
-	metrics.text = "FPS %d    |    Step %.2f ms    |    Alive %d    |    Sheep %d   Wolves %d   Dogs %d" % [
-		Engine.get_frames_per_second(), gameplay_engine.profile_service.last_step_ms,
+	var frequency := "Paused" if gameplay_engine.paused else "%.1f / %.0f Hz" % [gameplay_engine.actual_simulation_hz, gameplay_engine.config.simulation_hz]
+	metrics.text = "FPS %d | Sim %s | Step %.2f ms | Alive %d | Sheep %d Wolves %d Dogs %d" % [
+		Engine.get_frames_per_second(), frequency, gameplay_engine.profile_service.last_step_ms,
 		counts.x + counts.y + counts.z, counts.x, counts.y, counts.z]
+
 	var hunters: int = 0
 	for wolf_row in gameplay_engine.entity_service.wolf_rows:
 		var wolf := data.handles[wolf_row]
 		if data.identity_alive[wolf.row] and data.wolf_hunting[wolf.row]:
 			hunters += 1
+
 	status.text = "%s    |    Seed %d    |    Sim %.1f s    |    Captured %d    |    %s    |    Debug %s" % [
 		"PAUSED" if gameplay_engine.paused else "RUNNING", gameplay_engine.config.random_seed,
 		gameplay_engine.simulation_time, gameplay_engine.entity_service.capture_count,

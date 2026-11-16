@@ -2,21 +2,23 @@ class_name RuntimeConfigPanel
 extends PanelContainer
 
 const FIELD_HELP := {
+	"World.max_steps_per_frame": "每个显示帧最多执行的模拟步数；超过上限的整步积压会舍弃，可热应用。\n例如：max_steps_per_frame = 4。",
+	"World.simulation_hz": "目标模拟频率（Hz），独立于渲染帧率；应用后清空旧累计时间。\n例如：simulation_hz = 60。",
+	"Wolves.decision_hz": "狼的后台感知和决策请求频率上限（Hz）；未完成时继续原有移动，不积压请求。\n例如：decision_hz = 30。",
+	"Dogs.decision_hz": "狗的后台感知和任务选择频率上限（Hz）；未完成时继续原有移动，不积压请求。\n例如：decision_hz = 30。",
 	"Sheep.move_speed": "常态移动速度（px/s）。\n例如：move_speed = 70.0。",
 	"Sheep.flee_speed": "逃跑速度（px/s）。\n例如：flee_speed = 110.0。",
 	"Sheep.idle_speed_scale": "游走速度比例。\n例如：idle_speed_scale = 0.5。",
-	"Sheep.perception_radius": "视觉距离（px）。\n例如：perception_radius = 130.0。",
-	"Sheep.vision_angle": "完整扇形角度（度）。\n例如：vision_angle = 200.0。",
-	"Sheep.emergency_distance": "全向紧急逃跑距离（px）。\n例如：emergency_distance = 36.0。",
-	"Sheep.alert_duration": "危险消失后的警戒时间（秒）。\n例如：alert_duration = 6.0。",
-	"Sheep.panic_duration": "嚎叫造成的恐慌时间（秒）。\n例如：panic_duration = 2.0。",
+	"Sheep.wolf_pressure_distance": "全向狼压力距离（px）。\n例如：wolf_pressure_distance = 130.0。",
+	"World.grid_cell_size": "Grid 格子边长（px），修改需要重启；小格子降低候选数量但增加统计工作。\n例如：grid_cell_size = 30。",
+	"Sheep.hunting_pressure_multiplier": "追猎狼的局部压力倍率；可热应用。\n例如：hunting_pressure_multiplier = 2.0。",
+	"Sheep.wander_weight": "游走作用的权重，随危险强度降低。\n例如：wander_weight = 0.35。",
+	"Sheep.panic_duration": "恐慌强度线性衰减至零的时间（模拟秒）；0 立即清零。\n例如：panic_duration = 2.0。",
 	"Sheep.flock_radius": "局部聚合半径（px）。\n例如：flock_radius = 55.0。",
 	"Sheep.alignment_radius": "速度对齐半径（px）。\n例如：alignment_radius = 45.0。",
 	"Sheep.separation_weight": "软分离权重。\n例如：separation_weight = 2.8。",
 	"Sheep.alignment_weight": "速度对齐权重。\n例如：alignment_weight = 0.4。",
 	"Sheep.cohesion_weight": "局部聚合权重。\n例如：cohesion_weight = 0.25。",
-	"Sheep.idle_flock_scale": "游走时群体方向的比例。\n例如：idle_flock_scale = 0.05。",
-	"Sheep.alert_flock_scale": "警戒时群体方向的比例。\n例如：alert_flock_scale = 1.2。",
 	"Sheep.herding_distance": "全向避狗压力距离（px）。\n例如：herding_distance = 90.0。",
 	"Sheep.dog_pressure_weight": "避狗压力权重。\n例如：dog_pressure_weight = 1.4。",
 	"Sheep.wolf_pressure_weight": "远离狼或恐慌源的权重。\n例如：wolf_pressure_weight = 4.0。",
@@ -55,10 +57,11 @@ const FIELD_HELP := {
 	"Dogs.reassignment_improvement": "更换有效锚点所需的评分改善比例。\n例如：reassignment_improvement = 0.25。",
 	"Dogs.coverage_weight": "其他狗已覆盖附近羊时的惩罚权重。\n例如：coverage_weight = 2.0。",
 	"World.random_seed": "统一模拟随机种子；相同配置和操作顺序可重现随机结果，应用修改需要重启。\n例如：1337 表示使用固定种子 1337。",
-	"World.initial_sheep": "模拟开始时的羊数量；应用修改需要重启模拟并保留暂停状态。\n例如：240 表示初始生成 240 只羊。",
-	"World.initial_wolves": "模拟开始时的狼数量；应用修改需要重启模拟并保留暂停状态。\n例如：24 表示初始生成 24 只狼。",
-	"World.initial_sheepdogs": "模拟开始时的牧羊犬数量；应用修改需要重启模拟并保留暂停状态。\n例如：12 表示初始生成 12 只牧羊犬。",
-	"World.perception_interval": "动物采样附近实体和软分离的间隔，单位为模拟秒；不是全部 AI 决策的更新间隔。\n例如：0.125 表示约每 0.125 秒更新一次邻居采样。",
+	"World.initial_total": "初始实体总数；修改需要重启并保留暂停。取整后各物种数量之和始终等于总数。\n例如：276 配合 20:2:1 生成 240 羊、24 狼、12 狗。",
+	"World.sheep_ratio": "羊的相对比例，与狼狗比例自动归一化，不要求总和为 100；0 表示不生成羊，修改需要重启。\n例如：20:2:1 中羊占 20/23。",
+	"World.wolf_ratio": "狼的相对比例；0 表示不生成狼，修改需要重启。\n例如：20:2:1 中狼占 2/23。",
+	"World.sheepdog_ratio": "牧羊犬的相对比例；0 表示不生成狗，修改需要重启。\n例如：20:2:1 中狗占 1/23。",
+	"World.perception_interval": "同类软分离采样间隔（模拟秒）；狼狗在后台感知请求中采样，羊仍同步计算。\n例如：0.125 表示约每 0.125 秒更新一次软分离。",
 	"World.separation_distance": "同物种动物之间软分离的作用距离，单位为像素；不等同于物理碰撞。\n例如：24 表示同类靠近到 24 像素内时产生分离移动。",
 	"World.death_duration": "死亡立即退出模拟；尸体显示结束后隐藏并回收，单位为模拟秒。\n例如：0.3 表示尸体显示 0.3 秒。",
 }
@@ -167,12 +170,14 @@ func _value_changed(value: float, section_name: String, property_name: StringNam
 func _update_apply_state() -> void:
 	var error := draft.validate()
 	apply_button.disabled = not error.is_empty()
+
 	var restart := draft.requires_restart(gameplay_engine.config)
 	apply_button.text = "Apply & restart" if restart else "Apply"
 	if not error.is_empty():
 		message.text = error
 	elif restart:
-		message.text = "Population, seed or arena changed. Apply restarts the simulation."
+		var counts := draft.get_initial_counts()
+		message.text = "Apply restarts the simulation. Initial population: %d sheep, %d wolves, %d dogs." % [counts.x, counts.y, counts.z]
 	else:
 		message.text = "Apply updates current animals. Elapsed timers are preserved; new thresholds apply next step."
 
@@ -180,6 +185,7 @@ func _apply() -> void:
 	# 1) Commit text fields before validating the complete draft.
 	for spin in editors.values():
 		spin.apply()
+
 	var error: String = gameplay_engine.request_config_apply(draft)
 	if error.is_empty():
 		message.text = "Applying..."
@@ -203,8 +209,9 @@ func _save() -> void:
 func _load() -> void:
 	var loaded: SimulationConfig = gameplay_engine.load_preset()
 	if loaded == null:
-		message.text = "Preset missing or incompatible. Only behavior preset version 3 is supported; older files are preserved."
+		message.text = "Preset missing or incompatible. Only behavior preset version %d is supported; other files are preserved." % SimulationConfig.PRESET_VERSION
 		return
+
 	set_draft(loaded)
 	message.text = "Saved preset loaded into the form. Apply when ready."
 

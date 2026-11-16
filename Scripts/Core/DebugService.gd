@@ -4,12 +4,14 @@ extends Service
 var hud: DebugHUD
 var hud_enabled: bool = true
 var overlay_enabled: bool = true
+
 var _selected: AnimalEntity
 var selected: AnimalEntity:
 	get:
 		return g_gameplayEngine.entity_service.data.live(_selected)
 	set(value):
 		_selected = value
+
 var show_details: bool = false:
 	set(value):
 		show_details = value
@@ -18,10 +20,11 @@ var show_details: bool = false:
 		queue_redraw()
 var selected_only: bool = true
 var visual_options: Dictionary[String, bool] = {
-	"sheep_vision": false, "wolf_vision": true, "dog_vision": true,
+	"wolf_vision": true, "dog_vision": true,
 	"tracking": true, "memory": true, "movement": true,
 	"protection": true, "howl": true,
 }
+
 var howl_events: Array[Dictionary] = []
 
 func _startup() -> void:
@@ -109,6 +112,8 @@ func selection_text() -> String:
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	if not is_instance_valid(selected):
 		return "Click an animal to inspect its behavior and target."
+	if data.identity_kind[selected.row] == AnimalEntity.Kind.SHEEP:
+		return "Sheep #%d | %s" % [data.identity_entity_id[selected.row], g_gameplayEngine.debug_details(selected)]
 	var target_text := "none"
 	if g_gameplayEngine.animal_system.is_live(selected, data.live(data.memory_target[selected.row])):
 		target_text = "%s #%d" % [AnimalEntity.KIND_NAMES[data.identity_kind[data.live(data.memory_target[selected.row]).row]], data.identity_entity_id[data.live(data.memory_target[selected.row]).row]]
@@ -133,11 +138,12 @@ func record_howl(animal: AnimalEntity) -> void:
 		return
 	if selected_only and selected != animal:
 		return
-	var view := data.brain_view[row]
+
+	var visual: Dictionary = g_gameplayEngine.render_service.get_visual_settings(data.identity_kind[row])
 	howl_events.append({
 		"position": data.motion_position[row], "radius": data.settings[row].howl_radius,
-		"duration": view.howl_visual_duration, "elapsed": 0.0,
-		"color": view.howl_color, "id": data.identity_entity_id[row],
+		"duration": visual.howl_visual_duration, "elapsed": 0.0,
+		"color": visual.howl_color, "id": data.identity_entity_id[row],
 		"uid": animal.uid,
 	})
 
@@ -145,6 +151,7 @@ func advance_visuals(delta: float) -> void:
 	if not overlay_enabled or not show_details or not visual_options["howl"]:
 		howl_events.clear()
 		return
+
 	for index in range(howl_events.size() - 1, -1, -1):
 		howl_events[index]["elapsed"] += delta
 		if howl_events[index]["elapsed"] >= howl_events[index]["duration"]:
@@ -154,6 +161,7 @@ func _draw() -> void:
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	if not started or not g_gameplayEngine.running or not overlay_enabled:
 		return
+
 	var started_at := Time.get_ticks_usec() if g_gameplayEngine.profile_service.performance_stats_enabled else 0
 	if selected != null:
 		draw_arc(data.motion_position[selected.row], 17.0, 0.0, TAU, 40, Color("#f4f7ed"), 2.0, true)
@@ -169,6 +177,7 @@ func _draw() -> void:
 			for event in howl_events:
 				if selected_only and (selected == null or selected.uid != event["uid"]):
 					continue
+
 				var progress: float = clampf(event["elapsed"] / event["duration"], 0.0, 1.0)
 				var color: Color = event["color"]
 				color.a *= 1.0 - progress
@@ -182,30 +191,30 @@ func _draw_animal(animal: AnimalEntity) -> void:
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	var row := animal.row
 	var point := data.motion_position[row]
-	var view := data.brain_view[row]
-	var width := view.debug_line_width
-	var vision_key: String = ["sheep_vision", "wolf_vision", "dog_vision"][data.identity_kind[row]]
-	if visual_options[vision_key]:
+	var visual: Dictionary = g_gameplayEngine.render_service.get_visual_settings(data.identity_kind[row])
+	var width: float = visual.debug_line_width
+	var vision_key: String = ["", "wolf_vision", "dog_vision"][data.identity_kind[row]]
+	if data.identity_kind[row] != AnimalEntity.Kind.SHEEP and visual_options[vision_key]:
 		var half_angle: float = deg_to_rad(data.settings[row].vision_angle * 0.5)
 		var radius: float = data.settings[row].perception_radius
 		var direction := data.motion_facing[row].angle()
 		var points := PackedVector2Array([point])
 		for index in range(33):
 			points.append(point + Vector2.from_angle(direction - half_angle + 2.0 * half_angle * index / 32.0) * radius)
-		draw_colored_polygon(points, view.vision_color)
-		var edge := Color(view.vision_color, 0.5)
+		draw_colored_polygon(points, visual.vision_color)
+		var edge := Color(visual.vision_color, 0.5)
 		draw_arc(point, radius, direction - half_angle, direction + half_angle, 32, edge, width, true)
 		draw_line(point, points[1], edge, width, true)
 		draw_line(point, points[-1], edge, width, true)
 	if data.live(data.memory_target[row]) != null:
 		if visual_options["tracking"]:
 			if data.memory_target_visible[row]:
-				draw_line(point, data.memory_last_seen_position[row], Color(view.base_color, 0.5), width, true)
+				draw_line(point, data.memory_last_seen_position[row], Color(visual.base_color, 0.5), width, true)
 			else:
-				draw_dashed_line(point, data.memory_last_seen_position[row], Color(view.base_color, 0.5), width, 6.0)
+				draw_dashed_line(point, data.memory_last_seen_position[row], Color(visual.base_color, 0.5), width, 6.0)
 		if visual_options["memory"] and not data.memory_target_visible[row]:
 			var remaining: float = clampf(1.0 - data.memory_unseen_elapsed[row] / maxf(data.settings[row].memory_duration, 0.00001), 0.0, 1.0)
-			var color := Color(view.base_color, remaining)
+			var color := Color(visual.base_color, remaining)
 			draw_arc(data.memory_last_seen_position[row], 7.0, 0.0, TAU, 20, color, width, true)
 			draw_line(data.memory_last_seen_position[row] - Vector2(4, 0), data.memory_last_seen_position[row] + Vector2(4, 0), color, width)
 			draw_line(data.memory_last_seen_position[row] - Vector2(0, 4), data.memory_last_seen_position[row] + Vector2(0, 4), color, width)

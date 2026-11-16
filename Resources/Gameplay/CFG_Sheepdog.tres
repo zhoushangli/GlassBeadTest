@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="SheepdogConfig" format=3]
+[gd_resource type="Resource" script_class="SheepdogConfig" format=3 uid="uid://daie2exhdesjb"]
 
-[ext_resource type="Script" path="res://Scripts/Core/SheepdogConfig.gd" id="1"]
+[ext_resource type="Script" uid="uid://djv028iwxjif8" path="res://Scripts/Core/SheepdogConfig.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
+decision_hz = 12

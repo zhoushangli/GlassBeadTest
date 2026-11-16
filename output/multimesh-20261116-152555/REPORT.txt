@@ -1,0 +1,54 @@
+MultiMesh implementation and performance report
+
+Implementation: RenderService owns three MultiMeshInstance2D nodes under World/Animals, packs species transforms/colors and submits one buffer per species per simulation step.
+AnimalView was renamed to AnimalAgent. Wolves and dogs retain independent manual BTPlayer instances; sheep allocate no scene nodes. EntityService owns agent lifecycle and storage-row swaps.
+DebugService reads positions from AnimalData and shared styles from RenderService. Debug z_index remains 10.
+Explicit ArrayMesh vertices and UVs preserve Sprite orientation, texture size and colors. Corpse rendering includes the retained prefix and hides expired instances without shrinking capacity.
+
+Own changes: 18 logical files, +430/-153 lines, net 277. Excludes UID metadata, caches, evidence and concurrent agent changes.
+One added script, one renamed/refactored script, one deleted prefab, 15 modified files. Original script UID preserved through rename; RenderService has a new UID.
+Verified presentation node counts: 2130 -> 264 (-1866, -87.6%). Old: 1000 roots + 1000 Sprite2D + 130 BTPlayer. New: 130 agents + 130 BTPlayer + three MultiMeshInstance2D + RenderService.
+Common World/Animals, HUD and Debug nodes excluded from both counts.
+
+Automated checks: Simulation 251/251, Performance 87/87, Job 716/716, DebugVisual 27/27; total 1081 passed.
+Headless main-scene startup/exit also passed. No engine rebuild needed. Third-party addons unchanged.
+Rendered screenshot inspected: output/ecs-visuals/2026-11-16T15-29-56_45784/all-animals.png. Checked shapes, corrected wolf orientation and debug overlays. Full manual gameplay acceptance remains separate.
+Fixed 180-step deterministic comparison: RNG, position, velocity and heading SHA256 match. See deterministic-check.txt.
+
+Protocol: 1000 entities (870 sheep, 87 wolves, 43 dogs), independent heading changes every 0.8-1.2 simulation seconds, constant species speed, boundary bounce.
+No grid, perception, BT updates, steering systems, interaction or death. Existing presentation color calculations retained.
+60 Hz simulation; 1280x720 window; animals and HUD visible; debug overlay off; VSync off; FPS uncapped.
+Five seconds warmup + 30 seconds capture, three runs per variant, alternating before/after. Only final_* labels enter the final summary.
+Earlier mm_* runs were exploratory. The final baseline resolves the legacy view array once outside the entity loop.
+
+Run | FPS | mean frame ms | P95 frame ms | step ms | sync ms | buffer fill ms | submit ms
+final_before_r1 | 428.85 | 2.332 | 7.202 | 5.342 | 4.451 | 0.000 | 0.000
+final_before_r2 | 525.11 | 1.904 | 6.215 | 4.945 | 4.121 | 0.000 | 0.000
+final_before_r3 | 476.72 | 2.098 | 6.657 | 5.307 | 4.435 | 0.000 | 0.000
+final_after_r1 | 734.08 | 1.362 | 3.103 | 2.052 | 1.208 | 1.070 | 0.043
+final_after_r2 | 704.19 | 1.420 | 3.159 | 2.151 | 1.269 | 1.124 | 0.045
+final_after_r3 | 466.26 | 2.145 | 4.654 | 2.624 | 1.529 | 1.357 | 0.054
+
+Median of per-run metrics (P95 is median of run P95s, not a pooled percentile):
+average_fps: 476.722 -> 704.189
+loop_mean_ms: 2.098 -> 1.420
+loop_p95_ms: 6.657 -> 3.159
+step_mean_ms: 5.307 -> 2.151
+render_sync_mean_ms: 4.435 -> 1.269
+simulation_per_frame_mean_ms: 0.668 -> 0.183
+CPU presentation sync reduced 71.4%; step time reduced 59.5%.
+MultiMesh buffer fill: 1.124 ms; submission: 0.045 ms. Sync also includes counting and surrounding work.
+
+Limits: random-motion baseline, not full-AI scene FPS. GPU time was not measured independently. Step time includes presentation; fill/submit are nested sync metrics.
+Simulation is 60 Hz and rendering uncapped; entities do not update every render frame. All six final runs exited cleanly with empty stderr, stable populations, zero spatial work/captures/active BT players and simulation/wall ratio near one.
+Editor and the other agent remained active; machine not fully idle. No other verification processes overlapped the final performance runs.
+
+Concurrent integration: other agent moved max_steps_per_frame to SimulationConfig during final reporting and updated the affected callers. These changes are preserved and excluded from own statistics. Performance artifacts correspond to frozen before/after snapshots. The merged workspace receives a fresh simulation check and a short windowed random-motion smoke check; those are correctness checks, not new performance claims.
+Current source also preserves concurrent changes to JobService, AnimalSystem and DogPerceptionJob. They are excluded from the implementation patch.
+
+Reproduce in before and after directories, alternating three times each:
+powershell -File Tests/RunBenchmark.ps1 -Entities 1000 -Scenario fixed -Motion random -Warmup 5 -Duration 30 -Sampling stages -Hud on -Overlay off -Animals on -MaxFps 0 -Label repeat -TimeoutSeconds 60
+
+Artifacts: summary.json, protocol.json, change-statistics.json, implementation.patch, validation logs, before/after snapshots. Original-sources files match the initial source-manifest hashes.
+
+Final merged-workspace checks: Simulation 251 checks, zero failures; windowed random-motion smoke exited 0 with result and empty stderr.

@@ -1,0 +1,57 @@
+[gd_resource type="BehaviorTree" format=3 uid="uid://dqylum8ne1aje"]
+
+[ext_resource type="Script" uid="uid://dan5ub1d5qnqt" path="res://Scripts/AI/Tasks/AnimalCondition.gd" id="1"]
+[ext_resource type="Script" path="res://Scripts/AI/Tasks/SheepFlee.gd" id="action_0"]
+[ext_resource type="Script" path="res://Scripts/AI/Tasks/SheepAlert.gd" id="action_1"]
+[ext_resource type="Script" path="res://Scripts/AI/Tasks/SheepHerded.gd" id="action_2"]
+[ext_resource type="Script" path="res://Scripts/AI/Tasks/SheepFlock.gd" id="action_3"]
+
+[sub_resource type="BlackboardPlan" id="BlackboardPlan_gcdff"]
+
+[sub_resource type="BTCondition" id="Condition_0"]
+script = ExtResource("1")
+condition = &"has_threat"
+
+[sub_resource type="BTAction" id="Action_0"]
+script = ExtResource("action_0")
+
+[sub_resource type="BTDynamicSequence" id="Branch_0"]
+custom_name = "Flee"
+children = [SubResource("Condition_0"), SubResource("Action_0")]
+
+[sub_resource type="BTCondition" id="Condition_1"]
+script = ExtResource("1")
+condition = &"is_alert"
+
+[sub_resource type="BTAction" id="Action_1"]
+script = ExtResource("action_1")
+
+[sub_resource type="BTDynamicSequence" id="Branch_1"]
+custom_name = "Alert"
+children = [SubResource("Condition_1"), SubResource("Action_1")]
+
+[sub_resource type="BTCondition" id="Condition_2"]
+script = ExtResource("1")
+condition = &"is_herded"
+
+[sub_resource type="BTAction" id="Action_2"]
+script = ExtResource("action_2")
+
+[sub_resource type="BTDynamicSequence" id="Branch_2"]
+custom_name = "Herded"
+children = [SubResource("Condition_2"), SubResource("Action_2")]
+
+[sub_resource type="BTAction" id="Action_3"]
+script = ExtResource("action_3")
+
+[sub_resource type="BTDynamicSequence" id="Branch_3"]
+custom_name = "Flock"
+children = [SubResource("Action_3")]
+
+[sub_resource type="BTDynamicSelector" id="Root"]
+custom_name = "Sheep priorities"
+children = [SubResource("Branch_0"), SubResource("Branch_1"), SubResource("Branch_2"), SubResource("Branch_3")]
+
+[resource]
+blackboard_plan = SubResource("BlackboardPlan_gcdff")
+root_task = SubResource("Root")

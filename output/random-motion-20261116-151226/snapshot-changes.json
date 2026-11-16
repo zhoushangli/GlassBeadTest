@@ -1,0 +1,6 @@
+[
+  "Tests\\RunBenchmark.gd",
+  "Scripts\\Core\\EntityService.gd",
+  "Scripts\\Core\\GameplayEngine.gd",
+  "Scripts\\ECS\\Systems\\AnimalSystem.gd"
+]

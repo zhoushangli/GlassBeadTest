@@ -1,17 +1,19 @@
 class_name ProfileService
 extends Service
 
-const STAGE_NAMES := ["SpatialBuild", "TaskAssignment", "Perception", "Decision", "Movement", "Interaction", "Cleanup"]
+const STAGE_NAMES := ["SpatialBuild", "TaskAssignment", "Perception", "Decision", "Steering", "Movement", "Interaction", "Cleanup", "RenderSync"]
 const HOTSPOT_NAMES := ["NearbyQuery", "NeighborScan", "Separation", "WolfTarget", "DogAnchor"]
 
 var last_step_ms: float = 0.0
 var last_perception_ms: float = 0.0
 var last_decision_ms: float = 0.0
 var last_movement_ms: float = 0.0
+
 var _step_started: int = 0
 var _stage_started: int = 0
 var _decision_started: int = 0
 var _movement_started: int = 0
+
 var performance_stats_enabled: bool = OS.is_debug_build()
 var detailed_stats_enabled: bool = false
 var last_stages_ms: Dictionary = {}
@@ -26,6 +28,7 @@ var performance_monitors: Dictionary = {
 	"Spatial/MaxCandidates": 0.0, "Spatial/NonemptyCells": 0.0,
 	"Spatial/MaxCellOccupancy": 0.0,
 }
+
 var _stats_window_started: int = 0
 var _stats_steps: int = 0
 var _stats_step_total: float = 0.0
@@ -56,6 +59,7 @@ func _process(_delta: float) -> void:
 
 func begin_step() -> void:
 	_step_started = Time.get_ticks_usec()
+	_decision_started = _step_started
 	_stage_started = _step_started
 	if detailed_stats_enabled:
 		for metric in HOTSPOT_NAMES:
@@ -66,6 +70,7 @@ func end_stage(metric: String) -> void:
 	var finished := Time.get_ticks_usec()
 	if performance_stats_enabled:
 		last_stages_ms[metric] = (finished - _stage_started) / 1000.0
+
 	match metric:
 		"Perception":
 			last_perception_ms = (finished - _step_started) / 1000.0
@@ -73,11 +78,15 @@ func end_stage(metric: String) -> void:
 			_decision_started = finished
 		"Decision":
 			last_decision_ms = (finished - _decision_started) / 1000.0
+		"Steering":
 			_movement_started = finished
 	_stage_started = finished
 
 func end_step() -> void:
-	end_stage("Cleanup")
+	var finished := Time.get_ticks_usec()
+	if performance_stats_enabled:
+		last_stages_ms["Cleanup"] += (finished - _stage_started) / 1000.0
+	_stage_started = finished
 	last_step_ms = (_stage_started - _step_started) / 1000.0
 	last_movement_ms = (_stage_started - _movement_started) / 1000.0
 	if performance_stats_enabled:
@@ -86,9 +95,11 @@ func end_step() -> void:
 func set_performance_stats_enabled(enabled: bool, detailed: bool = false) -> void:
 	performance_stats_enabled = enabled
 	detailed_stats_enabled = enabled and detailed
-	g_gameplayEngine.entity_service.spatial_stats_enabled = enabled
+	g_gameplayEngine.grid_service.spatial_stats_enabled = enabled
+
 	for metric in STAGE_NAMES:
 		performance_monitors["SimStages/" + metric + "Mean"] = 0.0
+
 	for metric in HOTSPOT_NAMES:
 		for suffix in ["Mean", "CallsPerStep"]:
 			var id: String = "Hotspots/" + metric + suffix
@@ -97,9 +108,11 @@ func set_performance_stats_enabled(enabled: bool, detailed: bool = false) -> voi
 			performance_monitors.erase(id)
 			if detailed_stats_enabled:
 				performance_monitors[id] = 0.0
+
 	for metric in debug_totals_ms:
 		performance_monitors["Debug/" + metric + "Mean"] = 0.0
 	reset()
+
 	for id in performance_monitors:
 		if Performance.has_custom_monitor(id):
 			Performance.remove_custom_monitor(id)
@@ -133,17 +146,21 @@ func _reset() -> void:
 	last_perception_ms = 0.0
 	last_decision_ms = 0.0
 	last_movement_ms = 0.0
+
 	for id in performance_monitors:
 		performance_monitors[id] = 0.0
+
 	for metric in STAGE_NAMES:
 		last_stages_ms[metric] = 0.0
+
 	for metric in HOTSPOT_NAMES:
 		last_hotspots_ms[metric] = 0.0
 		last_hotspot_calls[metric] = 0
+
 	for metric in debug_totals_ms:
 		debug_totals_ms[metric] = 0.0
 		debug_calls[metric] = 0
-	g_gameplayEngine.entity_service.reset_spatial_stats()
+	g_gameplayEngine.grid_service.reset_spatial_stats()
 	_reset_stats_window()
 
 func _reset_stats_window() -> void:
@@ -157,11 +174,14 @@ func _reset_stats_window() -> void:
 	_stats_max_candidates = 0
 	_stats_cells = 0
 	_stats_max_occupancy = 0
+
 	for metric in STAGE_NAMES:
 		_stats_stages[metric] = 0.0
+
 	for metric in HOTSPOT_NAMES:
 		_stats_hotspots[metric] = 0.0
 		_stats_hotspot_calls[metric] = 0
+
 	for metric in debug_totals_ms:
 		_stats_debug_ms[metric] = 0.0
 		_stats_debug_calls[metric] = 0
@@ -171,34 +191,39 @@ func _record_performance_step() -> void:
 	_stats_step_total += last_step_ms
 	_stats_step_max = maxf(_stats_step_max, last_step_ms)
 	_stats_step_times.append(last_step_ms)
+
 	for metric in STAGE_NAMES:
 		_stats_stages[metric] += last_stages_ms[metric]
 	if detailed_stats_enabled:
 		for metric in HOTSPOT_NAMES:
 			_stats_hotspots[metric] += last_hotspots_ms[metric]
 			_stats_hotspot_calls[metric] += last_hotspot_calls[metric]
-	_stats_queries += g_gameplayEngine.entity_service.spatial_query_count
-	_stats_candidates += g_gameplayEngine.entity_service.spatial_candidate_count
-	_stats_max_candidates = maxi(_stats_max_candidates, g_gameplayEngine.entity_service.spatial_max_candidates)
-	_stats_cells += g_gameplayEngine.entity_service.spatial_nonempty_cells
-	_stats_max_occupancy = maxi(_stats_max_occupancy, g_gameplayEngine.entity_service.spatial_max_occupancy)
+
+	_stats_queries += g_gameplayEngine.grid_service.spatial_query_count
+	_stats_candidates += g_gameplayEngine.grid_service.spatial_candidate_count
+	_stats_max_candidates = maxi(_stats_max_candidates, g_gameplayEngine.grid_service.spatial_max_candidates)
+	_stats_cells += g_gameplayEngine.grid_service.spatial_nonempty_cells
+	_stats_max_occupancy = maxi(_stats_max_occupancy, g_gameplayEngine.grid_service.spatial_max_occupancy)
 	_publish_performance_stats()
 
 func _publish_performance_stats() -> void:
 	if Time.get_ticks_usec() - _stats_window_started < 1000000:
 		return
+
 	var counts: Vector3i = g_gameplayEngine.entity_service.get_counts()
 	performance_monitors["Simulation/AliveEntities"] = counts.x + counts.y + counts.z
 	performance_monitors["Simulation/StepMean"] = _stats_step_total / maxi(1, _stats_steps)
 	performance_monitors["Simulation/StepMax"] = _stats_step_max
 	_stats_step_times.sort()
 	performance_monitors["Simulation/StepP95"] = _stats_step_times[ceili(_stats_step_times.size() * 0.95) - 1] if not _stats_step_times.is_empty() else 0.0
+
 	for metric in STAGE_NAMES:
 		performance_monitors["SimStages/" + metric + "Mean"] = _stats_stages[metric] / maxi(1, _stats_steps)
 	if detailed_stats_enabled:
 		for metric in HOTSPOT_NAMES:
 			performance_monitors["Hotspots/" + metric + "Mean"] = _stats_hotspots[metric] / maxi(1, _stats_steps)
 			performance_monitors["Hotspots/" + metric + "CallsPerStep"] = float(_stats_hotspot_calls[metric]) / maxi(1, _stats_steps)
+
 	for metric in debug_totals_ms:
 		performance_monitors["Debug/" + metric + "Mean"] = _stats_debug_ms[metric] / maxi(1, _stats_debug_calls[metric])
 	performance_monitors["Spatial/QueriesPerStep"] = float(_stats_queries) / maxi(1, _stats_steps)

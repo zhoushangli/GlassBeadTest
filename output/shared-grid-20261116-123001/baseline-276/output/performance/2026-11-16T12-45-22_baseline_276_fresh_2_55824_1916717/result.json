@@ -1,0 +1,2383 @@
+{
+	"arena_size": [
+		2560.0,
+		1440.0
+	],
+	"average_fps": 59.9822392589554,
+	"camera_zoom": 0.5,
+	"captures_during_measurement": 12,
+	"cleanup_mean_ms": 0.887573014991672,
+	"configured_counts": [
+		240,
+		24,
+		12
+	],
+	"corpse_entities": 0,
+	"cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+	"debug": {
+		"HUDRefresh": {
+			"calls": 1800,
+			"mean_per_call_ms": 0.115478333333333,
+			"total_ms": 207.861
+		},
+		"OverlayDrawCPUTime": {
+			"calls": 1800,
+			"mean_per_call_ms": 0.00274722222222219,
+			"total_ms": 4.94499999999995
+		}
+	},
+	"decision_mean_ms": 3.71197612437535,
+	"display_driver": "Windows",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"entities": 0,
+	"final_counts": [
+		215,
+		24,
+		12
+	],
+	"frame_p95_ms": 16.689,
+	"gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+	"gpu_timing_available": false,
+	"headless": false,
+	"hotspots": {
+		"DogAnchor": {
+			"calls": 0,
+			"mean_per_call_ms": 0.0,
+			"mean_per_step_ms": 0.0,
+			"total_ms": 0.0
+		},
+		"NearbyQuery": {
+			"calls": 0,
+			"mean_per_call_ms": 0.0,
+			"mean_per_step_ms": 0.0,
+			"total_ms": 0.0
+		},
+		"NeighborScan": {
+			"calls": 0,
+			"mean_per_call_ms": 0.0,
+			"mean_per_step_ms": 0.0,
+			"total_ms": 0.0
+		},
+		"Separation": {
+			"calls": 0,
+			"mean_per_call_ms": 0.0,
+			"mean_per_step_ms": 0.0,
+			"total_ms": 0.0
+		},
+		"WolfTarget": {
+			"calls": 0,
+			"mean_per_call_ms": 0.0,
+			"mean_per_step_ms": 0.0,
+			"total_ms": 0.0
+		}
+	},
+	"initial_counts": [
+		227,
+		24,
+		12
+	],
+	"interaction_mean_ms": 0.046836202109939,
+	"label": "baseline_276_fresh_2",
+	"layout": "main_scene",
+	"layout_version": 1,
+	"limboai": {
+		"binary": "res://addons/limboai/bin/liblimboai.windows.editor.x86_64.dll",
+		"binary_sha256": "f9e758ebf088da12e71dbe330572fb55f186619bda8b144b4d8e822569161b97",
+		"version": "v1.8.1"
+	},
+	"loop_hz": 59.9822392589554,
+	"loop_max_ms": 37.363,
+	"loop_mean_ms": 16.6716016666667,
+	"loop_p95_ms": 16.689,
+	"max_fps": 60,
+	"max_steps_per_frame": 4,
+	"measured_wall_seconds": 30.008883,
+	"movement_interaction_mean_ms": 1.09417157134925,
+	"movement_mean_ms": 0.15976235424764,
+	"perception_mean_ms": 5.14091116046641,
+	"physics_hz": 60,
+	"physics_steps": 1801,
+	"pooled_entities": 25,
+	"process_iterations": 1800,
+	"renderer": "gl_compatibility",
+	"result_version": 3,
+	"retained_entities": 276,
+	"samples": [
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.116590163934426,
+					"total_ms": 7.112
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00311475409836066,
+					"total_ms": 0.19
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 194.0,
+			"frame_p95_ms": 16.696,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 15.767,
+			"loop_hz_average_so_far": 59.921296814741,
+			"physics_process_ms": 0.045,
+			"physics_steps": 61,
+			"primitives": 1188.0,
+			"process_ms": 15.321,
+			"rendered_objects": 526.0,
+			"sheep": 227,
+			"simulation_seconds": 6.06666666666665,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.920032786885246,
+				"Decision": 3.65580327868852,
+				"Interaction": 0.0642786885245902,
+				"Movement": 0.15727868852459,
+				"Perception": 3.22129508196721,
+				"SpatialBuild": 1.97398360655738,
+				"TaskAssignment": 0.154114754098361
+			},
+			"step_mean_ms": 10.1467868852459,
+			"step_p95_ms": 11.201,
+			"wall_seconds": 1.018002,
+			"window_loop_hz": 59.921296814741,
+			"window_wall_seconds": 1.018002,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.116852459016394,
+					"total_ms": 7.12800000000001
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00277049180327869,
+					"total_ms": 0.169
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 173.0,
+			"frame_p95_ms": 16.683,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.885,
+			"loop_hz_average_so_far": 60.0025771598715,
+			"physics_process_ms": 0.048,
+			"physics_steps": 61,
+			"primitives": 1182.0,
+			"process_ms": 17.978,
+			"rendered_objects": 523.0,
+			"sheep": 225,
+			"simulation_seconds": 7.08333333333331,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.927573770491804,
+				"Decision": 3.7172131147541,
+				"Interaction": 0.0671639344262295,
+				"Movement": 0.16116393442623,
+				"Perception": 3.10016393442623,
+				"SpatialBuild": 2.07290163934426,
+				"TaskAssignment": 0.144950819672131
+			},
+			"step_mean_ms": 10.191131147541,
+			"step_p95_ms": 11.199,
+			"wall_seconds": 2.033246,
+			"window_loop_hz": 60.0840783102387,
+			"window_wall_seconds": 1.015244,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 60,
+					"mean_per_call_ms": 0.11725,
+					"total_ms": 7.03499999999999
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 60,
+					"mean_per_call_ms": 0.00285,
+					"total_ms": 0.171
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 179.0,
+			"frame_p95_ms": 16.708,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 14.677,
+			"loop_hz_average_so_far": 59.9991560558269,
+			"physics_process_ms": 0.036,
+			"physics_steps": 60,
+			"primitives": 1182.0,
+			"process_ms": 14.823,
+			"rendered_objects": 523.0,
+			"sheep": 225,
+			"simulation_seconds": 8.08333333333331,
+			"simulation_steps": 60,
+			"stages_mean_ms": {
+				"Cleanup": 0.928766666666668,
+				"Decision": 3.76359999999999,
+				"Interaction": 0.0429833333333336,
+				"Movement": 0.162466666666667,
+				"Perception": 3.1882,
+				"SpatialBuild": 2.10498333333333,
+				"TaskAssignment": 0.15355
+			},
+			"step_mean_ms": 10.34455,
+			"step_p95_ms": 11.816,
+			"wall_seconds": 3.033376,
+			"window_loop_hz": 59.9922010138682,
+			"window_wall_seconds": 1.00013,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.114639344262295,
+					"total_ms": 6.99299999999998
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00281967213114754,
+					"total_ms": 0.172
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 174.0,
+			"frame_p95_ms": 16.677,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 10.816,
+			"loop_hz_average_so_far": 60.0024593600627,
+			"physics_process_ms": 0.057,
+			"physics_steps": 61,
+			"primitives": 1182.0,
+			"process_ms": 16.779,
+			"rendered_objects": 523.0,
+			"sheep": 225,
+			"simulation_seconds": 9.10000000000003,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.91011475409836,
+				"Decision": 3.74773770491803,
+				"Interaction": 0.0479180327868852,
+				"Movement": 0.156639344262295,
+				"Perception": 3.06690163934426,
+				"SpatialBuild": 2.06293442622951,
+				"TaskAssignment": 0.132803278688525
+			},
+			"step_mean_ms": 10.1250491803279,
+			"step_p95_ms": 11.263,
+			"wall_seconds": 4.049834,
+			"window_loop_hz": 60.0123172821701,
+			"window_wall_seconds": 1.016458,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 60,
+					"mean_per_call_ms": 0.119183333333333,
+					"total_ms": 7.15099999999998
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 60,
+					"mean_per_call_ms": 0.00285,
+					"total_ms": 0.171
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 194.0,
+			"frame_p95_ms": 16.832,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 15.254,
+			"loop_hz_average_so_far": 59.991137942791,
+			"physics_process_ms": 0.036,
+			"physics_steps": 60,
+			"primitives": 1186.0,
+			"process_ms": 17.862,
+			"rendered_objects": 525.0,
+			"sheep": 225,
+			"simulation_seconds": 10.1000000000001,
+			"simulation_steps": 60,
+			"stages_mean_ms": {
+				"Cleanup": 0.931816666666668,
+				"Decision": 3.8135,
+				"Interaction": 0.0447000000000001,
+				"Movement": 0.164416666666667,
+				"Perception": 3.35968333333333,
+				"SpatialBuild": 2.11111666666666,
+				"TaskAssignment": 0.151783333333334
+			},
+			"step_mean_ms": 10.5770166666667,
+			"step_p95_ms": 12.847,
+			"wall_seconds": 5.050746,
+			"window_loop_hz": 59.9453298591684,
+			"window_wall_seconds": 1.000912,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.116360655737705,
+					"total_ms": 7.09799999999998
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00272131147540982,
+					"total_ms": 0.165999999999999
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 203.0,
+			"frame_p95_ms": 16.675,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.806,
+			"loop_hz_average_so_far": 60.0023902051043,
+			"physics_process_ms": 0.053,
+			"physics_steps": 61,
+			"primitives": 1184.0,
+			"process_ms": 17.395,
+			"rendered_objects": 524.0,
+			"sheep": 225,
+			"simulation_seconds": 11.1166666666668,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.902737704918031,
+				"Decision": 3.74127868852458,
+				"Interaction": 0.0379672131147543,
+				"Movement": 0.157688524590164,
+				"Perception": 3.19416393442624,
+				"SpatialBuild": 1.97116393442623,
+				"TaskAssignment": 0.141737704918033
+			},
+			"step_mean_ms": 10.146737704918,
+			"step_p95_ms": 10.903,
+			"wall_seconds": 6.066425,
+			"window_loop_hz": 60.0583452055226,
+			"window_wall_seconds": 1.015679,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 60,
+					"mean_per_call_ms": 0.114766666666666,
+					"total_ms": 6.88599999999997
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 60,
+					"mean_per_call_ms": 0.0027166666666666,
+					"total_ms": 0.162999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 195.0,
+			"frame_p95_ms": 16.686,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 15.629,
+			"loop_hz_average_so_far": 59.99295931685,
+			"physics_process_ms": 0.032,
+			"physics_steps": 60,
+			"primitives": 1186.0,
+			"process_ms": 14.82,
+			"rendered_objects": 525.0,
+			"sheep": 224,
+			"simulation_seconds": 12.1166666666668,
+			"simulation_steps": 60,
+			"stages_mean_ms": {
+				"Cleanup": 0.914433333333334,
+				"Decision": 3.67180000000001,
+				"Interaction": 0.0614666666666667,
+				"Movement": 0.158433333333334,
+				"Perception": 3.16148333333334,
+				"SpatialBuild": 2.0374,
+				"TaskAssignment": 0.139816666666667
+			},
+			"step_mean_ms": 10.1448333333333,
+			"step_p95_ms": 11.137,
+			"wall_seconds": 7.067496,
+			"window_loop_hz": 59.93580874883,
+			"window_wall_seconds": 1.001071,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.114524590163934,
+					"total_ms": 6.98599999999996
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00270491803278682,
+					"total_ms": 0.164999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 184.0,
+			"frame_p95_ms": 16.685,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 12.425,
+			"loop_hz_average_so_far": 60.0024372123981,
+			"physics_process_ms": 0.034,
+			"physics_steps": 61,
+			"primitives": 1182.0,
+			"process_ms": 17.708,
+			"rendered_objects": 523.0,
+			"sheep": 223,
+			"simulation_seconds": 13.1333333333336,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.900590163934429,
+				"Decision": 3.70873770491803,
+				"Interaction": 0.0651967213114756,
+				"Movement": 0.153836065573771,
+				"Perception": 3.22283606557376,
+				"SpatialBuild": 1.98032786885246,
+				"TaskAssignment": 0.146754098360657
+			},
+			"step_mean_ms": 10.1782786885246,
+			"step_p95_ms": 11.451,
+			"wall_seconds": 8.083005,
+			"window_loop_hz": 60.068399196856,
+			"window_wall_seconds": 1.015509,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 60,
+					"mean_per_call_ms": 0.123833333333333,
+					"total_ms": 7.42999999999999
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 60,
+					"mean_per_call_ms": 0.0028166666666666,
+					"total_ms": 0.168999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 194.0,
+			"frame_p95_ms": 16.689,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 14.788,
+			"loop_hz_average_so_far": 59.9978290693775,
+			"physics_process_ms": 0.079,
+			"physics_steps": 60,
+			"primitives": 1180.0,
+			"process_ms": 14.823,
+			"rendered_objects": 522.0,
+			"sheep": 222,
+			"simulation_seconds": 14.1333333333336,
+			"simulation_steps": 60,
+			"stages_mean_ms": {
+				"Cleanup": 0.942449999999999,
+				"Decision": 3.86678333333333,
+				"Interaction": 0.0468833333333333,
+				"Movement": 0.163750000000001,
+				"Perception": 3.52893333333334,
+				"SpatialBuild": 1.97391666666666,
+				"TaskAssignment": 0.160450000000002
+			},
+			"step_mean_ms": 10.6831666666667,
+			"step_p95_ms": 12.871,
+			"wall_seconds": 9.083662,
+			"window_loop_hz": 59.9606058819356,
+			"window_wall_seconds": 1.000657,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.12239344262295,
+					"total_ms": 7.46599999999997
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00277049180327862,
+					"total_ms": 0.168999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 185.0,
+			"frame_p95_ms": 16.687,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 10.984,
+			"loop_hz_average_so_far": 60.0023763317359,
+			"physics_process_ms": 0.041,
+			"physics_steps": 61,
+			"primitives": 1180.0,
+			"process_ms": 14.49,
+			"rendered_objects": 522.0,
+			"sheep": 222,
+			"simulation_seconds": 15.1500000000003,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.924442622950818,
+				"Decision": 3.84263934426232,
+				"Interaction": 0.0408032786885247,
+				"Movement": 0.163836065573771,
+				"Perception": 3.42178688524592,
+				"SpatialBuild": 2.02559016393443,
+				"TaskAssignment": 0.173393442622952
+			},
+			"step_mean_ms": 10.5924918032787,
+			"step_p95_ms": 11.42,
+			"wall_seconds": 10.0996,
+			"window_loop_hz": 60.043034122161,
+			"window_wall_seconds": 1.015938,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 60,
+					"mean_per_call_ms": 0.130166666666667,
+					"total_ms": 7.81
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 60,
+					"mean_per_call_ms": 0.00308333333333327,
+					"total_ms": 0.184999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 184.0,
+			"frame_p95_ms": 20.288,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 11.774,
+			"loop_hz_average_so_far": 59.9479425029022,
+			"physics_process_ms": 0.049,
+			"physics_steps": 61,
+			"primitives": 1180.0,
+			"process_ms": 37.281,
+			"rendered_objects": 522.0,
+			"sheep": 221,
+			"simulation_seconds": 16.166666666667,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 1.01088524590164,
+				"Decision": 4.12614754098363,
+				"Interaction": 0.0576721311475409,
+				"Movement": 0.180098360655738,
+				"Perception": 3.64578688524589,
+				"SpatialBuild": 2.24726229508197,
+				"TaskAssignment": 0.176901639344263
+			},
+			"step_mean_ms": 11.4447540983607,
+			"step_p95_ms": 13.156,
+			"wall_seconds": 11.109639,
+			"window_loop_hz": 59.4036467898765,
+			"window_wall_seconds": 1.010039,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.121327868852458,
+					"total_ms": 7.40099999999995
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00304918032786882,
+					"total_ms": 0.185999999999998
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 184.0,
+			"frame_p95_ms": 16.679,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 10.196,
+			"loop_hz_average_so_far": 59.9525574878641,
+			"physics_process_ms": 0.043,
+			"physics_steps": 61,
+			"primitives": 1178.0,
+			"process_ms": 15.999,
+			"rendered_objects": 521.0,
+			"sheep": 221,
+			"simulation_seconds": 17.1833333333336,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.943754098360657,
+				"Decision": 3.98154098360654,
+				"Interaction": 0.0483770491803272,
+				"Movement": 0.167704918032788,
+				"Perception": 3.32911475409837,
+				"SpatialBuild": 2.14977049180327,
+				"TaskAssignment": 0.152639344262297
+			},
+			"step_mean_ms": 10.7729016393443,
+			"step_p95_ms": 11.703,
+			"wall_seconds": 12.126255,
+			"window_loop_hz": 60.0029903129598,
+			"window_wall_seconds": 1.016616,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.112770491803278,
+					"total_ms": 6.87899999999995
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00270491803278689,
+					"total_ms": 0.165
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 175.0,
+			"frame_p95_ms": 16.684,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.358,
+			"loop_hz_average_so_far": 59.9563581625446,
+			"physics_process_ms": 0.047,
+			"physics_steps": 61,
+			"primitives": 1176.0,
+			"process_ms": 13.926,
+			"rendered_objects": 520.0,
+			"sheep": 221,
+			"simulation_seconds": 18.2000000000002,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.863819672131155,
+				"Decision": 3.63486885245901,
+				"Interaction": 0.0394918032786877,
+				"Movement": 0.157032786885248,
+				"Perception": 3.34691803278687,
+				"SpatialBuild": 1.96796721311476,
+				"TaskAssignment": 0.163000000000002
+			},
+			"step_mean_ms": 10.1730983606557,
+			"step_p95_ms": 10.939,
+			"wall_seconds": 13.142893,
+			"window_loop_hz": 60.0016918509833,
+			"window_wall_seconds": 1.016638,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.108098360655737,
+					"total_ms": 6.59399999999998
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00245901639344256,
+					"total_ms": 0.149999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 177.0,
+			"frame_p95_ms": 16.676,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 8.797,
+			"loop_hz_average_so_far": 59.9596935261611,
+			"physics_process_ms": 0.031,
+			"physics_steps": 61,
+			"primitives": 1176.0,
+			"process_ms": 15.973,
+			"rendered_objects": 520.0,
+			"sheep": 220,
+			"simulation_seconds": 19.2166666666669,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.828114754098359,
+				"Decision": 3.49304918032791,
+				"Interaction": 0.0380491803278675,
+				"Movement": 0.149983606557377,
+				"Perception": 3.02557377049181,
+				"SpatialBuild": 1.91099999999999,
+				"TaskAssignment": 0.147114754098362
+			},
+			"step_mean_ms": 9.59288524590164,
+			"step_p95_ms": 11.108,
+			"wall_seconds": 14.159512,
+			"window_loop_hz": 60.0028132466539,
+			"window_wall_seconds": 1.016619,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.125491803278688,
+					"total_ms": 7.65499999999996
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00267213114754098,
+					"total_ms": 0.163
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 171.0,
+			"frame_p95_ms": 16.683,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.184,
+			"loop_hz_average_so_far": 59.9625267154472,
+			"physics_process_ms": 0.028,
+			"physics_steps": 61,
+			"primitives": 1172.0,
+			"process_ms": 13.29,
+			"rendered_objects": 518.0,
+			"sheep": 219,
+			"simulation_seconds": 20.2333333333335,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.851295081967211,
+				"Decision": 3.63729508196722,
+				"Interaction": 0.0508524590163928,
+				"Movement": 0.16044262295082,
+				"Perception": 2.97485245901641,
+				"SpatialBuild": 2.04409836065573,
+				"TaskAssignment": 0.142213114754098
+			},
+			"step_mean_ms": 9.86104918032787,
+			"step_p95_ms": 11.113,
+			"wall_seconds": 15.176145,
+			"window_loop_hz": 60.0019869510433,
+			"window_wall_seconds": 1.016633,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.109655737704917,
+					"total_ms": 6.68899999999995
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00259016393442617,
+					"total_ms": 0.157999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 169.0,
+			"frame_p95_ms": 16.69,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 11.403,
+			"loop_hz_average_so_far": 59.9647486325289,
+			"physics_process_ms": 0.039,
+			"physics_steps": 61,
+			"primitives": 1174.0,
+			"process_ms": 18.416,
+			"rendered_objects": 519.0,
+			"sheep": 219,
+			"simulation_seconds": 21.2500000000001,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.833311475409843,
+				"Decision": 3.50270491803282,
+				"Interaction": 0.0375737704918021,
+				"Movement": 0.152098360655736,
+				"Perception": 2.61722950819671,
+				"SpatialBuild": 1.8107213114754,
+				"TaskAssignment": 0.120459016393444
+			},
+			"step_mean_ms": 9.07409836065574,
+			"step_p95_ms": 10.565,
+			"wall_seconds": 16.192847,
+			"window_loop_hz": 59.9979148265667,
+			"window_wall_seconds": 1.016702,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.11755737704918,
+					"total_ms": 7.17099999999998
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00268852459016392,
+					"total_ms": 0.163999999999999
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 167.0,
+			"frame_p95_ms": 16.693,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 10.484,
+			"loop_hz_average_so_far": 59.9672272130347,
+			"physics_process_ms": 0.036,
+			"physics_steps": 61,
+			"primitives": 1174.0,
+			"process_ms": 15.216,
+			"rendered_objects": 519.0,
+			"sheep": 218,
+			"simulation_seconds": 22.2666666666667,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.902295081967203,
+				"Decision": 3.80947540983607,
+				"Interaction": 0.0553606557377048,
+				"Movement": 0.164311475409834,
+				"Perception": 3.18352459016393,
+				"SpatialBuild": 1.99245901639342,
+				"TaskAssignment": 0.149081967213113
+			},
+			"step_mean_ms": 10.2565081967213,
+			"step_p95_ms": 11.586,
+			"wall_seconds": 17.2094,
+			"window_loop_hz": 60.0067089468037,
+			"window_wall_seconds": 1.016553,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.12316393442623,
+					"total_ms": 7.51300000000001
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00286885245901641,
+					"total_ms": 0.175000000000001
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 174.0,
+			"frame_p95_ms": 16.684,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 11.127,
+			"loop_hz_average_so_far": 59.9692450497528,
+			"physics_process_ms": 0.03,
+			"physics_steps": 61,
+			"primitives": 1172.0,
+			"process_ms": 18.231,
+			"rendered_objects": 518.0,
+			"sheep": 218,
+			"simulation_seconds": 23.2833333333333,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.947950819672128,
+				"Decision": 3.97259016393441,
+				"Interaction": 0.0476557377049175,
+				"Movement": 0.179852459016393,
+				"Perception": 3.23840983606558,
+				"SpatialBuild": 1.94909836065573,
+				"TaskAssignment": 0.165672131147542
+			},
+			"step_mean_ms": 10.5012295081967,
+			"step_p95_ms": 11.547,
+			"wall_seconds": 18.226009,
+			"window_loop_hz": 60.0034034717378,
+			"window_wall_seconds": 1.016609,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.119950819672131,
+					"total_ms": 7.31700000000001
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00286885245901642,
+					"total_ms": 0.175000000000002
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 165.0,
+			"frame_p95_ms": 16.701,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 10.107,
+			"loop_hz_average_so_far": 59.9709904624818,
+			"physics_process_ms": 0.035,
+			"physics_steps": 61,
+			"primitives": 1170.0,
+			"process_ms": 14.613,
+			"rendered_objects": 517.0,
+			"sheep": 217,
+			"simulation_seconds": 24.2999999999999,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.920688524590151,
+				"Decision": 3.80459016393441,
+				"Interaction": 0.0524262295081964,
+				"Movement": 0.175131147540985,
+				"Perception": 3.13396721311471,
+				"SpatialBuild": 1.8837868852459,
+				"TaskAssignment": 0.151770491803279
+			},
+			"step_mean_ms": 10.1223606557377,
+			"step_p95_ms": 11.335,
+			"wall_seconds": 19.242637,
+			"window_loop_hz": 60.0022820540062,
+			"window_wall_seconds": 1.016628,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.110147540983606,
+					"total_ms": 6.71899999999999
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00262295081967211,
+					"total_ms": 0.159999999999999
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 172.0,
+			"frame_p95_ms": 16.683,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.533,
+			"loop_hz_average_so_far": 59.9725281397025,
+			"physics_process_ms": 0.033,
+			"physics_steps": 61,
+			"primitives": 1166.0,
+			"process_ms": 17.051,
+			"rendered_objects": 515.0,
+			"sheep": 217,
+			"simulation_seconds": 25.3166666666665,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.823901639344263,
+				"Decision": 3.47660655737701,
+				"Interaction": 0.0430163934426215,
+				"Movement": 0.157426229508197,
+				"Perception": 2.79162295081968,
+				"SpatialBuild": 1.79649180327869,
+				"TaskAssignment": 0.139606557377049
+			},
+			"step_mean_ms": 9.22867213114754,
+			"step_p95_ms": 9.967,
+			"wall_seconds": 20.259276,
+			"window_loop_hz": 60.0016328313196,
+			"window_wall_seconds": 1.016639,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.115147540983608,
+					"total_ms": 7.02400000000006
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00260655737704913,
+					"total_ms": 0.158999999999997
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 165.0,
+			"frame_p95_ms": 16.689,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.425,
+			"loop_hz_average_so_far": 59.9739583296613,
+			"physics_process_ms": 0.044,
+			"physics_steps": 61,
+			"primitives": 1166.0,
+			"process_ms": 16.99,
+			"rendered_objects": 515.0,
+			"sheep": 217,
+			"simulation_seconds": 26.3333333333331,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.872311475409829,
+				"Decision": 3.67157377049178,
+				"Interaction": 0.0399672131147532,
+				"Movement": 0.159704918032788,
+				"Perception": 3.17377049180325,
+				"SpatialBuild": 1.87257377049181,
+				"TaskAssignment": 0.16355737704918
+			},
+			"step_mean_ms": 9.95345901639344,
+			"step_p95_ms": 12.636,
+			"wall_seconds": 21.275901,
+			"window_loop_hz": 60.0024591171769,
+			"window_wall_seconds": 1.016625,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.113081967213115,
+					"total_ms": 6.89800000000002
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00288524590163936,
+					"total_ms": 0.176000000000001
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 172.0,
+			"frame_p95_ms": 16.675,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 8.992,
+			"loop_hz_average_so_far": 59.9752822886711,
+			"physics_process_ms": 0.036,
+			"physics_steps": 61,
+			"primitives": 1166.0,
+			"process_ms": 17.679,
+			"rendered_objects": 515.0,
+			"sheep": 217,
+			"simulation_seconds": 27.3499999999997,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.858868852459036,
+				"Decision": 3.63670491803277,
+				"Interaction": 0.0394098360655737,
+				"Movement": 0.154540983606557,
+				"Perception": 3.24408196721313,
+				"SpatialBuild": 1.82406557377048,
+				"TaskAssignment": 0.161983606557375
+			},
+			"step_mean_ms": 9.91965573770492,
+			"step_p95_ms": 10.725,
+			"wall_seconds": 22.292517,
+			"window_loop_hz": 60.0029903129599,
+			"window_wall_seconds": 1.016616,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.107295081967214,
+					"total_ms": 6.54500000000004
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00252459016393437,
+					"total_ms": 0.153999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 172.0,
+			"frame_p95_ms": 16.677,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.334,
+			"loop_hz_average_so_far": 59.9764341521604,
+			"physics_process_ms": 0.033,
+			"physics_steps": 61,
+			"primitives": 1166.0,
+			"process_ms": 13.76,
+			"rendered_objects": 515.0,
+			"sheep": 217,
+			"simulation_seconds": 28.3666666666663,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.829049180327867,
+				"Decision": 3.47868852459012,
+				"Interaction": 0.0378688524590178,
+				"Movement": 0.151672131147537,
+				"Perception": 3.19749180327864,
+				"SpatialBuild": 1.82777049180324,
+				"TaskAssignment": 0.15090163934426
+			},
+			"step_mean_ms": 9.67344262295082,
+			"step_p95_ms": 10.914,
+			"wall_seconds": 23.309155,
+			"window_loop_hz": 60.0016918509833,
+			"window_wall_seconds": 1.016638,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.108721311475411,
+					"total_ms": 6.63200000000009
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00257377049180324,
+					"total_ms": 0.156999999999997
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 160.0,
+			"frame_p95_ms": 16.677,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.623,
+			"loop_hz_average_so_far": 59.9775612391866,
+			"physics_process_ms": 0.039,
+			"physics_steps": 61,
+			"primitives": 1168.0,
+			"process_ms": 16.184,
+			"rendered_objects": 516.0,
+			"sheep": 217,
+			"simulation_seconds": 29.3833333333329,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.826360655737692,
+				"Decision": 3.57665573770492,
+				"Interaction": 0.0369508196721324,
+				"Movement": 0.152196721311475,
+				"Perception": 3.21013114754099,
+				"SpatialBuild": 1.78339344262293,
+				"TaskAssignment": 0.160573770491801
+			},
+			"step_mean_ms": 9.74626229508197,
+			"step_p95_ms": 10.883,
+			"wall_seconds": 24.325764,
+			"window_loop_hz": 60.003403471738,
+			"window_wall_seconds": 1.016609,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.100393442622951,
+					"total_ms": 6.12400000000002
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00239344262295072,
+					"total_ms": 0.145999999999994
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 162.0,
+			"frame_p95_ms": 16.681,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.372,
+			"loop_hz_average_so_far": 59.9785694992796,
+			"physics_process_ms": 0.029,
+			"physics_steps": 61,
+			"primitives": 1168.0,
+			"process_ms": 13.938,
+			"rendered_objects": 516.0,
+			"sheep": 217,
+			"simulation_seconds": 30.3999999999996,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.767918032786875,
+				"Decision": 3.4386557377049,
+				"Interaction": 0.0354918032786893,
+				"Movement": 0.146114754098359,
+				"Perception": 3.1671147540984,
+				"SpatialBuild": 1.76916393442623,
+				"TaskAssignment": 0.148754098360656
+			},
+			"step_mean_ms": 9.4732131147541,
+			"step_p95_ms": 10.876,
+			"wall_seconds": 25.342385,
+			"window_loop_hz": 60.0026952030304,
+			"window_wall_seconds": 1.016621,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.112819672131149,
+					"total_ms": 6.88200000000006
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00273770491803273,
+					"total_ms": 0.166999999999996
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 182.0,
+			"frame_p95_ms": 16.694,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 12.173,
+			"loop_hz_average_so_far": 59.979443098648,
+			"physics_process_ms": 0.036,
+			"physics_steps": 61,
+			"primitives": 1170.0,
+			"process_ms": 15.226,
+			"rendered_objects": 517.0,
+			"sheep": 217,
+			"simulation_seconds": 31.4166666666662,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.890836065573784,
+				"Decision": 3.81803278688523,
+				"Interaction": 0.0523934426229515,
+				"Movement": 0.161737704918032,
+				"Perception": 3.31144262295086,
+				"SpatialBuild": 1.81845901639346,
+				"TaskAssignment": 0.174524590163934
+			},
+			"step_mean_ms": 10.2274262295082,
+			"step_p95_ms": 12.34,
+			"wall_seconds": 26.359031,
+			"window_loop_hz": 60.0012196969249,
+			"window_wall_seconds": 1.016646,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.112754098360658,
+					"total_ms": 6.87800000000016
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00275409836065573,
+					"total_ms": 0.167999999999999
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 182.0,
+			"frame_p95_ms": 16.679,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.517,
+			"loop_hz_average_so_far": 59.980321924835,
+			"physics_process_ms": 0.034,
+			"physics_steps": 61,
+			"primitives": 1166.0,
+			"process_ms": 15.971,
+			"rendered_objects": 515.0,
+			"sheep": 215,
+			"simulation_seconds": 32.4333333333328,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.872786885245902,
+				"Decision": 3.77447540983606,
+				"Interaction": 0.0553114754098374,
+				"Movement": 0.158803278688527,
+				"Perception": 3.44855737704921,
+				"SpatialBuild": 1.86345901639344,
+				"TaskAssignment": 0.176770491803278
+			},
+			"step_mean_ms": 10.3501639344262,
+			"step_p95_ms": 12.321,
+			"wall_seconds": 27.375645,
+			"window_loop_hz": 60.0031083577446,
+			"window_wall_seconds": 1.016614,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.10860655737705,
+					"total_ms": 6.62500000000006
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.00257377049180325,
+					"total_ms": 0.156999999999998
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 160.0,
+			"frame_p95_ms": 16.68,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 9.4,
+			"loop_hz_average_so_far": 59.981106127674,
+			"physics_process_ms": 0.029,
+			"physics_steps": 61,
+			"primitives": 1162.0,
+			"process_ms": 17.585,
+			"rendered_objects": 513.0,
+			"sheep": 215,
+			"simulation_seconds": 33.4499999999994,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.819557377049183,
+				"Decision": 3.55009836065578,
+				"Interaction": 0.0370819672131164,
+				"Movement": 0.149950819672129,
+				"Perception": 3.05637704918035,
+				"SpatialBuild": 1.75216393442624,
+				"TaskAssignment": 0.157573770491801
+			},
+			"step_mean_ms": 9.52280327868852,
+			"step_p95_ms": 10.466,
+			"wall_seconds": 28.392274,
+			"window_loop_hz": 60.0022230331811,
+			"window_wall_seconds": 1.016629,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 61,
+					"mean_per_call_ms": 0.116573770491803,
+					"total_ms": 7.11099999999999
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 61,
+					"mean_per_call_ms": 0.0029344262295082,
+					"total_ms": 0.179
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 168.0,
+			"frame_p95_ms": 16.692,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 10.3,
+			"loop_hz_average_so_far": 59.9818340731093,
+			"physics_process_ms": 0.036,
+			"physics_steps": 61,
+			"primitives": 1164.0,
+			"process_ms": 13.584,
+			"rendered_objects": 514.0,
+			"sheep": 215,
+			"simulation_seconds": 34.466666666666,
+			"simulation_steps": 61,
+			"stages_mean_ms": {
+				"Cleanup": 0.89088524590164,
+				"Decision": 3.77481967213118,
+				"Interaction": 0.0391967213114771,
+				"Movement": 0.158000000000001,
+				"Perception": 3.18600000000001,
+				"SpatialBuild": 1.87565573770493,
+				"TaskAssignment": 0.150639344262293
+			},
+			"step_mean_ms": 10.0751967213115,
+			"step_p95_ms": 11.506,
+			"wall_seconds": 29.408904,
+			"window_loop_hz": 60.0021640124726,
+			"window_wall_seconds": 1.01663,
+			"wolves": 24
+		},
+		{
+			"debug": {
+				"HUDRefresh": {
+					"calls": 36,
+					"mean_per_call_ms": 0.114138888888892,
+					"total_ms": 4.10900000000009
+				},
+				"OverlayDrawCPUTime": {
+					"calls": 36,
+					"mean_per_call_ms": 0.00266666666666662,
+					"total_ms": 0.0959999999999983
+				}
+			},
+			"dogs": 12,
+			"draw_calls": 159.0,
+			"frame_p95_ms": 16.678,
+			"hotspots": {
+				"DogAnchor": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NearbyQuery": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"NeighborScan": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"Separation": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				},
+				"WolfTarget": {
+					"calls": 0,
+					"mean_per_call_ms": 0.0,
+					"mean_per_step_ms": 0.0,
+					"total_ms": 0.0
+				}
+			},
+			"last_step_ms": 10.196,
+			"loop_hz_average_so_far": 59.9822392589554,
+			"physics_process_ms": 0.036,
+			"physics_steps": 36,
+			"primitives": 1164.0,
+			"process_ms": 13.584,
+			"rendered_objects": 514.0,
+			"sheep": 215,
+			"simulation_seconds": 35.066666666666,
+			"simulation_steps": 36,
+			"stages_mean_ms": {
+				"Cleanup": 0.861833333333348,
+				"Decision": 3.65102777777775,
+				"Interaction": 0.0381666666666677,
+				"Movement": 0.154611111111112,
+				"Perception": 3.1755555555555,
+				"SpatialBuild": 1.79611111111109,
+				"TaskAssignment": 0.154249999999997
+			},
+			"step_mean_ms": 9.83155555555556,
+			"step_p95_ms": 11.305,
+			"wall_seconds": 30.008883,
+			"window_loop_hz": 60.0021000735025,
+			"window_wall_seconds": 0.599979000000001,
+			"wolves": 24
+		}
+	],
+	"sampling": "stages",
+	"scenario": "",
+	"script_profiler_active": false,
+	"seed": 1337,
+	"simulation_hz": 60.0,
+	"simulation_per_frame_mean_ms": 10.1062438888889,
+	"simulation_per_frame_p95_ms": 11.589,
+	"simulation_seconds_advanced": 30.016666666666,
+	"simulation_seconds_at_measurement_start": 5.04999999999999,
+	"simulation_steps": 1801,
+	"simulation_wall_ratio": 1.00025937875348,
+	"spatial_candidates": 798917,
+	"spatial_candidates_per_query": 4.81850037997129,
+	"spatial_max_candidates": 38,
+	"spatial_max_occupancy": 7,
+	"spatial_nonempty_cells_mean": 223.184342032204,
+	"spatial_queries": 165802,
+	"spatial_queries_per_step": 92.0610771793448,
+	"stages_mean_ms": {
+		"Cleanup": 0.887573014991672,
+		"Decision": 3.71197612437535,
+		"Interaction": 0.046836202109939,
+		"Movement": 0.15976235424764,
+		"Perception": 3.1974869516935,
+		"SpatialBuild": 1.9434242087729,
+		"TaskAssignment": 0.153573570238756
+	},
+	"stats_enabled": true,
+	"step_max_ms": 17.807,
+	"step_mean_ms": 10.1006324264298,
+	"step_p95_ms": 11.589,
+	"steps_per_frame_mean": 1.00055555555556,
+	"steps_per_frame_p95": 1.0,
+	"tier": 1,
+	"tiles": 0,
+	"viewport": [
+		1280,
+		720
+	],
+	"visibility": {
+		"animals": true,
+		"hud": true,
+		"overlay": "on"
+	},
+	"vsync": false,
+	"warmup_wall_seconds": 5.0
+}

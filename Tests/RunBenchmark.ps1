@@ -1,4 +1,8 @@
 param(
+	[ValidateSet('normal', 'random')][string]$Motion = 'normal',
+	[ValidateSet('default', 'serial', 'parallel')][string]$Jobs = 'default',
+	[ValidateSet(2, 4, 8)][int]$JobWorkers = 4,
+	[ValidateSet('default', 'all', 'Sheep', 'Wolf', 'DogAnchor', 'Dog', 'Grid')][string]$JobStages = 'default',
 	[string]$GodotPath = 'C:\Work\Godot\Editor\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe',
 	[ValidateSet(1000, 2000, 3000, 4000)][int]$Entities,
 	[ValidateSet('scaled', 'fixed')][string]$Scenario,
@@ -16,12 +20,20 @@ param(
 	[ValidateRange(0, 1000000)][int]$WarmupSteps = 180,
 	[ValidateRange(1, 3600)][int]$TimeoutSeconds = 120,
 	[ValidateRange(0, 10000)][int]$MaxFps = 0,
+	[switch]$MainScene,
 	[switch]$Headless,
 	[switch]$Profile
 )
 
 $ErrorActionPreference = 'Stop'
-if ($PSBoundParameters.ContainsKey('Entities') -or $PSBoundParameters.ContainsKey('Scenario')) {
+if ($MainScene) {
+	foreach ($option in @('Entities', 'Scenario', 'Tiles', 'Layout')) {
+		if ($PSBoundParameters.ContainsKey($option)) {
+			throw 'Use -MainScene without population/layout options.'
+		}
+	}
+	$populationArguments = '--main-scene=on'
+} elseif ($PSBoundParameters.ContainsKey('Entities') -or $PSBoundParameters.ContainsKey('Scenario')) {
 	if (-not $Entities -or -not $Scenario -or $PSBoundParameters.ContainsKey('Tiles') -or $PSBoundParameters.ContainsKey('Layout')) {
 		throw 'Use -Entities and -Scenario together, without -Tiles or -Layout.'
 	}
@@ -45,6 +57,7 @@ if ($Profile) {
 	$flags += '--debug', '--profiling'
 }
 $culture = [Globalization.CultureInfo]::InvariantCulture
+
 $startInfo = New-Object System.Diagnostics.ProcessStartInfo
 $startInfo.FileName = $godotExecutable
 $startInfo.WorkingDirectory = $projectPath
@@ -53,6 +66,8 @@ $startInfo.Arguments += ' --sampling={0} --hud={1} --overlay={2} --animals={3} -
 if ($Steps -gt 0) {
 	$startInfo.Arguments += ' --steps={0} --warmup-steps={1}' -f $Steps, $WarmupSteps
 }
+$startInfo.Arguments += ' --jobs={0} --job-workers={1} --job-stages={2}' -f $Jobs, $JobWorkers, $JobStages
+$startInfo.Arguments += ' --motion={0}' -f $Motion
 $startInfo.UseShellExecute = $false
 $startInfo.CreateNoWindow = $true
 $startInfo.RedirectStandardOutput = $true
@@ -75,14 +90,17 @@ $status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding UTF8
 Write-Output "BENCHMARK_LAUNCH pid=$($process.Id) timeout=${TimeoutSeconds}s logs=$logDirectory"
 $completed = $process.WaitForExit($TimeoutSeconds * 1000)
 if (-not $completed) {
+
 	# 1) Stop only the process tree created by this launcher.
 	& taskkill.exe /PID $process.Id /T /F | Out-Null
+
 	if ($LASTEXITCODE -ne 0 -or -not $process.WaitForExit(5000)) {
 		$status.state = 'cleanup_failed'
 		$status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding UTF8
 		throw "Unable to stop benchmark process $($process.Id)."
 	}
 }
+
 if (-not $stdout.Wait(5000) -or -not $stderr.Wait(5000)) {
 	throw 'Benchmark output streams did not close after process exit.'
 }

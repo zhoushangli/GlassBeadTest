@@ -1,10 +1,10 @@
-[gd_resource type="BehaviorTree" format=3]
+[gd_resource type="BehaviorTree" format=3 uid="uid://kyi3ld0aatps"]
 
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/AnimalCondition.gd" id="1"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/DogReturn.gd" id="action_0"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/DogDrive.gd" id="action_1"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/DogCollect.gd" id="action_2"]
-[ext_resource type="Script" path="res://Scripts/AI/Tasks/DogPatrol.gd" id="action_3"]
+[ext_resource type="Script" uid="uid://dan5ub1d5qnqt" path="res://Scripts/AI/Tasks/AnimalCondition.gd" id="1"]
+[ext_resource type="Script" uid="uid://cdc3qg8fxsxu5" path="res://Scripts/AI/Tasks/DogReturn.gd" id="action_0"]
+[ext_resource type="Script" uid="uid://ueq8kjugwigv" path="res://Scripts/AI/Tasks/DogDrive.gd" id="action_1"]
+[ext_resource type="Script" uid="uid://c7a8tw6hh2a6y" path="res://Scripts/AI/Tasks/DogCollect.gd" id="action_2"]
+[ext_resource type="Script" uid="uid://dhflxqie8dh4p" path="res://Scripts/AI/Tasks/DogPatrol.gd" id="action_3"]
 
 [sub_resource type="BTCondition" id="Condition_0"]
 script = ExtResource("1")

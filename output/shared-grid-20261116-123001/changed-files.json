@@ -1,0 +1,21 @@
+[
+  "Scripts/Core/GameplayEngine.gd",
+  "Scripts/Core/GridService.gd",
+  "Scripts/Core/ProfileService.gd",
+  "Scripts/ECS/AnimalData.gd",
+  "Scripts/ECS/Systems/AnimalSystem.gd",
+  "Scripts/ECS/Systems/SheepdogSystem.gd",
+  "Scripts/ECS/Systems/SheepSystem.gd",
+  "Scripts/ECS/Systems/WolfSystem.gd",
+  "Scripts/AI/Tasks/DogCollect.gd",
+  "Scripts/AI/Tasks/SheepAlert.gd",
+  "Scripts/AI/Tasks/SheepFlee.gd",
+  "Scripts/AI/Tasks/SheepFlock.gd",
+  "Scripts/AI/Tasks/SheepHerded.gd",
+  "Scripts/AI/Tasks/WolfRetreat.gd",
+  "Scripts/AI/Tasks/WolfStalk.gd",
+  "Tests/PerformanceGuide.txt",
+  "Tests/PerformanceVerification.gd",
+  "Tests/RunBenchmark.gd",
+  "Tests/SimulationVerification.gd"
+]
