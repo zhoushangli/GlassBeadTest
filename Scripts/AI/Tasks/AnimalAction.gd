@@ -1,7 +1,7 @@
 @tool
 extends BTAction
 
-@export var behavior: AnimalController.Behavior = AnimalController.Behavior.FLOCK
+var behavior: AnimalController.Behavior = AnimalController.Behavior.FLOCK
 
 func _generate_name() -> String:
 	return AnimalController.BEHAVIOR_NAMES[behavior]
@@ -9,9 +9,9 @@ func _generate_name() -> String:
 func _tick(delta: float) -> Status:
 	if not is_instance_valid(agent) or not agent.alive:
 		return FAILURE
-	agent.perform_behavior(behavior, delta)
+	agent.set_behavior(behavior)
+	_execute(delta)
 	return RUNNING
 
-func _exit() -> void:
-	if is_instance_valid(agent):
-		agent.finish_behavior(behavior)
+func _execute(_delta: float) -> void:
+	pass

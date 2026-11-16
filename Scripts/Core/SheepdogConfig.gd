@@ -2,38 +2,55 @@ class_name SheepdogConfig
 extends Resource
 
 @export_group("Movement")
-## 牧羊犬前往局部羊群守护点时的速度，单位为像素/秒。
-## 例如：80 表示守护移动时每秒最多移动 80 像素。
-@export_range(0.0, 300.0, 1.0) var move_speed: float = 80.0
-## 牧羊犬拦截和驱赶狼时的速度，单位为像素/秒。
-## 例如：185 表示拦截和驱赶时每秒最多移动 185 像素。
-@export_range(0.0, 400.0, 1.0) var drive_speed: float = 185.0
-## 牧羊犬返回守护点时的速度，单位为像素/秒。
-## 例如：100 表示返回时每秒最多移动 100 像素。
-@export_range(0.0, 300.0, 1.0) var return_speed: float = 100.0
-## 牧羊犬能发现候选威胁狼的最大距离，单位为像素；实际威慑狼的距离由狼配置的 dog_threat_distance 控制。
-## 例如：240 表示狗只处理自己周围 240 像素内的狼。
-@export_range(20.0, 700.0, 1.0) var perception_radius: float = 240.0
+## 常态移动速度（px/s）。
+## 例如：move_speed = 80.0。
+@export_range(0, 300, 1) var move_speed: float = 80.0
+## 驱狼速度（px/s）。
+## 例如：drive_speed = 185.0。
+@export_range(0, 400, 1) var drive_speed: float = 185.0
+## 返回速度（px/s）。
+## 例如：return_speed = 100.0。
+@export_range(0, 300, 1) var return_speed: float = 100.0
+
+@export_group("Vision")
+## 视觉距离（px）。
+## 例如：perception_radius = 240.0。
+@export_range(20, 700, 1) var perception_radius: float = 240.0
+## 完整扇形角度（度）。
+## 例如：vision_angle = 120.0。
+@export_range(1, 360, 1) var vision_angle: float = 120.0
+## 最后可见位置的记忆时间（秒）。
+## 例如：memory_duration = 3.0。
+@export_range(0, 20, 0.1) var memory_duration: float = 3.0
 
 @export_group("Local protection")
-## 围绕保护锚点羊计算局部羊群中心的半径，单位为像素，也参与保护覆盖评分。
-## 例如：120 表示以锚点羊附近 120 像素内的羊计算中心。
-@export_range(20.0, 400.0, 1.0) var local_flock_radius: float = 120.0
-## 猎捕中或持续驱赶的狼距离保护中心不超过此半径时视为羊群威胁，还须在狗的感知范围内。
-## 例如：200 表示处理保护中心周围 200 像素内的猎捕威胁。
-@export_range(20.0, 600.0, 1.0) var protection_radius: float = 200.0
-## 牧羊犬离保护中心超过此距离后优先返回，单位为像素。
-## 例如：240 表示追离羊群超过 240 像素后返回。
-@export_range(20.0, 700.0, 1.0) var leash_distance: float = 240.0
-## 守护点相对局部羊群中心的偏移距离，单位为像素。
-## 例如：60 表示在羊群中心外约 60 像素处守护。
-@export_range(0.0, 200.0, 1.0) var guard_distance: float = 60.0
-## 重新评估保护锚点羊的间隔，单位为模拟秒；锚点死亡时立即重新选择。
-## 例如：2 表示每隔 2 秒重新评估保护对象。
-@export_range(0.1, 10.0, 0.1) var reassignment_interval: float = 2.0
-## 已有保护锚点时，新锚点评分需要改善的比例；评分越低越好。
-## 例如：0.25 表示新锚点至少改善 25% 才更换。
-@export_range(0.0, 0.9, 0.05) var reassignment_improvement: float = 0.25
-## 选择保护锚点时，对其他狗已有覆盖的惩罚权重。
-## 例如：数值越大，越倾向保护其他狗较少覆盖的羊群。
-@export_range(0.0, 10.0, 0.1) var coverage_weight: float = 2.0
+## 保护锚点附近的局部羊群半径（px）。
+## 例如：local_flock_radius = 120.0。
+@export_range(20, 400, 1) var local_flock_radius: float = 120.0
+## 狼靠近受保护羊的威胁距离（px）。
+## 例如：threat_distance = 180.0。
+@export_range(1, 600, 1) var threat_distance: float = 180.0
+## 超出局部中心后优先返回的距离（px）。
+## 例如：leash_distance = 240.0。
+@export_range(20, 700, 1) var leash_distance: float = 240.0
+## 巡逻圆半径（px）。
+## 例如：guard_distance = 120.0。
+@export_range(0, 400, 1) var guard_distance: float = 120.0
+## 巡逻角速度（rad/s）。
+## 例如：patrol_angular_speed = 0.6。
+@export_range(0, 3, 0.05) var patrol_angular_speed: float = 0.6
+## 收拢时位于离群羊外侧的距离（px）。
+## 例如：collect_distance = 75.0。
+@export_range(1, 200, 1) var collect_distance: float = 75.0
+## 收拢完成距离相对局部半径的比例。
+## 例如：collect_complete_ratio = 0.8。
+@export_range(0.1, 0.95, 0.05) var collect_complete_ratio: float = 0.8
+## 重新评估保护锚点的间隔（秒）。
+## 例如：reassignment_interval = 2.0。
+@export_range(0.1, 10, 0.1) var reassignment_interval: float = 2.0
+## 更换有效锚点所需的评分改善比例。
+## 例如：reassignment_improvement = 0.25。
+@export_range(0, 0.9, 0.05) var reassignment_improvement: float = 0.25
+## 其他狗已覆盖附近羊时的惩罚权重。
+## 例如：coverage_weight = 2.0。
+@export_range(0, 10, 0.1) var coverage_weight: float = 2.0

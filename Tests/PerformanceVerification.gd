@@ -16,17 +16,18 @@ func _check(condition: bool, label: String) -> void:
 		push_error("FAIL: " + label)
 
 func _state() -> Array:
-	var values: Array = [engine.rng.state, engine.entity_service.capture_count, engine.grass_bites.duplicate(), engine.grass_claims.duplicate(), engine.grass_regrow_remaining.duplicate()]
+	var values: Array = [engine.rng.state, engine.entity_service.capture_count]
 	for animal in engine.entity_service.entities:
 		var target_id: int = animal.target.entity_id if animal.is_live(animal.target) else 0
-		values.append([animal.entity_id, animal.position, animal.velocity, animal.current_behavior, target_id, animal.alive])
+		values.append([animal.entity_id, animal.position, animal.velocity, animal.current_behavior, target_id, animal.alive, animal.facing, animal.last_seen_position, animal.last_seen_velocity, animal.unseen_elapsed])
 		if animal is SheepController:
-			values.append([animal.hunger, animal.grass_target_index, animal.meals_eaten, animal.grazing_progress, animal.threat_memory])
+			values.append([animal.has_alert, animal.alert_elapsed, animal.has_panic, animal.panic_elapsed])
 		elif animal is WolfController:
-			values.append([animal.hunting, animal.capture_progress, animal.hunt_elapsed])
+			values.append([animal.hunting, animal.hunt_elapsed, animal.charging, animal.strategy, animal.strategy_failures.duplicate(), animal.rest_elapsed, animal.howl_elapsed, animal.howled, animal.retreating])
 		elif animal is SheepdogController:
 			var anchor_id: int = animal.protected_sheep.entity_id if animal.is_live(animal.protected_sheep) else 0
-			values.append([anchor_id, animal.protection_center, animal.intercept_point])
+			var stray_id: int = animal.collected_sheep.entity_id if animal.is_live(animal.collected_sheep) else 0
+			values.append([anchor_id, stray_id, animal.protection_center, animal.guard_point, animal.patrol_angle, animal._returning])
 	return values
 
 func _verify() -> void:
@@ -44,26 +45,26 @@ func _verify() -> void:
 			_check(settings.validate().is_empty(), "exact configuration validates %d/%s" % [total, mode])
 			var expected_ratio := float(total) / 276.0 if mode == "scaled" else 1.0
 			_check(is_equal_approx(settings.arena_size.x * settings.arena_size.y / (1280.0 * 720.0), expected_ratio), "area scaling %d/%s" % [total, mode])
-			var patches := roundi(5.0 * total / 276.0) if mode == "scaled" else 5
-			_check(settings.grass.positions.size() == patches, "grass count %d/%s" % [total, mode])
-			var margin := Vector2.ONE * settings.grass.patch_radius
-			var bounds := Rect2(margin, settings.arena_size - margin * 2.0)
-			var inside := true
-			for point in settings.grass.positions:
-				inside = inside and bounds.has_point(point)
-			_check(inside, "grass patch extents inside arena %d/%s" % [total, mode])
-	_check(defaults.arena_size == Vector2(1280, 720) and defaults.grass.positions.size() == 5, "default resources preserved")
+	_check(defaults.arena_size == Vector2(1280, 720), "default resources preserved")
 	_check(_exact_counts(2, Vector3i.ONE) == Vector3i(1, 1, 0), "largest remainder ties follow species order")
 	entities_count = 0
 	scenario = ""
 	tiles = 2
 	layout = "spread"
 	_start()
-	engine.set_physics_process(false)
+	engine.set_process(false)
 	engine.paused = true
 	_check(engine.entity_service.get_counts() == Vector3i(960, 96, 48), "expanded species counts")
 	_check(engine.config.arena_size == Vector2(2560, 1440), "expanded area")
-	_check(engine.grass_positions.size() == 480 and engine.config.grass.positions.size() == 20, "grass scales with area")
+	var entity_count: int = engine.entity_service.entities.size()
+	for item: Service in [engine.entity_service, engine.debug_service, engine.profile_service]:
+		_check(item.started, "service is started")
+		item.startup()
+	_check(engine.entity_service.entities.size() == entity_count, "repeated startup preserves entities")
+	_check(Performance.has_custom_monitor("Simulation/StepMean"), "repeated startup preserves monitor registration")
+	engine.debug_service.selected = engine.entity_service.entities[0]
+	engine.debug_service.reset()
+	_check(engine.debug_service.selected == null, "debug reset releases selected animal")
 	var positions: Array[Vector2] = []
 	var bounds := Rect2(Vector2.ZERO, engine.config.arena_size)
 	var in_bounds := true
@@ -71,10 +72,6 @@ func _verify() -> void:
 		positions.append(animal.position)
 		in_bounds = in_bounds and bounds.has_point(animal.position)
 	_check(in_bounds, "spawned animals stay inside arena")
-	var grass_in_bounds := true
-	for point in engine.grass_positions:
-		grass_in_bounds = grass_in_bounds and bounds.has_point(point)
-	_check(grass_in_bounds, "grass stays inside arena")
 	engine.entity_service.clear()
 	engine.rng.seed = engine.config.random_seed
 	_spawn_layout(Vector3i(240, 24, 12), Vector2(1280, 720))
@@ -121,61 +118,69 @@ func _verify() -> void:
 	_check(service.spatial_nonempty_cells == 3 and service.spatial_max_occupancy == 1, "occupancy statistics")
 	_check(service.get_nearby_indices(Vector2(2000, 1000), 1.0).is_empty(), "empty query")
 	_check(service.spatial_query_count == 2 and service.spatial_candidate_count == 2, "empty query contributes denominator")
-	engine.reset_performance_stats()
-	engine.last_step_ms = 2.0
+	engine.profile_service.reset()
+	engine.profile_service.last_step_ms = 2.0
 	service.spatial_query_count = 1
 	service.spatial_candidate_count = 10
 	service.spatial_nonempty_cells = 3
 	service.spatial_max_occupancy = 2
-	engine._record_performance_step()
-	engine.last_step_ms = 6.0
+	engine.profile_service._record_performance_step()
+	engine.profile_service.last_step_ms = 6.0
 	service.spatial_query_count = 3
 	service.spatial_candidate_count = 6
 	service.spatial_nonempty_cells = 5
 	service.spatial_max_occupancy = 4
-	engine._stats_window_started = Time.get_ticks_usec() - 1000000
-	engine._record_performance_step()
+	engine.profile_service._stats_window_started = Time.get_ticks_usec() - 1000000
+	engine.profile_service._record_performance_step()
 	_check(Performance.get_custom_monitor("Simulation/StepMean") == 0.004 and Performance.get_custom_monitor("Simulation/StepMax") == 0.006, "window step average and maximum")
 	_check(Performance.get_custom_monitor("Spatial/CandidatesPerQuery") == 4.0, "candidate mean weighted by query count")
 	_check(Performance.get_custom_monitor("Spatial/QueriesPerStep") == 2.0 and Performance.get_custom_monitor("Spatial/NonemptyCells") == 4.0, "per-step means")
 	_check(Performance.get_custom_monitor("Spatial/MaxCellOccupancy") == 4.0, "window occupancy maximum")
-	engine._physics_process(1.0 / 60.0)
+	engine._process(1.0 / 60.0)
 	_check(engine.step_count == 0 and Performance.get_custom_monitor("Simulation/StepMean") == 0.004, "pause preserves window until next publication")
-	engine._stats_window_started = Time.get_ticks_usec() - 1000000
-	engine._publish_performance_stats()
+	engine.profile_service._stats_window_started = Time.get_ticks_usec() - 1000000
+	engine.profile_service._process(0.0)
 	_check(Performance.get_custom_monitor("Simulation/StepMean") == 0.0, "paused empty window publishes zero")
-	engine.reset_performance_stats()
-	engine._stats_window_started = Time.get_ticks_usec() - 1000000
-	engine._record_performance_step()
+	engine.profile_service.reset()
+	engine.profile_service._stats_window_started = Time.get_ticks_usec() - 1000000
+	engine.profile_service._record_performance_step()
 	_check(Performance.get_custom_monitor("Spatial/CandidatesPerQuery") == 0.0, "zero-query window is finite zero")
+	var debug: DebugService = engine.debug_service
+	var hud_calls: int = engine.profile_service.debug_calls["HUDRefresh"]
+	debug.hud_enabled = false
+	debug._process(0.0)
+	_check(engine.profile_service.debug_calls["HUDRefresh"] == hud_calls, "disabled HUD skips debug service refresh")
+	debug.hud_enabled = true
+	debug._process(0.0)
+	_check(engine.profile_service.debug_calls["HUDRefresh"] == hud_calls + 1 and debug.hud.status.text.begins_with("PAUSED"), "debug service refreshes and profiles HUD while paused")
 	engine.config.initial_sheep = 24
 	engine.config.initial_wolves = 4
 	engine.config.initial_sheepdogs = 2
-	engine.set_performance_stats_enabled(true)
+	engine.profile_service.set_performance_stats_enabled(true)
 	engine.reset_simulation()
 	engine.paused = true
 	for index in range(120):
 		engine.simulate_step(1.0 / 60.0)
 	var observed := _state()
 	var stage_sum: float = 0.0
-	for name in engine.last_stages_ms:
-		stage_sum += engine.last_stages_ms[name]
-	_check(is_equal_approx(stage_sum, engine.last_step_ms), "exclusive stages account for whole measured step")
+	for name in engine.profile_service.last_stages_ms:
+		stage_sum += engine.profile_service.last_stages_ms[name]
+	_check(is_equal_approx(stage_sum, engine.profile_service.last_step_ms), "exclusive stages account for whole measured step")
 	var names := Performance.get_custom_monitor_names()
 	var types := Performance.get_custom_monitor_types()
 	_check(types[names.find("Simulation/StepMean")] == Performance.MONITOR_TYPE_TIME, "step monitor registers native time unit")
 	_check(types[names.find("Spatial/QueriesPerStep")] == Performance.MONITOR_TYPE_QUANTITY, "query monitor registers quantity unit")
-	engine.set_performance_stats_enabled(true, true)
+	engine.profile_service.set_performance_stats_enabled(true, true)
 	_check(Performance.has_custom_monitor("Hotspots/WolfTargetMean"), "detailed mode registers hotspots")
 	engine.reset_simulation()
 	engine.paused = true
 	for index in range(120):
 		engine.simulate_step(1.0 / 60.0)
 	_check(observed == _state(), "detailed timing preserves RNG and animal state")
-	_check(engine.last_hotspot_calls["NearbyQuery"] > 0, "detailed mode counts queries")
-	engine.set_performance_stats_enabled(true)
+	_check(engine.profile_service.last_hotspot_calls["NearbyQuery"] > 0, "detailed mode counts queries")
+	engine.profile_service.set_performance_stats_enabled(true)
 	_check(not Performance.has_custom_monitor("Hotspots/WolfTargetMean"), "stages mode unregisters hotspots")
-	engine.set_performance_stats_enabled(false)
+	engine.profile_service.set_performance_stats_enabled(false)
 	_check(not Performance.has_custom_monitor("Simulation/StepMean"), "disable unregisters monitors")
 	engine.reset_simulation()
 	engine.paused = true
@@ -183,13 +188,20 @@ func _verify() -> void:
 		engine.simulate_step(1.0 / 60.0)
 	_check(observed == _state(), "statistics preserve RNG and animal state after equal simulation steps")
 	_check(service.spatial_query_count == 0 and service.spatial_max_occupancy == 0, "disabled statistics remain zero")
-	engine.set_performance_stats_enabled(true)
+	engine.profile_service.set_performance_stats_enabled(true)
 	engine.reset_simulation()
 	_check(Performance.get_custom_monitor("Simulation/StepMean") == 0.0 and service.spatial_query_count == 0, "reset clears counters and monitors")
+	engine.debug_service.selected = engine.entity_service.entities[0] if not engine.entity_service.entities.is_empty() else null
+	engine.stop_simulation()
 	engine.stop_simulation()
 	_check(not Performance.has_custom_monitor("Spatial/QueriesPerStep"), "stop unregisters monitors")
+	_check(engine.debug_service.selected == null and engine.debug_service.hud == null, "shutdown releases debug references")
+	_check(engine.entity_service.entities.is_empty() and engine.entity_service.container == null, "shutdown releases entities and container")
+	for item: Service in [engine.entity_service, engine.debug_service, engine.profile_service]:
+		item.reset()
+		_check(not item.started, "reset does not restart stopped service")
 	engine.start_simulation(scene.get_node("World"), scene.get_node("DebugHUD"), scene.simulation_config)
-	engine.set_physics_process(false)
+	engine.set_process(false)
 	engine.paused = true
 	_check(Performance.has_custom_monitor("Spatial/QueriesPerStep"), "restart registers monitors again")
 	engine.stop_simulation()

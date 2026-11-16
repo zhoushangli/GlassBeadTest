@@ -9,7 +9,6 @@ param(
 	[ValidateSet('on', 'off')][string]$Hud = 'on',
 	[ValidateSet('off', 'on', 'details')][string]$Overlay = 'on',
 	[ValidateSet('on', 'off')][string]$Animals = 'on',
-	[ValidateSet('on', 'off')][string]$Grass = 'on',
 	[ValidatePattern('^[a-zA-Z][a-zA-Z0-9_-]*$')][string]$Label = 'benchmark',
 	[ValidateRange(0.01, 3600)][double]$Duration = 30,
 	[ValidateRange(0, 3600)][double]$Warmup = 3,
@@ -47,8 +46,8 @@ $culture = [Globalization.CultureInfo]::InvariantCulture
 $startInfo = New-Object System.Diagnostics.ProcessStartInfo
 $startInfo.FileName = $godotExecutable
 $startInfo.WorkingDirectory = $projectPath
-$startInfo.Arguments = '--path "{0}" --script res://Tests/RunBenchmark.gd {1} -- {2} --stats={3} --duration={4} --warmup={5} --max-fps={6}' -f $projectPath, ($flags -join ' '), $populationArguments, $Stats, $Duration.ToString($culture), $Warmup.ToString($culture), $MaxFps
-$startInfo.Arguments += ' --sampling={0} --hud={1} --overlay={2} --animals={3} --grass={4} --label={5}' -f $Sampling, $Hud, $Overlay, $Animals, $Grass, $Label
+$startInfo.Arguments = '--path "{0}" --script res://Tests/RunWithAutoload.gd {1} -- --entry=res://Tests/RunBenchmark.gd {2} --stats={3} --duration={4} --warmup={5} --max-fps={6}' -f $projectPath, ($flags -join ' '), $populationArguments, $Stats, $Duration.ToString($culture), $Warmup.ToString($culture), $MaxFps
+$startInfo.Arguments += ' --sampling={0} --hud={1} --overlay={2} --animals={3} --label={4}' -f $Sampling, $Hud, $Overlay, $Animals, $Label
 $startInfo.UseShellExecute = $false
 $startInfo.CreateNoWindow = $true
 $startInfo.RedirectStandardOutput = $true

@@ -1,5 +1,5 @@
 class_name EntityService
-extends Node
+extends Service
 
 const SPATIAL_CELL_SIZE: float = 120.0
 
@@ -11,11 +11,11 @@ var entities: Array[AnimalController] = []
 var sheep: Array[SheepController] = []
 var wolves: Array[WolfController] = []
 var dogs: Array[SheepdogController] = []
-var gameplay_engine: Node
 var container: Node2D
 var next_id: int = 1
 var capture_count: int = 0
 var perception_positions := PackedVector2Array()
+var perception_velocities := PackedVector2Array()
 var perception_kinds := PackedInt32Array()
 var _spatial_cells: Dictionary[Vector2i, Array] = {}
 var spatial_stats_enabled: bool = OS.is_debug_build()
@@ -25,9 +25,12 @@ var spatial_max_candidates: int = 0
 var spatial_nonempty_cells: int = 0
 var spatial_max_occupancy: int = 0
 
-func initialize(engine: Node, entity_container: Node2D) -> void:
-	gameplay_engine = engine
-	container = entity_container
+func _reset() -> void:
+	clear()
+
+func _shutdown() -> void:
+	clear()
+	container = null
 
 func spawn(kind: AnimalController.Kind, count: int, at_position := Vector2.INF) -> Array[AnimalController]:
 	var result: Array[AnimalController] = []
@@ -40,8 +43,8 @@ func spawn(kind: AnimalController.Kind, count: int, at_position := Vector2.INF) 
 		var animal := scene.instantiate() as AnimalController
 		var spawn_position: Vector2 = at_position
 		if spawn_position == Vector2.INF:
-			spawn_position = gameplay_engine.random_position()
-		animal.initialize(gameplay_engine, next_id, spawn_position)
+			spawn_position = g_gameplayEngine.random_position()
+		animal.initialize(next_id, spawn_position)
 		next_id += 1
 		container.add_child(animal)
 		entities.append(animal)
@@ -57,16 +60,16 @@ func spawn(kind: AnimalController.Kind, count: int, at_position := Vector2.INF) 
 	return result
 
 func spawn_initial() -> void:
-	var settings: SimulationConfig = gameplay_engine.config
+	var settings: SimulationConfig = g_gameplayEngine.config
 	var center: Vector2 = settings.arena_size * 0.5
 	for index in range(settings.initial_sheep):
 		var point := center + Vector2(
-			gameplay_engine.rng.randf_range(-440.0, 440.0),
-			gameplay_engine.rng.randf_range(-220.0, 220.0))
+			g_gameplayEngine.rng.randf_range(-440.0, 440.0),
+			g_gameplayEngine.rng.randf_range(-220.0, 220.0))
 		spawn(AnimalController.Kind.SHEEP, 1, point)
 
 	for index in range(settings.initial_wolves):
-		var point: Vector2 = gameplay_engine.random_position()
+		var point: Vector2 = g_gameplayEngine.random_position()
 		if index % 2 == 0:
 			point.x = 40.0
 		else:
@@ -82,6 +85,7 @@ func rebuild_spatial_index() -> void:
 	_spatial_cells.clear()
 	perception_positions.resize(entities.size())
 	perception_kinds.resize(entities.size())
+	perception_velocities.resize(entities.size())
 
 	for index in range(entities.size()):
 		var animal := entities[index]
@@ -91,6 +95,7 @@ func rebuild_spatial_index() -> void:
 		var point := animal.global_position
 		animal.perception_index = index
 		perception_positions[index] = point
+		perception_velocities[index] = animal.velocity
 		perception_kinds[index] = animal.kind
 		var cell := Vector2i((point / SPATIAL_CELL_SIZE).floor())
 		if not _spatial_cells.has(cell):
@@ -109,7 +114,7 @@ func reset_spatial_stats() -> void:
 	spatial_max_occupancy = 0
 
 func get_nearby_indices(point: Vector2, radius: float) -> Array[int]:
-	var started := Time.get_ticks_usec() if gameplay_engine.detailed_stats_enabled else 0
+	var started := Time.get_ticks_usec() if g_gameplayEngine.profile_service.detailed_stats_enabled else 0
 	var nearby: Array[int] = []
 	var first := Vector2i(((point - Vector2.ONE * radius) / SPATIAL_CELL_SIZE).floor())
 	var last := Vector2i(((point + Vector2.ONE * radius) / SPATIAL_CELL_SIZE).floor())
@@ -123,9 +128,53 @@ func get_nearby_indices(point: Vector2, radius: float) -> Array[int]:
 		spatial_query_count += 1
 		spatial_candidate_count += nearby.size()
 		spatial_max_candidates = maxi(spatial_max_candidates, nearby.size())
-	if gameplay_engine.detailed_stats_enabled:
-		gameplay_engine.record_hotspot("NearbyQuery", started)
+	if g_gameplayEngine.profile_service.detailed_stats_enabled:
+		g_gameplayEngine.profile_service.record_hotspot("NearbyQuery", started)
 	return nearby
+
+func assign_dog_tasks() -> void:
+	var wolves_claimed: Dictionary = {}
+	var sheep_claimed: Dictionary = {}
+	var assignments: Dictionary = {}
+	for dog in dogs:
+		if dog.alive:
+			assignments[dog] = [null, null]
+	# 1) Resolve nearest wolf proposals, then farthest stray proposals.
+	for kind in range(2):
+		var claimed: Dictionary = wolves_claimed if kind == 0 else sheep_claimed
+		var waiting: Array[SheepdogController] = []
+		for dog: SheepdogController in assignments:
+			if assignments[dog][0] == null and not dog._returning:
+				waiting.append(dog)
+		while not waiting.is_empty():
+			var proposals: Dictionary = {}
+			for dog in waiting:
+				var candidates: Array[AnimalController] = dog.wolf_candidates if kind == 0 else dog.stray_candidates
+				var best: AnimalController
+				var best_score: float = INF
+				for animal in candidates:
+					if claimed.has(animal):
+						continue
+					var score := dog.global_position.distance_squared_to(dog.task_point(animal)) if kind == 0 else -dog.protection_center.distance_squared_to(animal.global_position)
+					if score < best_score or (is_equal_approx(score, best_score) and best != null and animal.entity_id < best.entity_id):
+						best = animal
+						best_score = score
+				if best == null:
+					continue
+				var previous: SheepdogController = proposals.get(best)
+				var distance := dog.global_position.distance_squared_to(dog.task_point(best))
+				var previous_distance := previous.global_position.distance_squared_to(previous.task_point(best)) if previous != null else INF
+				if distance < previous_distance or (is_equal_approx(distance, previous_distance) and previous != null and dog.entity_id < previous.entity_id):
+					proposals[best] = dog
+			if proposals.is_empty():
+				break
+			for animal: AnimalController in proposals:
+				var dog: SheepdogController = proposals[animal]
+				assignments[dog][kind] = animal
+				claimed[animal] = dog
+				waiting.erase(dog)
+	for dog: SheepdogController in assignments:
+		dog.apply_assignment(assignments[dog][0], assignments[dog][1])
 
 func get_counts() -> Vector3i:
 	var counts := Vector3i.ZERO
@@ -140,7 +189,7 @@ func capture(prey: AnimalController) -> bool:
 
 	prey.die()
 	capture_count += 1
-	gameplay_engine.debug_service.clear_invalid_selection()
+	g_gameplayEngine.debug_service.clear_invalid_selection()
 	return true
 
 func remove_expired() -> void:
@@ -168,6 +217,7 @@ func clear() -> void:
 	dogs.clear()
 	_spatial_cells.clear()
 	perception_positions.clear()
+	perception_velocities.clear()
 	perception_kinds.clear()
 	reset_spatial_stats()
 	next_id = 1

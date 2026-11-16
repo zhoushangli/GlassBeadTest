@@ -4,14 +4,3 @@
 
 [resource]
 script = ExtResource("1")
-move_speed = 80.0
-drive_speed = 185.0
-return_speed = 100.0
-perception_radius = 240.0
-local_flock_radius = 120.0
-protection_radius = 200.0
-leash_distance = 240.0
-guard_distance = 60.0
-reassignment_interval = 2.0
-reassignment_improvement = 0.25
-coverage_weight = 2.0

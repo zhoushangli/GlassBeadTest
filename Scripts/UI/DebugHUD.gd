@@ -28,7 +28,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func refresh() -> void:
 	var counts: Vector3i = gameplay_engine.entity_service.get_counts()
 	metrics.text = "FPS %d    |    Step %.2f ms    |    Alive %d    |    Sheep %d   Wolves %d   Dogs %d" % [
-		Engine.get_frames_per_second(), gameplay_engine.last_step_ms,
+		Engine.get_frames_per_second(), gameplay_engine.profile_service.last_step_ms,
 		counts.x + counts.y + counts.z, counts.x, counts.y, counts.z]
 	var hunters: int = 0
 	for wolf in gameplay_engine.entity_service.wolves:

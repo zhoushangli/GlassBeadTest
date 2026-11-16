@@ -1,7 +1,7 @@
 class_name SimulationConfig
 extends Resource
 
-const PRESET_VERSION: int = 2
+const PRESET_VERSION: int = 3
 
 @export_storage var preset_version: int = 0
 
@@ -34,7 +34,7 @@ const PRESET_VERSION: int = 2
 @export_range(0.0, 3.0, 0.05) var death_duration: float = 0.3
 
 @export_group("Behavior resources")
-## 羊的移动、饥饿、觅食和避险配置资源。
+## 羊的移动、聚群和避险配置资源。
 ## 例如：使用 CFG_Sheep.tres 调整羊的行为。
 @export var sheep: SheepConfig = SheepConfig.new()
 ## 狼的搜索、猎捕、捕获和避狗配置资源。
@@ -43,32 +43,25 @@ const PRESET_VERSION: int = 2
 ## 牧羊犬的移动和局部羊群保护配置资源。
 ## 例如：使用 CFG_Sheepdog.tres 调整保护范围。
 @export var sheepdog: SheepdogConfig = SheepdogConfig.new()
-## 草地布局、每点食物口数和恢复时间配置资源。
-## 例如：使用 CFG_Grass.tres 调整草的周转速度。
-@export var grass: GrassConfig = GrassConfig.new()
 
 func copy_config() -> SimulationConfig:
 	var result := duplicate(false) as SimulationConfig
 	result.sheep = sheep.duplicate() as SheepConfig
 	result.wolf = wolf.duplicate() as WolfConfig
 	result.sheepdog = sheepdog.duplicate() as SheepdogConfig
-	result.grass = grass.duplicate() as GrassConfig
-	result.grass.positions = grass.positions.duplicate()
 	return result
 
 func get_sections() -> Dictionary:
-	return {"World": self, "Sheep": sheep, "Wolves": wolf, "Dogs": sheepdog, "Grass": grass}
+	return {"World": self, "Sheep": sheep, "Wolves": wolf, "Dogs": sheepdog}
 
 func requires_restart(previous: SimulationConfig) -> bool:
 	return arena_size != previous.arena_size or random_seed != previous.random_seed \
 		or initial_sheep != previous.initial_sheep or initial_wolves != previous.initial_wolves \
-		or initial_sheepdogs != previous.initial_sheepdogs or grass.patch_radius != previous.grass.patch_radius \
-		or grass.per_patch != previous.grass.per_patch or grass.bites != previous.grass.bites \
-		or grass.positions != previous.grass.positions
+		or initial_sheepdogs != previous.initial_sheepdogs
 
 func validate() -> String:
-	if sheep == null or wolf == null or sheepdog == null or grass == null:
-		return "The preset must include all four behavior resources."
+	if sheep == null or wolf == null or sheepdog == null:
+		return "The preset must include all three behavior resources."
 
 	for section in get_sections().values():
 		for property in section.get_property_list():
@@ -82,14 +75,10 @@ func validate() -> String:
 
 	if not arena_size.is_finite() or arena_size.x < 128.0 or arena_size.y < 200.0:
 		return "The arena must be at least 128 x 200."
-	if sheep.full_threshold >= sheep.hungry_threshold:
-		return "Full threshold must be below hungry threshold."
-	if sheep.initial_hunger_min > sheep.initial_hunger_max:
-		return "Initial hunger minimum must not exceed maximum."
 	if sheep.emergency_distance > sheep.perception_radius:
 		return "Sheep emergency distance must not exceed perception radius."
-
-	for point in grass.positions:
-		if not point.is_finite():
-			return "Grass positions must be finite."
+	if sheepdog.guard_distance >= sheepdog.leash_distance:
+		return "Dog patrol radius must be below leash distance."
+	if sheepdog.collect_distance >= sheep.herding_distance:
+		return "Dog collecting distance must be below sheep pressure distance."
 	return ""

@@ -2,51 +2,58 @@ class_name RuntimeConfigPanel
 extends PanelContainer
 
 const FIELD_HELP := {
-	"Sheep.move_speed": "羊寻找食物时的移动速度，单位为像素/秒；闲逛速度还会乘以闲逛比例。\n例如：70 表示每秒最多移动 70 像素。",
-	"Sheep.flee_speed": "羊逃离狼时的速度，单位为像素/秒。\n例如：110 表示逃跑时每秒最多移动 110 像素。",
-	"Sheep.perception_radius": "羊在饥饿为 0 时的基础避险距离，也是扫描狼的最大距离；实际避险距离随饥饿百分比线性缩短，饥饿 100 时降至紧急距离。威胁判断和选草共用此距离。\n例如：基础 130、紧急 36 时，饥饿 50 对应避险距离 83 像素。",
-	"Sheep.idle_speed_scale": "闲逛速度相对普通移动速度的比例。\n例如：0.5 表示以普通速度的一半闲逛。",
-	"Sheep.flock_radius": "计算局部羊群中心时查找同伴的半径，单位为像素。\n例如：120 表示只参考附近 120 像素内的羊。",
-	"Sheep.foraging_cohesion": "寻找食物途中靠近局部羊群中心的力度，接近草点后不再叠加。\n例如：0 表示寻找食物时不向同伴中心靠拢。",
-	"Sheep.idle_cohesion": "闲逛时靠近局部羊群中心的力度。\n例如：数值越大，闲逛时越倾向于靠近附近同伴。",
-	"Sheep.initial_hunger_min": "新生成羊的初始整数饥饿下限，范围为 0～100；修改不改变已有羊的饥饿值。\n例如：20 表示初始饥饿不低于 20。",
-	"Sheep.initial_hunger_max": "新生成羊的初始整数饥饿上限，范围为 0～100；不得低于初始下限。\n例如：70 表示初始饥饿不高于 70。",
-	"Sheep.hunger_per_second": "每模拟秒增加的整数饥饿点数，不足一点的增量累计保留，饥饿最多为 100。\n例如：1 表示每秒增加 1 点饥饿。",
-	"Sheep.hungry_threshold": "饥饿达到此值后开始觅食，必须高于停止觅食阈值。\n例如：60 表示达到 60 点饥饿后开始找草。",
-	"Sheep.full_threshold": "已经开始觅食的羊，饥饿降至此值或更低后停止觅食。\n例如：20 表示吃到饥饿不超过 20 时停止。",
-	"Sheep.hunger_per_bite": "每完成一口草降低的整数饥饿点数，最低降至 0。\n例如：25 表示每口草减少 25 点饥饿。",
-	"Sheep.grazing_duration": "完成一口草所需的连续模拟时间，单位为秒；离开吃草行为会重置进度。\n例如：2 表示连续吃草 2 秒才消耗一口。",
-	"Sheep.grazing_distance": "羊与草点距离不超过此值时可以开始吃草，单位为像素。\n例如：18 表示进入草点周围 18 像素后可以吃草。",
-	"Sheep.retarget_interval": "觅食时重新评估草目标的间隔，单位为秒；正在吃草时不因定时评估换目标。\n例如：1 表示每隔 1 秒考虑更好的草点。",
-	"Sheep.retarget_improvement": "已有有效草目标时，新目标评分需要改善的比例；评分越低越好。\n例如：0.2 表示新目标至少改善 20% 才切换。",
-	"Sheep.crowd_weight": "草点评分中其他羊预约数量的惩罚权重。\n例如：数值越大，越倾向选择预约较少的草点。",
-	"Sheep.emergency_distance": "羊对任意狼的强制逃跑距离，单位为像素，也是饥饿 100 时的最小避险距离；不得超过基础避险距离。\n例如：36 表示狼进入 36 像素内时始终逃跑。",
-	"Sheep.safety_duration": "狼离开实际避险范围后仍继续逃跑的模拟时间，单位为秒；减少此值可更快恢复觅食。\n例如：0.5 表示危险解除后继续逃跑半秒。",
-	"Wolves.move_speed": "狼搜索猎物时的移动速度，单位为像素/秒。\n例如：70 表示搜索时每秒最多移动 70 像素。",
-	"Wolves.chase_speed": "狼追赶和贴近猎物时的移动速度，单位为像素/秒。\n例如：135 表示追赶时每秒最多移动 135 像素。",
-	"Wolves.retreat_speed": "狼逃离牧羊犬时的移动速度，单位为像素/秒。\n例如：160 表示避狗时每秒最多移动 160 像素。",
-	"Wolves.perception_radius": "狼寻找羊和维持追赶的感知半径，单位为像素；猎物离开范围后放弃追赶。\n例如：260 表示只选择 260 像素内的羊。",
-	"Wolves.dog_threat_distance": "牧羊犬对狼的威慑距离，单位为像素；狼发现狗进入此距离后放弃猎物并逃跑，捕获结算时也会检查。\n例如：90 表示狗进入狼周围 90 像素内即可打断猎捕。",
-	"Wolves.search_interval": "没有可用猎物时重新搜索的间隔，单位为模拟秒；已有目标时保持追赶。\n例如：1 表示没有猎物时每秒搜索一次。",
-	"Wolves.hunt_duration": "单次追赶允许持续的最长模拟时间，单位为秒；超时后重新选择，应用配置保留已追赶时间。\n例如：10 表示一次最多追赶 10 秒。",
-	"Wolves.competition_weight": "其他狼已经追踪同一只羊时降低其选择权重，权重除以 1 加其他追踪狼数乘本值。\n例如：3 表示已有一只狼追踪时，选择权重降为原来的四分之一。",
-	"Wolves.capture_distance": "狼可以累计捕获进度的最大距离，单位为像素；超过后进度清零。\n例如：22 表示必须持续贴近羊到 22 像素内。",
-	"Wolves.capture_duration": "在捕获距离内连续维持多久才能捕获羊，单位为模拟秒；狗可以打断。\n例如：0.5 表示持续贴近半秒后捕获。",
-	"Dogs.move_speed": "牧羊犬前往局部羊群守护点时的速度，单位为像素/秒。\n例如：80 表示守护移动时每秒最多移动 80 像素。",
-	"Dogs.drive_speed": "牧羊犬拦截和驱赶狼时的速度，单位为像素/秒。\n例如：185 表示拦截和驱赶时每秒最多移动 185 像素。",
-	"Dogs.return_speed": "牧羊犬返回守护点时的速度，单位为像素/秒。\n例如：100 表示返回时每秒最多移动 100 像素。",
-	"Dogs.perception_radius": "牧羊犬能发现候选威胁狼的最大距离，单位为像素；实际威慑狼的距离由狼配置的 dog_threat_distance 控制。\n例如：240 表示狗只处理自己周围 240 像素内的狼。",
-	"Dogs.local_flock_radius": "围绕保护锚点羊计算局部羊群中心的半径，单位为像素，也参与保护覆盖评分。\n例如：120 表示以锚点羊附近 120 像素内的羊计算中心。",
-	"Dogs.protection_radius": "猎捕中或持续驱赶的狼距离保护中心不超过此半径时视为羊群威胁，还须在狗的感知范围内。\n例如：200 表示处理保护中心周围 200 像素内的猎捕威胁。",
-	"Dogs.leash_distance": "牧羊犬离保护中心超过此距离后优先返回，单位为像素。\n例如：240 表示追离羊群超过 240 像素后返回。",
-	"Dogs.guard_distance": "守护点相对局部羊群中心的偏移距离，单位为像素。\n例如：60 表示在羊群中心外约 60 像素处守护。",
-	"Dogs.reassignment_interval": "重新评估保护锚点羊的间隔，单位为模拟秒；锚点死亡时立即重新选择。\n例如：2 表示每隔 2 秒重新评估保护对象。",
-	"Dogs.reassignment_improvement": "已有保护锚点时，新锚点评分需要改善的比例；评分越低越好。\n例如：0.25 表示新锚点至少改善 25% 才更换。",
-	"Dogs.coverage_weight": "选择保护锚点时，对其他狗已有覆盖的惩罚权重。\n例如：数值越大，越倾向保护其他狗较少覆盖的羊群。",
-	"Grass.patch_radius": "每片草地的布局半径，单位为像素，也用于草目标距离评分；应用修改需要重启模拟。\n例如：84 表示草点分布在半径约 84 像素的草地中。",
-	"Grass.per_patch": "每片草地包含的草点数量；应用修改需要重启模拟。\n例如：24 表示每片草地生成 24 个草点。",
-	"Grass.bites": "每个草点可提供的口数，吃空后才开始恢复倒计时；应用修改需要重启模拟。\n例如：2 表示每个草点可被吃两口。",
-	"Grass.regrow_duration": "草点吃空后原地恢复全部口数的模拟时间，单位为秒；修改只影响之后吃空的草点。\n例如：15 表示吃空后等待 15 秒恢复。",
+	"Sheep.move_speed": "常态移动速度（px/s）。\n例如：move_speed = 70.0。",
+	"Sheep.flee_speed": "逃跑速度（px/s）。\n例如：flee_speed = 110.0。",
+	"Sheep.idle_speed_scale": "游走速度比例。\n例如：idle_speed_scale = 0.5。",
+	"Sheep.perception_radius": "视觉距离（px）。\n例如：perception_radius = 130.0。",
+	"Sheep.vision_angle": "完整扇形角度（度）。\n例如：vision_angle = 200.0。",
+	"Sheep.emergency_distance": "全向紧急逃跑距离（px）。\n例如：emergency_distance = 36.0。",
+	"Sheep.alert_duration": "危险消失后的警戒时间（秒）。\n例如：alert_duration = 6.0。",
+	"Sheep.panic_duration": "嚎叫造成的恐慌时间（秒）。\n例如：panic_duration = 2.0。",
+	"Sheep.flock_radius": "局部聚合半径（px）。\n例如：flock_radius = 55.0。",
+	"Sheep.alignment_radius": "速度对齐半径（px）。\n例如：alignment_radius = 45.0。",
+	"Sheep.separation_weight": "软分离权重。\n例如：separation_weight = 2.8。",
+	"Sheep.alignment_weight": "速度对齐权重。\n例如：alignment_weight = 0.4。",
+	"Sheep.cohesion_weight": "局部聚合权重。\n例如：cohesion_weight = 0.25。",
+	"Sheep.idle_flock_scale": "游走时群体方向的比例。\n例如：idle_flock_scale = 0.05。",
+	"Sheep.alert_flock_scale": "警戒时群体方向的比例。\n例如：alert_flock_scale = 1.2。",
+	"Sheep.herding_distance": "全向避狗压力距离（px）。\n例如：herding_distance = 90.0。",
+	"Sheep.dog_pressure_weight": "避狗压力权重。\n例如：dog_pressure_weight = 1.4。",
+	"Sheep.wolf_pressure_weight": "远离狼或恐慌源的权重。\n例如：wolf_pressure_weight = 4.0。",
+	"Sheep.steering_rate": "速度趋近目标的响应率（每秒）。\n例如：steering_rate = 4.0。",
+	"Wolves.move_speed": "常态移动速度（px/s）。\n例如：move_speed = 70.0。",
+	"Wolves.chase_speed": "冲刺速度（px/s）。\n例如：chase_speed = 135.0。",
+	"Wolves.retreat_speed": "避狗撤退速度（px/s）。\n例如：retreat_speed = 160.0。",
+	"Wolves.patrol_speed_scale": "巡逻速度比例。\n例如：patrol_speed_scale = 0.6。",
+	"Wolves.perception_radius": "视觉距离（px）。\n例如：perception_radius = 260.0。",
+	"Wolves.vision_angle": "完整扇形角度（度）。\n例如：vision_angle = 130.0。",
+	"Wolves.memory_duration": "最后可见位置的记忆时间（秒）。\n例如：memory_duration = 3.0。",
+	"Wolves.dog_threat_distance": "狗触发全向撤退的距离（px）。\n例如：dog_threat_distance = 90.0。",
+	"Wolves.hunt_duration": "单次猎捕总时限（秒）。\n例如：hunt_duration = 10.0。",
+	"Wolves.rest_duration": "猎捕或撤退后的休息时间（秒）。\n例如：rest_duration = 3.0。",
+	"Wolves.capture_distance": "冲刺即时捕获距离（px）。\n例如：capture_distance = 22.0。",
+	"Wolves.charge_distance_scale": "冲刺触发距离相对捕获距离的倍数。\n例如：charge_distance_scale = 4.0。",
+	"Wolves.strategy_offset": "侧面或后方接近偏移（px）。\n例如：strategy_offset = 40.0。",
+	"Wolves.strategy_decay": "每秒减少的策略失败计数。\n例如：strategy_decay = 0.05。",
+	"Wolves.howl_radius": "嚎叫刺激半径（px）。\n例如：howl_radius = 200.0。",
+	"Wolves.howl_trigger_distance": "可见猎物触发嚎叫的距离（px）。\n例如：howl_trigger_distance = 200.0。",
+	"Wolves.howl_cooldown": "嚎叫冷却时间（秒）。\n例如：howl_cooldown = 5.0。",
+	"Dogs.move_speed": "常态移动速度（px/s）。\n例如：move_speed = 80.0。",
+	"Dogs.drive_speed": "驱狼速度（px/s）。\n例如：drive_speed = 185.0。",
+	"Dogs.return_speed": "返回速度（px/s）。\n例如：return_speed = 100.0。",
+	"Dogs.perception_radius": "视觉距离（px）。\n例如：perception_radius = 240.0。",
+	"Dogs.vision_angle": "完整扇形角度（度）。\n例如：vision_angle = 120.0。",
+	"Dogs.memory_duration": "最后可见位置的记忆时间（秒）。\n例如：memory_duration = 3.0。",
+	"Dogs.local_flock_radius": "保护锚点附近的局部羊群半径（px）。\n例如：local_flock_radius = 120.0。",
+	"Dogs.threat_distance": "狼靠近受保护羊的威胁距离（px）。\n例如：threat_distance = 180.0。",
+	"Dogs.leash_distance": "超出局部中心后优先返回的距离（px）。\n例如：leash_distance = 240.0。",
+	"Dogs.guard_distance": "巡逻圆半径（px）。\n例如：guard_distance = 120.0。",
+	"Dogs.patrol_angular_speed": "巡逻角速度（rad/s）。\n例如：patrol_angular_speed = 0.6。",
+	"Dogs.collect_distance": "收拢时位于离群羊外侧的距离（px）。\n例如：collect_distance = 75.0。",
+	"Dogs.collect_complete_ratio": "收拢完成距离相对局部半径的比例。\n例如：collect_complete_ratio = 0.8。",
+	"Dogs.reassignment_interval": "重新评估保护锚点的间隔（秒）。\n例如：reassignment_interval = 2.0。",
+	"Dogs.reassignment_improvement": "更换有效锚点所需的评分改善比例。\n例如：reassignment_improvement = 0.25。",
+	"Dogs.coverage_weight": "其他狗已覆盖附近羊时的惩罚权重。\n例如：coverage_weight = 2.0。",
 	"World.random_seed": "统一模拟随机种子；相同配置和操作顺序可重现随机结果，应用修改需要重启。\n例如：1337 表示使用固定种子 1337。",
 	"World.initial_sheep": "模拟开始时的羊数量；应用修改需要重启模拟并保留暂停状态。\n例如：240 表示初始生成 240 只羊。",
 	"World.initial_wolves": "模拟开始时的狼数量；应用修改需要重启模拟并保留暂停状态。\n例如：24 表示初始生成 24 只狼。",
@@ -165,9 +172,9 @@ func _update_apply_state() -> void:
 	if not error.is_empty():
 		message.text = error
 	elif restart:
-		message.text = "Population, seed or grass layout changed. Apply restarts the simulation."
+		message.text = "Population, seed or arena changed. Apply restarts the simulation."
 	else:
-		message.text = "Apply updates current animals. Running cooldowns keep their sampled duration."
+		message.text = "Apply updates current animals. Elapsed timers are preserved; new thresholds apply next step."
 
 func _apply() -> void:
 	# 1) Commit text fields before validating the complete draft.
@@ -196,7 +203,7 @@ func _save() -> void:
 func _load() -> void:
 	var loaded: SimulationConfig = gameplay_engine.load_preset()
 	if loaded == null:
-		message.text = "Preset missing or incompatible. Hunger values must use integer points (0-100); old normalized presets are unsupported."
+		message.text = "Preset missing or incompatible. Only behavior preset version 3 is supported; older files are preserved."
 		return
 	set_draft(loaded)
 	message.text = "Saved preset loaded into the form. Apply when ready."

@@ -1,0 +1,31 @@
+Behavior-tree gameplay rebuild, preset version 3
+
+Runtime: Godot 4.7.2 stable official; LimboAI v1.8.1; GDScript; Compatibility renderer.
+SimulationVerification: 91 checks, 0 failures.
+PerformanceVerification: 67 checks, 0 failures.
+Runtime scene load and six rendered frames completed without script errors.
+Editor import initially could not create the temporary LimboAI DLL copy; runtime loads and all tests successfully loaded the installed extension. Third-party addon files were not modified.
+
+Default workload benchmark:
+Initial population: 240 sheep / 24 wolves / 12 dogs; arena 1280 x 720.
+Headless, VSync off, process cap 0, physics 60 Hz, warmup 1 second, measurement 5.100 wall seconds.
+Mean step: 17.363 ms; P95: 22.031 ms; simulation/wall ratio: 0.918.
+This is a short headless workload sample, not desktop FPS or proof of stable 60 FPS. The performance verification process overlapped the beginning of this sample.
+Result: output/performance/2026-11-13T18-59-49_behavior_v3_final_191724_756067/result.json
+
+Render evidence:
+default_dog.png / default_wolf.png: default population after 120 manually advanced simulation steps, facing and cones visible.
+wolf_config.png: runtime version-3 parameters, no food tab.
+collect_0.png / collect_1.png / collect_2.png: small flock with one collecting/patrolling dog, at 2/4/6 simulation seconds.
+Separate continuous simulation check confirms dog pressure can return a stray to nearby companions.
+Screenshots confirm rendered layout, not continuous desktop interaction or subjective flock naturalness.
+Computer-use application approval timed out; no desktop input verification was completed. Temporary preview processes launched for this task were stopped; the user's existing editor was not stopped.
+
+Changes:
+Removed food and hunger data, resources, UI, rendering, benchmark arguments, and obsolete behavior tests.
+Sheep: local BOID, wandering, alert, panic, dog pressure.
+Wolf: strategy feedback, stalking, persistent charge, last-position search, instant capture, retreat/rest, one-shot non-audio howl.
+Dog: local anchor, rotating patrol, collecting, deterministic unique wolf/stray claims, leash return.
+All animals: shared vision-cone test, movement facing, deterministic RNG, snapshot neighbor velocities.
+Preserved pause, single step, reset, UI input guards, CFG copies and hot apply; old presets rejected unchanged.
+No engine build, new AI framework, or addon source changes.

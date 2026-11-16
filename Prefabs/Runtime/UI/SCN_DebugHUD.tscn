@@ -43,7 +43,7 @@ offset_right = 900.0
 offset_bottom = 28.0
 theme_override_colors/font_color = Color(0.68, 0.76, 0.7, 1)
 theme_override_font_sizes/font_size = 15
-text = "GLASS BEAD  /  GRAZING SIMULATION"
+text = "GLASS BEAD  /  FLOCK SIMULATION"
 
 [node name="Metrics" type="Label" parent="Screen/Header"]
 offset_left = 20.0

@@ -2,37 +2,60 @@ class_name WolfConfig
 extends Resource
 
 @export_group("Movement")
-## 狼搜索猎物时的移动速度，单位为像素/秒。
-## 例如：70 表示搜索时每秒最多移动 70 像素。
-@export_range(0.0, 300.0, 1.0) var move_speed: float = 70.0
-## 狼追赶和贴近猎物时的移动速度，单位为像素/秒。
-## 例如：135 表示追赶时每秒最多移动 135 像素。
-@export_range(0.0, 400.0, 1.0) var chase_speed: float = 135.0
-## 狼逃离牧羊犬时的移动速度，单位为像素/秒。
-## 例如：160 表示避狗时每秒最多移动 160 像素。
-@export_range(0.0, 400.0, 1.0) var retreat_speed: float = 160.0
-## 狼寻找羊和维持追赶的感知半径，单位为像素；猎物离开范围后放弃追赶。
-## 例如：260 表示只选择 260 像素内的羊。
-@export_range(20.0, 700.0, 1.0) var perception_radius: float = 260.0
-## 牧羊犬对狼的威慑距离，单位为像素；狼发现狗进入此距离后放弃猎物并逃跑，捕获结算时也会检查。
-## 例如：90 表示狗进入狼周围 90 像素内即可打断猎捕。
-@export_range(0.0, 400.0, 1.0) var dog_threat_distance: float = 90.0
+## 常态移动速度（px/s）。
+## 例如：move_speed = 70.0。
+@export_range(0, 300, 1) var move_speed: float = 70.0
+## 冲刺速度（px/s）。
+## 例如：chase_speed = 135.0。
+@export_range(0, 400, 1) var chase_speed: float = 135.0
+## 避狗撤退速度（px/s）。
+## 例如：retreat_speed = 160.0。
+@export_range(0, 400, 1) var retreat_speed: float = 160.0
+## 巡逻速度比例。
+## 例如：patrol_speed_scale = 0.6。
+@export_range(0, 1, 0.05) var patrol_speed_scale: float = 0.6
+
+@export_group("Vision")
+## 视觉距离（px）。
+## 例如：perception_radius = 260.0。
+@export_range(20, 700, 1) var perception_radius: float = 260.0
+## 完整扇形角度（度）。
+## 例如：vision_angle = 130.0。
+@export_range(1, 360, 1) var vision_angle: float = 130.0
+## 最后可见位置的记忆时间（秒）。
+## 例如：memory_duration = 3.0。
+@export_range(0, 20, 0.1) var memory_duration: float = 3.0
+## 狗触发全向撤退的距离（px）。
+## 例如：dog_threat_distance = 90.0。
+@export_range(0, 400, 1) var dog_threat_distance: float = 90.0
 
 @export_group("Hunting")
-## 没有可用猎物时重新搜索的间隔，单位为模拟秒；已有目标时保持追赶。
-## 例如：1 表示没有猎物时每秒搜索一次。
-@export_range(0.1, 60.0, 0.1) var search_interval: float = 1.0
-## 单次追赶允许持续的最长模拟时间，单位为秒；超时后重新选择，应用配置保留已追赶时间。
-## 例如：10 表示一次最多追赶 10 秒。
-@export_range(0.1, 60.0, 0.1) var hunt_duration: float = 10.0
-## 其他狼已经追踪同一只羊时降低其选择权重，权重除以 1 加其他追踪狼数乘本值。
-## 例如：3 表示已有一只狼追踪时，选择权重降为原来的四分之一。
-@export_range(0.0, 20.0, 0.5) var competition_weight: float = 3.0
+## 单次猎捕总时限（秒）。
+## 例如：hunt_duration = 10.0。
+@export_range(0.1, 60, 0.1) var hunt_duration: float = 10.0
+## 猎捕或撤退后的休息时间（秒）。
+## 例如：rest_duration = 3.0。
+@export_range(0, 30, 0.1) var rest_duration: float = 3.0
+## 冲刺即时捕获距离（px）。
+## 例如：capture_distance = 22.0。
+@export_range(1, 80, 1) var capture_distance: float = 22.0
+## 冲刺触发距离相对捕获距离的倍数。
+## 例如：charge_distance_scale = 4.0。
+@export_range(1, 10, 0.1) var charge_distance_scale: float = 4.0
+## 侧面或后方接近偏移（px）。
+## 例如：strategy_offset = 40.0。
+@export_range(0, 200, 1) var strategy_offset: float = 40.0
+## 每秒减少的策略失败计数。
+## 例如：strategy_decay = 0.05。
+@export_range(0, 2, 0.01) var strategy_decay: float = 0.05
 
-@export_group("Capture")
-## 狼可以累计捕获进度的最大距离，单位为像素；超过后进度清零。
-## 例如：22 表示必须持续贴近羊到 22 像素内。
-@export_range(1.0, 80.0, 1.0) var capture_distance: float = 22.0
-## 在捕获距离内连续维持多久才能捕获羊，单位为模拟秒；狗可以打断。
-## 例如：0.5 表示持续贴近半秒后捕获。
-@export_range(0.1, 5.0, 0.05) var capture_duration: float = 0.5
+@export_group("Howling")
+## 嚎叫刺激半径（px）。
+## 例如：howl_radius = 200.0。
+@export_range(1, 600, 1) var howl_radius: float = 200.0
+## 可见猎物触发嚎叫的距离（px）。
+## 例如：howl_trigger_distance = 200.0。
+@export_range(1, 600, 1) var howl_trigger_distance: float = 200.0
+## 嚎叫冷却时间（秒）。
+## 例如：howl_cooldown = 5.0。
+@export_range(0, 30, 0.1) var howl_cooldown: float = 5.0

@@ -9,10 +9,10 @@ script = ExtResource("1")
 kind = 2
 base_color = Color(0.2313725, 0.5098039, 0.9647059, 1)
 behavior_colors = {
-"Patrol": Color(0.2313725, 0.5098039, 0.9647059, 1),
-"Intercept": Color(0.1333333, 0.7215686, 0.9411765, 1),
-"Drive off": Color(0.1450980, 0.3882353, 0.9215686, 1),
-"Return": Color(0.5764706, 0.7725490, 0.9921569, 1)
+"Patrol": Color(0.3, 0.6, 1, 1),
+"Collect": Color(0.3, 1, 0.7, 1),
+"Drive off": Color(0.8, 0.4, 1, 1),
+"Return": Color(0.6, 0.8, 1, 1)
 }
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

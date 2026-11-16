@@ -10,7 +10,6 @@ var sampling: String = "stages"
 var hud_visible: bool = true
 var overlay: String = "on"
 var animals_visible: bool = true
-var grass_visible: bool = true
 var label: String = "benchmark"
 var stage_totals: Dictionary = {}
 var hotspot_totals: Dictionary = {}
@@ -49,9 +48,6 @@ var perception_total: float = 0.0
 var decision_total: float = 0.0
 var movement_total: float = 0.0
 var samples: Array[Dictionary] = []
-var grass_meals: int = 0
-var grass_depletions: int = 0
-var grass_regrowths: int = 0
 var done: bool = false
 
 func _initialize() -> void:
@@ -61,6 +57,8 @@ func _initialize() -> void:
 	var has_tiles := false
 	var has_layout := false
 	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--entry="):
+			continue
 		var parts := argument.split("=", true, 1)
 		if parts.size() != 2:
 			_fail("Expected --name=value: " + argument)
@@ -102,7 +100,7 @@ func _initialize() -> void:
 					return
 				has_sampling = true
 				sampling = value
-			"--hud", "--animals", "--grass":
+			"--hud", "--animals":
 				if value not in ["on", "off"]:
 					_fail("Expected on or off: " + argument)
 					return
@@ -111,8 +109,6 @@ func _initialize() -> void:
 						hud_visible = value == "on"
 					"--animals":
 						animals_visible = value == "on"
-					"--grass":
-						grass_visible = value == "on"
 			"--overlay":
 				if value not in ["off", "on", "details"]:
 					_fail("--overlay must be off, on or details")
@@ -167,12 +163,6 @@ func _start() -> void:
 	settings.initial_sheepdogs = configured_counts.z
 	if tiles > 0:
 		settings.arena_size *= tiles
-		var base_patches := settings.grass.positions.duplicate()
-		settings.grass.positions.clear()
-		for y in range(tiles):
-			for x in range(tiles):
-				for point in base_patches:
-					settings.grass.positions.append(point + Vector2(x, y) * base_size)
 	var error := settings.validate()
 	if not error.is_empty():
 		_fail(error)
@@ -185,23 +175,22 @@ func _start() -> void:
 	scene.simulation_config = settings
 	root.add_child(scene)
 	engine = root.get_node("g_gameplayEngine")
-	engine.set_performance_stats_enabled(stats_enabled, sampling == "detailed")
-	engine.hud_enabled = hud_visible
-	engine.overlay_enabled = overlay != "off"
-	engine.hud.visible = hud_visible
+	engine.profile_service.set_performance_stats_enabled(stats_enabled, sampling == "detailed")
+	engine.debug_service.hud_enabled = hud_visible
+	engine.debug_service.overlay_enabled = overlay != "off"
+	engine.debug_service.hud.visible = hud_visible
 	engine.debug_service.visible = overlay != "off"
 	engine.debug_service.show_details = overlay == "details"
 	scene.get_node("World/Animals").visible = animals_visible
-	scene.get_node("World/Grass").visible = grass_visible
-	for name in engine.STAGE_NAMES:
+	for name in engine.profile_service.STAGE_NAMES:
 		stage_totals[name] = 0.0
 		window_stage_totals[name] = 0.0
-	for name in engine.HOTSPOT_NAMES:
+	for name in engine.profile_service.HOTSPOT_NAMES:
 		hotspot_totals[name] = 0.0
 		hotspot_calls[name] = 0
 		window_hotspot_totals[name] = 0.0
 		window_hotspot_calls[name] = 0
-	for name in engine.debug_totals_ms:
+	for name in engine.profile_service.debug_totals_ms:
 		window_debug_ms[name] = 0.0
 		window_debug_calls[name] = 0
 	if tiles > 0 or entities_count > 0:
@@ -218,7 +207,6 @@ func _start() -> void:
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = Vector2i(1280, 720)
 	engine.simulation_stepped.connect(_record_step)
-	engine.grass_changed.connect(_record_grass)
 	DisplayServer.window_set_title("GlassBeadTest - %s %d animals" % [layout, configured_counts.x + configured_counts.y + configured_counts.z])
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
@@ -250,16 +238,6 @@ func _prepare_exact_settings(settings: SimulationConfig) -> void:
 	var base_total := settings.initial_sheep + settings.initial_wolves + settings.initial_sheepdogs
 	var ratio := float(entities_count) / base_total
 	settings.arena_size *= sqrt(ratio)
-	var patch_count := roundi(settings.grass.positions.size() * ratio)
-	var columns := ceili(sqrt(patch_count * settings.arena_size.x / settings.arena_size.y))
-	var rows := ceili(float(patch_count) / columns)
-	var margin := Vector2.ONE * (settings.grass.patch_radius + 12.0)
-	var area := settings.arena_size - margin * 2.0
-	settings.grass.positions.clear()
-	for index in range(patch_count):
-		var x := (float(index % columns) + 0.5) / columns
-		var y := (floorf(float(index) / columns) + 0.5) / rows
-		settings.grass.positions.append(margin + Vector2(x, y) * area)
 
 func _spawn_exact_layout() -> void:
 	var positions_rng := RandomNumberGenerator.new()
@@ -303,10 +281,7 @@ func _process(_delta: float) -> bool:
 			initial_counts = engine.entity_service.get_counts()
 			sim_started = engine.simulation_time
 			capture_started = engine.entity_service.capture_count
-			grass_meals = 0
-			grass_depletions = 0
-			grass_regrowths = 0
-			engine.reset_performance_stats()
+			engine.profile_service.reset()
 		return false
 
 	frames += 1
@@ -317,7 +292,7 @@ func _process(_delta: float) -> bool:
 		var counts: Vector3i = engine.entity_service.get_counts()
 		_record_sample(elapsed)
 		print("BENCHMARK_SAMPLE tier=%d wall=%.1f loop_hz=%.1f step_ms=%.2f alive=%s sim=%.1f" % [
-			tier, elapsed, frames / elapsed, engine.last_step_ms, counts, engine.simulation_time])
+			tier, elapsed, frames / elapsed, engine.profile_service.last_step_ms, counts, engine.simulation_time])
 		last_sample = now
 	if elapsed >= duration:
 		_finish(elapsed)
@@ -325,15 +300,15 @@ func _process(_delta: float) -> bool:
 
 func _record_step() -> void:
 	if started > 0 and not done:
-		step_times.append(engine.last_step_ms)
-		perception_total += engine.last_perception_ms
-		decision_total += engine.last_decision_ms
-		movement_total += engine.last_movement_ms
+		step_times.append(engine.profile_service.last_step_ms)
+		perception_total += engine.profile_service.last_perception_ms
+		decision_total += engine.profile_service.last_decision_ms
+		movement_total += engine.profile_service.last_movement_ms
 		for name in stage_totals:
-			stage_totals[name] += engine.last_stages_ms[name]
+			stage_totals[name] += engine.profile_service.last_stages_ms[name]
 		for name in hotspot_totals:
-			hotspot_totals[name] += engine.last_hotspots_ms[name]
-			hotspot_calls[name] += engine.last_hotspot_calls[name]
+			hotspot_totals[name] += engine.profile_service.last_hotspots_ms[name]
+			hotspot_calls[name] += engine.profile_service.last_hotspot_calls[name]
 		var service: EntityService = engine.entity_service
 		spatial_queries += service.spatial_query_count
 		spatial_candidates += service.spatial_candidate_count
@@ -345,9 +320,9 @@ func _record_sample(elapsed: float) -> void:
 	var counts: Vector3i = engine.entity_service.get_counts()
 	var steps := step_times.size() - window_step_index
 	var sample := {"wall_seconds": elapsed, "window_wall_seconds": elapsed - window_elapsed,
-		"simulation_seconds": engine.simulation_time, "physics_steps": steps,
+		"simulation_seconds": engine.simulation_time, "simulation_steps": steps, "physics_steps": steps,
 		"sheep": counts.x, "wolves": counts.y, "dogs": counts.z,
-		"loop_hz_average_so_far": frames / elapsed, "last_step_ms": engine.last_step_ms,
+		"loop_hz_average_so_far": frames / elapsed, "last_step_ms": engine.profile_service.last_step_ms,
 		"window_loop_hz": (frames - window_frame_index) / maxf(0.000001, elapsed - window_elapsed),
 		"step_mean_ms": _mean(step_times.slice(window_step_index)),
 		"step_p95_ms": _percentile(step_times.slice(window_step_index), 0.95),
@@ -367,26 +342,16 @@ func _record_sample(elapsed: float) -> void:
 		sample.hotspots[name] = {"total_ms": total, "calls": calls, "mean_per_step_ms": total / maxi(1, steps), "mean_per_call_ms": total / maxi(1, calls)}
 		window_hotspot_totals[name] = hotspot_totals[name]
 		window_hotspot_calls[name] = hotspot_calls[name]
-	for name in engine.debug_totals_ms:
-		var total: float = engine.debug_totals_ms[name] - window_debug_ms[name]
-		var calls: int = engine.debug_calls[name] - window_debug_calls[name]
+	for name in engine.profile_service.debug_totals_ms:
+		var total: float = engine.profile_service.debug_totals_ms[name] - window_debug_ms[name]
+		var calls: int = engine.profile_service.debug_calls[name] - window_debug_calls[name]
 		sample.debug[name] = {"total_ms": total, "calls": calls, "mean_per_call_ms": total / maxi(1, calls)}
-		window_debug_ms[name] = engine.debug_totals_ms[name]
-		window_debug_calls[name] = engine.debug_calls[name]
+		window_debug_ms[name] = engine.profile_service.debug_totals_ms[name]
+		window_debug_calls[name] = engine.profile_service.debug_calls[name]
 	samples.append(sample)
 	window_step_index = step_times.size()
 	window_frame_index = frames
 	window_elapsed = elapsed
-
-func _record_grass(index: int) -> void:
-	if started == 0 or done:
-		return
-	if engine.grass_bites[index] == engine.config.grass.bites:
-		grass_regrowths += 1
-	else:
-		grass_meals += 1
-		if engine.grass_bites[index] == 0:
-			grass_depletions += 1
 
 func _mean(values: Array[float]) -> float:
 	var total: float = 0.0
@@ -415,12 +380,12 @@ func _finish(elapsed: float) -> void:
 		hotspots[name] = {"total_ms": hotspot_totals[name], "calls": hotspot_calls[name],
 			"mean_per_step_ms": hotspot_totals[name] / maxi(1, step_times.size()),
 			"mean_per_call_ms": hotspot_totals[name] / maxi(1, hotspot_calls[name])}
-	for name in engine.debug_totals_ms:
-		debug[name] = {"total_ms": engine.debug_totals_ms[name], "calls": engine.debug_calls[name],
-			"mean_per_call_ms": engine.debug_totals_ms[name] / maxi(1, engine.debug_calls[name])}
+	for name in engine.profile_service.debug_totals_ms:
+		debug[name] = {"total_ms": engine.profile_service.debug_totals_ms[name], "calls": engine.profile_service.debug_calls[name],
+			"mean_per_call_ms": engine.profile_service.debug_totals_ms[name] / maxi(1, engine.profile_service.debug_calls[name])}
 	var result := {
-		"result_version": 2, "label": label, "sampling": sampling,
-		"visibility": {"hud": hud_visible, "overlay": overlay, "animals": animals_visible, "grass": grass_visible},
+		"result_version": 3, "label": label, "sampling": sampling,
+		"visibility": {"hud": hud_visible, "overlay": overlay, "animals": animals_visible},
 		"stages_mean_ms": stages_mean, "hotspots": hotspots, "debug": debug,
 		"movement_mean_ms": stages_mean["Movement"], "interaction_mean_ms": stages_mean["Interaction"],
 		"cleanup_mean_ms": stages_mean["Cleanup"],
@@ -431,18 +396,18 @@ func _finish(elapsed: float) -> void:
 		"script_profiler_active": EngineDebugger.is_profiling("scripts"),
 		"headless": DisplayServer.get_name() == "headless",
 		"arena_size": [engine.config.arena_size.x, engine.config.arena_size.y],
-		"grass_patches": engine.config.grass.positions.size(), "grass_points": engine.grass_positions.size(),
 		"configured_counts": [configured_counts.x, configured_counts.y, configured_counts.z],
 		"cpu": OS.get_processor_name(), "gpu": RenderingServer.get_video_adapter_name(),
 		"renderer": RenderingServer.get_current_rendering_method(),
 		"display_driver": DisplayServer.get_name(), "viewport": [root.size.x, root.size.y],
 		"camera_zoom": scene.get_node("Camera2D").zoom.x, "vsync": false,
 		"max_fps": Engine.max_fps, "physics_hz": Engine.physics_ticks_per_second,
+		"simulation_hz": engine.simulation_hz, "max_steps_per_frame": engine.max_steps_per_frame,
 		"seed": engine.config.random_seed, "warmup_wall_seconds": warmup,
 		"measured_wall_seconds": elapsed, "process_iterations": frames,
 		"loop_hz": frames / elapsed, "loop_mean_ms": _mean(frame_times),
 		"loop_p95_ms": _percentile(frame_times, 0.95), "loop_max_ms": frame_times.max() if not frame_times.is_empty() else 0.0,
-		"physics_steps": step_times.size(), "step_mean_ms": _mean(step_times),
+		"simulation_steps": step_times.size(), "physics_steps": step_times.size(), "step_mean_ms": _mean(step_times),
 		"step_p95_ms": _percentile(step_times, 0.95),
 		"step_max_ms": step_times.max() if not step_times.is_empty() else 0.0,
 		"spatial_queries": spatial_queries, "spatial_candidates": spatial_candidates,
@@ -458,8 +423,6 @@ func _finish(elapsed: float) -> void:
 		"initial_counts": [initial_counts.x, initial_counts.y, initial_counts.z],
 		"final_counts": [counts.x, counts.y, counts.z],
 		"captures_during_measurement": engine.entity_service.capture_count - capture_started,
-		"grass_meals_total": grass_meals, "grass_depletions_total": grass_depletions,
-		"grass_regrowths_total": grass_regrowths,
 		"samples": samples
 	}
 	if DisplayServer.get_name() != "headless":

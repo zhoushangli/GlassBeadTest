@@ -2,11 +2,11 @@ class_name AnimalController
 extends Node2D
 
 enum Kind { SHEEP, WOLF, SHEEPDOG }
-enum Behavior { FLOCK, SEEK_FOOD, GRAZE, FLEE, SEARCH, CHASE, CAPTURE, PATROL, INTERCEPT, DRIVE, RETURN, DEAD, REST, RETREAT }
+enum Behavior { FLOCK, ALERT, HERDED, FLEE, SEARCH, STALK, CHASE, PATROL, COLLECT, DRIVE, RETURN, REST, RETREAT, DEAD }
 
 const BEHAVIOR_NAMES := [
-	"Flock", "Seek grass", "Graze", "Flee", "Search", "Chase",
-	"Capture", "Patrol", "Intercept", "Drive off", "Return", "Dead", "Rest", "Retreat"
+	"Flock", "Alert", "Herded", "Flee", "Search", "Stalk", "Chase",
+	"Patrol", "Collect", "Drive off", "Return", "Rest", "Retreat", "Dead"
 ]
 const KIND_NAMES := ["Sheep", "Wolf", "Sheepdog"]
 
@@ -24,12 +24,16 @@ var perception_radius: float:
 	get:
 		return movement_config.perception_radius
 
-var gameplay_engine: Node
 var movement_config: Resource
 var entity_id: int = 0
 var alive: bool = true
 var current_behavior: Behavior = Behavior.FLOCK
 var target: AnimalController
+var facing := Vector2.RIGHT
+var last_seen_position := Vector2.ZERO
+var last_seen_velocity := Vector2.ZERO
+var unseen_elapsed: float = 0.0
+var target_visible: bool = false
 var velocity := Vector2.ZERO
 var desired_velocity := Vector2.ZERO
 var movement_goal := Vector2.ZERO
@@ -43,15 +47,16 @@ var _speed_limit: float = 0.0
 var _perception_remaining: float = 0.0
 var _perception_ready: bool = false
 
-func initialize(engine: Node, id: int, at_position: Vector2) -> void:
-	gameplay_engine = engine
+func initialize(id: int, at_position: Vector2) -> void:
 	entity_id = id
 	position = at_position
 	_wander_point = position
+	facing = Vector2.from_angle(g_gameplayEngine.rng.randf_range(-PI, PI))
 	refresh_config()
 
 func _ready() -> void:
 	sprite.self_modulate = behavior_colors.get(BEHAVIOR_NAMES[current_behavior], base_color)
+	sprite.rotation = facing.angle() + PI * 0.5
 
 func refresh_config() -> void:
 	_perception_ready = false
@@ -59,31 +64,50 @@ func refresh_config() -> void:
 func is_live(animal: AnimalController) -> bool:
 	return is_instance_valid(animal) and animal.alive
 
+func can_see(point: Vector2) -> bool:
+	var offset := point - global_position
+	if offset.length_squared() > perception_radius * perception_radius:
+		return false
+	return offset.is_zero_approx() or facing.dot(offset.normalized()) + 0.000001 >= cos(deg_to_rad(movement_config.vision_angle * 0.5))
+
+func observe_target(delta: float) -> void:
+	if not is_live(target):
+		target_visible = false
+		unseen_elapsed = 0.0
+		return
+	target_visible = can_see(target.global_position)
+	if target_visible:
+		last_seen_position = target.global_position
+		last_seen_velocity = target.velocity
+		unseen_elapsed = 0.0
+	else:
+		unseen_elapsed += delta
+
 func perceive(delta: float) -> void:
 	_wander_remaining -= delta
 	_perception_remaining -= delta
 	if not _perception_ready or _perception_remaining <= 0.0:
-		var service: EntityService = gameplay_engine.entity_service
+		var service: EntityService = g_gameplayEngine.entity_service
 		_nearby = service.get_nearby_indices(global_position, _get_query_radius())
-		var started := Time.get_ticks_usec() if gameplay_engine.detailed_stats_enabled else 0
+		var started := Time.get_ticks_usec() if g_gameplayEngine.profile_service.detailed_stats_enabled else 0
 		_scan_separation(service)
-		if gameplay_engine.detailed_stats_enabled:
-			gameplay_engine.record_hotspot("Separation", started)
+		if g_gameplayEngine.profile_service.detailed_stats_enabled:
+			g_gameplayEngine.profile_service.record_hotspot("Separation", started)
 			started = Time.get_ticks_usec()
 		_scan_neighbors(service)
-		if gameplay_engine.detailed_stats_enabled:
-			gameplay_engine.record_hotspot("NeighborScan", started)
-		_perception_remaining = gameplay_engine.config.perception_interval
+		if g_gameplayEngine.profile_service.detailed_stats_enabled:
+			g_gameplayEngine.profile_service.record_hotspot("NeighborScan", started)
+		_perception_remaining = g_gameplayEngine.config.perception_interval
 		if not _perception_ready:
 			_perception_remaining *= fmod(entity_id * 0.618034, 1.0)
 		_perception_ready = true
 
 func _get_query_radius() -> float:
-	return maxf(perception_radius, gameplay_engine.config.separation_distance)
+	return maxf(perception_radius, g_gameplayEngine.config.separation_distance)
 
 func _scan_separation(service: EntityService) -> void:
 	separation = Vector2.ZERO
-	var distance_limit: float = gameplay_engine.config.separation_distance
+	var distance_limit: float = g_gameplayEngine.config.separation_distance
 	if distance_limit <= 0.0:
 		return
 
@@ -110,34 +134,42 @@ func decide(delta: float) -> void:
 	_speed_limit = move_speed
 	bt_player.update(delta)
 
-func perform_behavior(_behavior: Behavior, _delta: float) -> void:
-	pass
-
-func finish_behavior(_behavior: Behavior) -> void:
-	pass
-
-func _update_wander(distance: float) -> void:
+func get_wander_point(distance: float) -> Vector2:
 	if _wander_remaining <= 0.0 or global_position.distance_to(_wander_point) < 15.0:
-		var direction := Vector2.from_angle(gameplay_engine.rng.randf_range(-PI, PI))
+		var direction := Vector2.from_angle(g_gameplayEngine.rng.randf_range(-PI, PI))
 		_wander_point = clamp_to_arena(global_position + direction * distance)
-		_wander_remaining = gameplay_engine.rng.randf_range(1.5, 3.5)
+		_wander_remaining = g_gameplayEngine.rng.randf_range(1.5, 3.5)
+	return _wander_point
 
 func clamp_to_arena(point: Vector2) -> Vector2:
-	return point.clamp(Vector2(12.0, 94.0), gameplay_engine.config.arena_size - Vector2(12.0, 58.0))
+	return point.clamp(Vector2(12.0, 94.0), g_gameplayEngine.config.arena_size - Vector2(12.0, 58.0))
 
-func _towards(point: Vector2, speed: float, delta: float) -> void:
+func move_towards(point: Vector2, speed: float, delta: float) -> void:
 	movement_goal = point
 	_speed_limit = speed
 	var difference := point - global_position
 	desired_velocity = difference.normalized() * minf(speed, difference.length() / maxf(delta, 0.00001))
+
+func submit_velocity(desired: Vector2, speed: float) -> void:
+	desired_velocity = desired
+	_speed_limit = speed
+	movement_goal = global_position + desired_velocity
+
+func separation_velocity() -> Vector2:
+	return separation * move_speed
 
 func move(delta: float) -> void:
 	if not alive:
 		death_remaining -= delta
 		return
 
-	velocity = (desired_velocity + separation * move_speed).limit_length(_speed_limit)
+	var previous := global_position
+	velocity = (desired_velocity + separation_velocity()).limit_length(_speed_limit)
 	global_position = clamp_to_arena(global_position + velocity * delta)
+	velocity = (global_position - previous) / maxf(delta, 0.00001)
+	if not velocity.is_zero_approx():
+		facing = velocity.normalized()
+		sprite.rotation = facing.angle() + PI * 0.5
 
 func resolve_interactions(_delta: float) -> void:
 	pass
@@ -154,7 +186,7 @@ func get_debug_details() -> String:
 
 func die() -> void:
 	alive = false
-	death_remaining = gameplay_engine.config.death_duration
+	death_remaining = g_gameplayEngine.config.death_duration
 	bt_player.active = false
 	bt_player.restart()
 	target = null
