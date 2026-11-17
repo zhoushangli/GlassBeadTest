@@ -90,9 +90,6 @@ func apply_decision(job: DogPerceptionJob) -> void:
 	service.dog_region_coverage = coverage
 	service.dog_region_threats = job.region_threats
 
-func accumulate_sheep_pressure() -> void:
-	g_gameplayEngine.grid_service.accumulate_pressure(AnimalEntity.Kind.SHEEPDOG)
-
 func assign_tasks() -> void:
 	var identity_entity_id := data.identity_entity_id
 	var motion_position := data.motion_position

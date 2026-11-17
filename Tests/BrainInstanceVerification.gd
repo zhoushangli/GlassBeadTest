@@ -68,7 +68,7 @@ func _release() -> void:
 	_check(reference.get_ref() == null and service.data.brain_instance.is_empty(), "clear breaks tree/task/storage reference cycles")
 
 func _run() -> void:
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 0
 	root.add_child(scene)

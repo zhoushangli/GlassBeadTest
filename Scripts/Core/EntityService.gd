@@ -231,36 +231,5 @@ func clear() -> void:
 	capture_count = 0
 
 func update_movement(delta: float) -> void:
-	var result: int = g_gameplayEngine.compute_service.run_numeric(data, delta, NumericComputeJob.Pass.MOVEMENT)
-	if result != 0:
-		if result < 0:
-			g_gameplayEngine.fail_step("GPU movement failed")
-		return
-
-	# 1) Integrate the CPU path only when the numeric pass did not commit movement.
-	var lower := Vector2(12.0, 94.0)
-	var upper: Vector2 = g_gameplayEngine.config.arena_size - Vector2(12.0, 58.0)
-
-	for row in range(data.active_count):
-		if data.motion_intent[row] == AnimalData.MotionIntent.POINT:
-			var difference := data.motion_movement_goal[row] - data.motion_position[row]
-			data.motion_desired_velocity[row] = difference.normalized() * minf(data.motion_speed_limit[row], difference.length() / maxf(delta, 0.00001))
-		elif data.motion_intent[row] == AnimalData.MotionIntent.SHEEP:
-			var response: float = minf(1.0, g_gameplayEngine.config.sheep.steering_rate * delta)
-			var boundary := (lower + Vector2.ONE * 40.0 - data.motion_position[row]).max(Vector2.ZERO) - (data.motion_position[row] - upper + Vector2.ONE * 40.0).max(Vector2.ZERO)
-			var steering := data.motion_desired_velocity[row] + boundary / 40.0 * data.motion_speed_limit[row] * 2.0
-			data.motion_velocity[row] = data.motion_velocity[row].lerp(steering.limit_length(data.motion_speed_limit[row]), response)
-
-		var previous := data.motion_position[row]
-		var separation := Vector2.ZERO
-		if data.identity_kind[row] != AnimalEntity.Kind.SHEEP:
-			separation = data.motion_separation[row] * data.settings[row].move_speed
-		var desired := data.motion_velocity[row] if data.motion_intent[row] == AnimalData.MotionIntent.SHEEP else data.motion_desired_velocity[row]
-		var velocity := (desired + separation).limit_length(data.motion_speed_limit[row])
-		var position := (previous + velocity * delta).clamp(lower, upper)
-		velocity = (position - previous) / maxf(delta, 0.00001)
-
-		data.motion_position[row] = position
-		data.motion_velocity[row] = velocity
-		if not velocity.is_zero_approx():
-			data.motion_facing[row] = velocity.normalized()
+	if not g_gameplayEngine.compute_service.run_movement(data, delta):
+		g_gameplayEngine.fail_step("GPU movement failed: " + g_gameplayEngine.compute_service.failure)

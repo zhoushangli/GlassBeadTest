@@ -22,15 +22,6 @@ var pressure_source_pairs: int = 0
 var nearby_offsets := PackedInt32Array()
 var nearby_members := PackedInt32Array()
 
-func execute() -> void:
-	if snapshot != null:
-		var started := Time.get_ticks_usec()
-		SheepSystem.calculate_snapshot(self)
-		execute_ms = (Time.get_ticks_usec() - started) / 1000.0
-		return
-
-	target.calculate_batch(self)
-
 func apply_result() -> void:
 	if snapshot != null:
 		target.apply_decision(self)

@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ReferenceSimulation = preload("res://Tests/ReferenceSimulation.gd")
+
 class GateJob extends Job:
 	var gate := Semaphore.new()
 	var entered := Semaphore.new()
@@ -81,11 +83,11 @@ func _empty() -> void:
 	engine.paused = true
 
 func _job(kind: AnimalEntity.Kind) -> Job:
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	var job: Job = WolfPerceptionJob.new() if kind == AnimalEntity.Kind.WOLF else DogPerceptionJob.new()
 	job.stage = &"Wolf" if kind == AnimalEntity.Kind.WOLF else &"Dog"
 	job.snapshot = engine.animal_system.decision_snapshot()
-	job.grid = GridService.build_snapshot(job.snapshot)
+	job.grid = ReferenceSimulation.build_snapshot(job.snapshot)
 	job.rows = job.snapshot.rows_for(kind)
 	job.target = engine.wolf_system if kind == AnimalEntity.Kind.WOLF else engine.dog_system
 	return job
@@ -142,7 +144,7 @@ func _snapshots() -> void:
 	var point: Vector2 = job.snapshot.motion_position[sheep.row]
 	var grid_point: Vector2 = job.grid.positions[sheep.row]
 	data.motion_position[sheep.row] = Vector2(50, 300)
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	_check(job.snapshot.motion_position[sheep.row] == point and job.grid.positions[sheep.row] == grid_point, "job owns immutable entity and grid input")
 	engine.job_service.submit_async(job)
 	_wait(job)
@@ -191,7 +193,7 @@ func _shared_inputs() -> void:
 	var snapshot: AnimalSnapshot = engine.animal_system.decision_snapshot(PackedInt32Array([0]))
 	_check(snapshot.motion_position.size() == entities.data.active_count and snapshot.identity_animal_id.size() == entities.data.active_count, "capture excludes inactive retained rows")
 	_check(snapshot.memory_target.is_empty() and snapshot.dog_returning.is_empty() and snapshot.wolf_resting.is_empty(), "sheep-only capture omits wolf and dog decision columns")
-	var grid := GridService.build_snapshot(snapshot)
+	var grid := ReferenceSimulation.build_snapshot(snapshot)
 	var point := snapshot.motion_position[0]
 	grid.positions[0] = point + Vector2.ONE
 	_check(snapshot.motion_position[0] == point + Vector2.ONE and entities.data.motion_position[0] == point, "grid aliases the isolated snapshot position column")
@@ -226,7 +228,7 @@ func _shared_inputs() -> void:
 func _compute_job() -> SheepComputeJob:
 	var job := SheepComputeJob.new()
 	job.snapshot = engine.animal_system.decision_snapshot()
-	job.grid = GridService.build_snapshot(job.snapshot, false)
+	job.grid = ReferenceSimulation.build_snapshot(job.snapshot)
 	return job
 
 func _compute_cancellation() -> void:
@@ -234,7 +236,6 @@ func _compute_cancellation() -> void:
 	engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 2, Vector2(300, 300))
 	var held := HeldCompute.new()
 	root.add_child(held)
-	held.backend = "gpu"
 	held.startup()
 	var job := _compute_job()
 	_check(held.submit(job), "device service accepts one request")
@@ -276,7 +277,6 @@ func _compute_cancellation() -> void:
 	held.queue_free()
 	var failed := FailedCompute.new()
 	root.add_child(failed)
-	failed.backend = "auto"
 	failed.startup()
 	var original: ComputeShaderService = engine.compute_service
 	engine.compute_service = failed
@@ -285,14 +285,14 @@ func _compute_cancellation() -> void:
 	engine.animal_service.waiting[0] = true
 	_check(failed.submit(job), "failure fixture accepts input")
 	deadline = Time.get_ticks_msec() + 5000
-	while failed.busy and Time.get_ticks_msec() < deadline:
-		failed.flush()
+	var failed_result: SheepComputeJob
+	while failed_result == null and Time.get_ticks_msec() < deadline:
+		failed_result = failed._take_completed()
 		OS.delay_msec(1)
-	_check(not engine.animal_service.waiting.has(0) and engine.animal_service.applied[0] == 0 and not failed.failure.is_empty(), "device failure clears waiting without applying data")
+	_check(failed_result == job and not failed.failure.is_empty(), "device error returns failed completion")
 	_check(not failed.available(), "failed device refuses subsequent GPU submissions")
-	engine.animal_service.schedule_updates(1.0)
-	_check(engine.job_service.async_jobs.has(&"Grid") and not engine.job_service.async_jobs[&"Grid"].snapshot.gpu, "auto backend schedules CPU work after a device error")
-	engine.job_service.drain()
+	job.release_input()
+	engine.animal_service.waiting.clear()
 	engine.compute_service = original
 	failed.shutdown()
 	failed.queue_free()
@@ -313,10 +313,11 @@ func _frequency_and_motion() -> void:
 	engine.config.sheepdog_update_hz = 15
 	for step in range(60):
 		engine.simulate_step(1.0 / 60.0)
-		while not engine.job_service.async_jobs.is_empty():
+		while not engine.job_service.async_jobs.is_empty() or engine.compute_service.busy:
 			for job: Job in engine.job_service.async_jobs.values():
 				_wait(job)
 			engine.animal_service.apply_completed()
+			OS.delay_msec(1)
 	_check(engine.animal_service.requested[1] == 25 and engine.animal_service.requested[2] == 15, "non-divisor and independent frequencies preserve fractional time")
 	engine.job_service.invalidate_async()
 	engine.animal_service.waiting.clear()
@@ -346,10 +347,10 @@ func _frequency_and_motion() -> void:
 	data.dog_collected_sheep[dog.row] = sheep
 	data.dog_protection_center[dog.row] = Vector2(500, 400)
 	data.motion_intent[dog.row] = AnimalData.MotionIntent.POINT
-	engine.animal_system.update_steering(1.0 / 60.0)
+	ReferenceSimulation.new(engine.entity_service.data).update_all_steering(1.0 / 60.0)
 	var goals := [data.motion_movement_goal[wolf.row], data.motion_movement_goal[dog.row]]
 	for step in range(6):
-		engine.animal_system.update_steering(1.0 / 60.0)
+		ReferenceSimulation.new(engine.entity_service.data).update_all_steering(1.0 / 60.0)
 	_check(goals == [data.motion_movement_goal[wolf.row], data.motion_movement_goal[dog.row]], "stalk and collect offsets never accumulate between decisions")
 	engine.paused = false
 	engine.profile_service.set_performance_stats_enabled(false)
@@ -427,7 +428,7 @@ func _run() -> void:
 	verification_directory = "res://output/service-refactor/async-" + str(OS.get_process_id()) + "-" + str(Time.get_ticks_usec())
 	DirAccess.make_dir_recursive_absolute(verification_directory)
 	_queues()
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 276
 	scene.simulation_config.arena_size = Vector2(1280, 720)

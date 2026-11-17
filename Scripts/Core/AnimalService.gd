@@ -60,28 +60,21 @@ func advance_decision(animal: AnimalEntity) -> void:
 	_last_decision[id] = now
 
 func advance_time(delta: float) -> void:
-	# 1) Run the optional GPU timer pass before updating live state on the CPU.
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	var profile: ProfileService = g_gameplayEngine.profile_service
 	var detail_started := Time.get_ticks_usec() if profile.detailed_stats_enabled else 0
-	var numeric: int = g_gameplayEngine.compute_service.run_numeric(data, delta, NumericComputeJob.Pass.TIMERS)
-	if numeric < 0:
-		g_gameplayEngine.fail_step("GPU timers failed")
-		return
 
-	# 2) Advance timers, renew wander goals and invalidate lost targets.
+	# 1) Advance timers, renew wander goals and invalidate lost targets.
 	var sheep_settings: SheepConfig = g_gameplayEngine.config.sheep
 	var duration: float = sheep_settings.panic_duration
 	var wander: bool = sheep_settings.wander_weight > 0.0
 	var active_ids: Dictionary = {}
 	for row in range(data.active_count):
-		if numeric == 0:
-			data.motion_wander_remaining[row] -= delta
-			data.memory_perception_remaining[row] -= delta
+		data.motion_wander_remaining[row] -= delta
+		data.memory_perception_remaining[row] -= delta
 
 		if data.identity_kind[row] == AnimalEntity.Kind.SHEEP:
-			if numeric == 0:
-				data.sheep_panic_strength[row] = maxf(0.0, data.sheep_panic_strength[row] - delta / duration) if duration > 0.0 else 0.0
+			data.sheep_panic_strength[row] = maxf(0.0, data.sheep_panic_strength[row] - delta / duration) if duration > 0.0 else 0.0
 			if wander and (data.motion_wander_remaining[row] <= 0.0 or data.motion_position[row].distance_to(data.motion_wander_point[row]) < 15.0):
 				animal_system.get_wander_point(data.handles[row], 85.0)
 			continue
@@ -106,7 +99,7 @@ func advance_time(delta: float) -> void:
 		profile.record_duration("AdvanceTime/ActiveLoop", (Time.get_ticks_usec() - detail_started) / 1000.0)
 		detail_started = Time.get_ticks_usec()
 
-	# 3) Remove obsolete decision timestamps before advancing species-specific timers.
+	# 2) Remove obsolete decision timestamps before advancing species-specific timers.
 	for id in _last_decision.keys():
 		if not active_ids.has(id):
 			_last_decision.erase(id)
@@ -141,7 +134,8 @@ func apply_completed() -> void:
 func schedule_updates(delta: float) -> void:
 	var engine := g_gameplayEngine
 	var compute: ComputeShaderService = engine.compute_service
-	if compute.backend == "gpu" and not compute.available():
+	if not compute.available():
+		engine.fail_step("GPU compute unavailable: " + compute.failure)
 		return
 
 	# 1) Select due species without queuing catch-up work behind an unfinished batch.
@@ -175,8 +169,7 @@ func schedule_updates(delta: float) -> void:
 
 	# 2) Copy live inputs once; grid construction and species work use immutable snapshots.
 	var prepared_at := Time.get_ticks_usec()
-	var gpu := compute.available()
-	var snapshot := animal_system.decision_snapshot(due, gpu)
+	var snapshot := animal_system.decision_snapshot(due)
 	snapshot.prepare_ms = (Time.get_ticks_usec() - prepared_at) / 1000.0
 	engine.profile_service.record_duration("Snapshot/Prepare", snapshot.prepare_ms)
 	snapshot.captured_usec = prepared_at
@@ -192,7 +185,7 @@ func schedule_updates(delta: float) -> void:
 func apply_grid(grid: GridSnapshot, snapshot: AnimalSnapshot, sheep_job: SheepComputeJob = null, grid_ms: float = 0.0) -> void:
 	# 1) Complete GPU aggregates before exposing the shared grid to species jobs.
 	var engine := g_gameplayEngine
-	if snapshot.gpu and sheep_job == null:
+	if sheep_job == null:
 		var job := SheepComputeJob.new()
 		job.stage = &"Compute"
 		job.snapshot = snapshot
@@ -216,7 +209,7 @@ func apply_grid(grid: GridSnapshot, snapshot: AnimalSnapshot, sheep_job: SheepCo
 		var job: Job
 		match kind:
 			AnimalEntity.Kind.SHEEP:
-				job = SheepPerceptionJob.new()
+				continue
 			AnimalEntity.Kind.WOLF:
 				job = WolfPerceptionJob.new()
 			_:
@@ -231,10 +224,9 @@ func apply_grid(grid: GridSnapshot, snapshot: AnimalSnapshot, sheep_job: SheepCo
 		waiting.erase(kind)
 
 func compute_failed(message: String, snapshot: AnimalSnapshot) -> void:
-	g_gameplayEngine.compute_service.fallback_reason = message
 	for kind in snapshot.due:
 		waiting.erase(kind)
-	push_warning("ComputeShaderService: " + message)
+	g_gameplayEngine.fail_step("GPU sheep calculation failed: " + message)
 
 func apply_decision(job: Job) -> void:
 	var snapshot := job.snapshot
@@ -254,14 +246,14 @@ func apply_decision(job: Job) -> void:
 	applied[kind] += 1
 
 	if kind == AnimalEntity.Kind.SHEEP:
-		var metrics := (job as SheepComputeJob).metrics if job is SheepComputeJob else ComputeShaderService.Metrics.new()
-		metrics.backend = "gpu" if job is SheepComputeJob else "cpu"
+		var metrics := (job as SheepComputeJob).metrics
+		metrics.backend = "gpu"
 		metrics.apply_ms = apply_ms
 		metrics.grid_ms = job.grid_ms
 		metrics.prepare_ms = snapshot.prepare_ms
 		metrics.execute_ms = job.execute_ms
 		metrics.latency_ms = (Time.get_ticks_usec() - snapshot.captured_usec) / 1000.0
-		var cpu_ms := metrics.pack_ms + metrics.decode_ms if job is SheepComputeJob else job.execute_ms
+		var cpu_ms := metrics.pack_ms + metrics.decode_ms
 		metrics.processing_ms = metrics.prepare_ms + metrics.grid_ms + cpu_ms + metrics.apply_ms + metrics.upload_submit_ms + maxf(0.0, metrics.gpu_ms) + maxf(0.0, metrics.buffer_read_ms)
 		if job is SheepComputeJob:
 			for metric in ["pack_ms", "device_queue_ms", "upload_submit_ms", "gpu_wait_ms", "buffer_read_ms", "decode_ms"]:

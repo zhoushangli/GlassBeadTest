@@ -3,7 +3,6 @@ extends SceneTree
 var job_totals: Dictionary = {}
 var async_totals: Dictionary = {}
 var async_sequences: Dictionary = {}
-var compute_backend: String = "auto"
 var startup_ms: float = 0.0
 var wolf_frequency: int = 0
 var dog_frequency: int = 0
@@ -109,10 +108,6 @@ func _initialize() -> void:
 
 		var value := parts[1]
 		match parts[0]:
-			"--movement-compute", "--timers-compute":
-				if value not in ["cpu", "gpu", "auto"]:
-					_fail("Invalid numeric backend")
-					return
 			"--debug-grids":
 				debug_grids = value == "1"
 			"--wolf-hz", "--dog-hz":
@@ -123,11 +118,6 @@ func _initialize() -> void:
 					wolf_frequency = value.to_int()
 				else:
 					dog_frequency = value.to_int()
-			"--compute":
-				if value not in ["auto", "cpu", "gpu"]:
-					_fail("Expected --compute=auto|cpu|gpu")
-					return
-				compute_backend = value
 			"--simulation-hz", "--sheep-hz":
 				if not value.is_valid_int() or value.to_int() < 1:
 					_fail("Expected positive update frequency")
@@ -285,7 +275,7 @@ func _fail(message: String) -> void:
 
 func _start() -> void:
 	var startup_started := Time.get_ticks_usec()
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	var settings: SimulationConfig = scene.simulation_config.copy_config()
 	if population >= 0:
 		settings.initial_total = population
@@ -408,7 +398,7 @@ func _run_fixed_steps() -> void:
 		stage_totals[stage] /= fixed_steps
 
 	var result := {
-		"result_version": 8, "label": label, "motion_mode": motion_mode, "motion_state_sha256": _motion_hash(), "active_bt_instances": _active_bt_instances(), "startup_ms": startup_ms, "mode": "fixed_steps", "job_timings_mean_ms": _job_means(),
+		"result_version": 9, "is_debug_build": OS.is_debug_build(), "label": label, "motion_mode": motion_mode, "motion_state_sha256": _motion_hash(), "active_bt_instances": _active_bt_instances(), "startup_ms": startup_ms, "mode": "fixed_steps", "job_timings_mean_ms": _job_means(),
 		"jobs_parallel_enabled": engine.job_service.parallel_enabled, "job_workers": jobs_workers, "warmup_steps": warmup_steps,
 		"measured_steps": fixed_steps, "simulation_hz": engine.config.simulation_hz,
 		"step_mean_ms": total / fixed_steps, "step_p95_ms": times[mini(times.size() - 1, ceili(times.size() * 0.95) - 1)],
@@ -483,7 +473,7 @@ func _process(_delta: float) -> bool:
 			_simulate_benchmark_step(interval)
 	if fixed_steps > 0:
 		return false
-	if compute_backend == "gpu" and engine != null and engine.compute_service != null:
+	if engine != null and engine.compute_service != null:
 		var compute: ComputeShaderService = engine.compute_service
 		if not compute.available():
 			_fail("Forced GPU unavailable: " + compute.failure)
@@ -663,7 +653,7 @@ func _percentile(values: Array[float], fraction: float) -> float:
 	return sorted[mini(sorted.size() - 1, int(ceil(sorted.size() * fraction)) - 1)]
 
 func _finish(elapsed: float) -> void:
-	if compute_backend == "gpu" and engine.animal_service.preprocessing_samples.is_empty():
+	if engine.animal_service.preprocessing_samples.is_empty():
 		_fail("Forced GPU produced no applied sheep results")
 		return
 	done = true
@@ -692,7 +682,7 @@ func _finish(elapsed: float) -> void:
 
 	var result := {
 		"job_timings_mean_ms": _job_means(), "jobs_parallel_enabled": engine.job_service.parallel_enabled,
-		"result_version": 8, "jobs_mode": jobs_mode, "job_workers": jobs_workers, "job_stages": engine.job_service.parallel_stages, "label": label, "sampling": sampling,
+		"result_version": 9, "is_debug_build": OS.is_debug_build(), "jobs_mode": jobs_mode, "job_workers": jobs_workers, "job_stages": engine.job_service.parallel_stages, "label": label, "sampling": sampling,
 		"visibility": {"hud": hud_visible, "overlay": overlay, "animals": animals_visible, "debug_grids": debug_grids},
 		"stages_mean_ms": stages_mean, "hotspots": hotspots, "debug": debug,
 		"preprocessing_mean_per_step": preprocessing_mean,
@@ -851,7 +841,7 @@ func _compute_summary(elapsed: float) -> Dictionary:
 	for sample in service.preprocessing_samples:
 		rows.append(sample.to_dictionary())
 	var compute: ComputeShaderService = engine.compute_service
-	var result := {"requested_backend": compute_backend, "device": "local" if compute.available() else "cpu", "samples": rows, "requests_hz": [], "applied_hz": [], "metrics": {}, "failure": compute.failure, "fallback_reason": compute.fallback_reason}
+	var result := {"required_backend": "gpu", "device": "local" if compute.available() else "unavailable", "samples": rows, "requests_hz": [], "applied_hz": [], "metrics": {}, "failure": compute.failure}
 	for kind in range(3):
 		result.requests_hz.append((service.requested[kind] - requested_at_start[kind]) / elapsed)
 		result.applied_hz.append((service.applied[kind] - applied_at_start[kind]) / elapsed)
@@ -861,7 +851,7 @@ func _compute_summary(elapsed: float) -> Dictionary:
 			if sample.has(metric) and sample[metric] >= 0.0:
 				values.append(float(sample[metric]))
 		result.metrics[metric] = {"count": values.size(), "mean": _mean(values), "p95": _percentile(values, 0.95), "max": values.max() if not values.is_empty() else 0.0}
-	result["numeric"] = {"movement_backend": compute.movement_backend, "timers_backend": compute.timers_backend, "samples": compute.numeric_samples.duplicate(true)}
+	result["numeric"] = {"movement_backend": "gpu", "timers_backend": "cpu", "samples": compute.numeric_samples.duplicate(true)}
 	result.window_size = [root.size.x, root.size.y]
 	var viewport_size := root.get_texture().get_size()
 	result.render_size = [viewport_size.x, viewport_size.y]

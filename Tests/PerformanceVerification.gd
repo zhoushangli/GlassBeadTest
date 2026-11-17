@@ -1,5 +1,7 @@
 extends "res://Tests/RunBenchmark.gd"
 
+const ReferenceSimulation = preload("res://Tests/ReferenceSimulation.gd")
+
 var checks: int = 0
 var failures: int = 0
 
@@ -150,7 +152,7 @@ func _verify() -> void:
 	service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(119, 110))
 	service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(120, 110))
 	service.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(400, 110))
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	var nearby: PackedInt32Array = engine.grid_service.get_nearby_indices(Vector2(120, 110), 2.0)
 	_check(nearby.size() == 2 and engine.grid_service.spatial_candidate_count == 2, "cell boundary query counts broad-phase candidates")
 	_check(engine.grid_service.spatial_query_count == 1 and engine.grid_service.spatial_max_candidates == 2, "query statistics")
@@ -316,8 +318,9 @@ func _verify() -> void:
 	quit(0 if failures == 0 else 1)
 
 func _wait_decisions() -> void:
-	while not engine.job_service.async_jobs.is_empty():
+	while not engine.job_service.async_jobs.is_empty() or engine.compute_service.busy:
 		for job: Job in engine.job_service.async_jobs.values():
 			while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
 				OS.delay_msec(1)
 		engine.animal_service.apply_completed()
+		OS.delay_msec(1)

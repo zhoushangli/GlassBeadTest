@@ -1,8 +1,5 @@
 param(
-	[ValidateSet('auto', 'cpu', 'gpu')][string]$Compute = 'auto',
 	[ValidateSet('normal', 'random')][string]$Motion = 'normal',
-	[ValidateSet('auto', 'cpu', 'gpu')][string]$MovementCompute = 'auto',
-	[ValidateSet('auto', 'cpu', 'gpu')][string]$TimersCompute = 'cpu',
 	[ValidateRange(1, 240)][int]$WolfHz,
 	[ValidateRange(1, 240)][int]$DogHz,
 	[switch]$DebugGrids,
@@ -77,7 +74,7 @@ if ($Steps -gt 0) {
 	$startInfo.Arguments += ' --steps={0} --warmup-steps={1}' -f $Steps, $WarmupSteps
 }
 $startInfo.Arguments += ' --jobs={0} --job-workers={1} --job-stages={2}' -f $Jobs, $JobWorkers, $JobStages
-$startInfo.Arguments += ' --motion={0} --compute={1} --movement-compute={2} --timers-compute={3} --debug-grids={4}' -f $Motion, $Compute, $MovementCompute, $TimersCompute, ([int]$DebugGrids.IsPresent)
+$startInfo.Arguments += ' --motion={0} --debug-grids={1}' -f $Motion, ([int]$DebugGrids.IsPresent)
 foreach ($option in @(@('Population', 'population'), @('SimulationHz', 'simulation-hz'), @('SheepHz', 'sheep-hz'), @('WolfHz', 'wolf-hz'), @('DogHz', 'dog-hz'), @('ArenaSize', 'arena-size'))) {
 	if ($PSBoundParameters.ContainsKey($option[0])) {
 		$startInfo.Arguments += ' --{0}={1}' -f $option[1], $PSBoundParameters[$option[0]]

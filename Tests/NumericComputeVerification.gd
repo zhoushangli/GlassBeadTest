@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ReferenceSimulation = preload("res://Tests/ReferenceSimulation.gd")
+
 class HeldDevice extends ComputeShaderService:
 	var entered := Semaphore.new()
 	var gate := Semaphore.new()
@@ -51,11 +53,10 @@ func _receive(job: NumericComputeJob) -> void:
 func _movement() -> void:
 	var entities: EntityService = engine.entity_service
 	var data := entities.data
-	for pass_kind in [NumericComputeJob.Pass.MOVEMENT, NumericComputeJob.Pass.TIMERS]:
-		var empty := NumericComputeJob.new()
-		empty.capture(data, engine.config, 1.0 / 30.0, pass_kind)
-		_receive(empty)
-		_check(empty.commit(data), "empty GPU pass retains inactive columns")
+	var empty := NumericComputeJob.new()
+	empty.capture(data, engine.config, 1.0 / 30.0)
+	_receive(empty)
+	_check(empty.commit(data), "empty GPU pass retains inactive columns")
 	for amount in [1, 15, 130]:
 		engine.reset_simulation()
 		engine.paused = true
@@ -72,8 +73,8 @@ func _movement() -> void:
 			data.motion_separation[row] = Vector2(-0.2, 0.3)
 		for interval in [0.0, 1.0 / 30.0, 0.2]:
 			var job := NumericComputeJob.new()
-			job.capture(data, engine.config, interval, NumericComputeJob.Pass.MOVEMENT)
-			entities.update_movement(interval)
+			job.capture(data, engine.config, interval)
+			ReferenceSimulation.update_movement(data, interval)
 			var expected := [data.motion_position.duplicate(), data.motion_velocity.duplicate(), data.motion_facing.duplicate(), data.motion_desired_velocity.duplicate()]
 			_receive(job)
 			for column in range(4):
@@ -82,7 +83,7 @@ func _movement() -> void:
 			_check(job.commit(data), "matching step commits movement columns")
 
 	var job := NumericComputeJob.new()
-	job.capture(data, engine.config, 1.0 / 30.0, NumericComputeJob.Pass.MOVEMENT)
+	job.capture(data, engine.config, 1.0 / 30.0)
 	_receive(job)
 	entities.capture(data.handles[0])
 	entities.remove_expired()
@@ -90,35 +91,30 @@ func _movement() -> void:
 	_check(not job.commit(data) and data.motion_position == position, "row swap rejects stale output atomically")
 	var corpse_row := data.active_count
 	var corpse_position := data.motion_position[corpse_row]
-	engine.compute_service.movement_backend = "gpu"
 	entities.update_movement(1.0 / 30.0)
 	_check(data.motion_position[corpse_row] == corpse_position, "bulk movement retains corpse suffix")
-	engine.compute_service.movement_backend = "cpu"
 
 func _timers() -> void:
 	var data: AnimalData = engine.entity_service.data
+	engine.config.sheep.wander_weight = 0.0
 	for duration in [0.0, 2.0]:
 		engine.config.sheep.panic_duration = duration
 		for row in range(data.active_count):
 			data.motion_wander_remaining[row] = 0.01
 			data.memory_perception_remaining[row] = -0.1
-			data.sheep_panic_strength[row] = 0.01 if row % 2 == 0 else 0.5
-		var job := NumericComputeJob.new()
-		job.capture(data, engine.config, 1.0 / 30.0, NumericComputeJob.Pass.TIMERS)
-		_receive(job)
+			data.sheep_panic_strength[row] = 0.5
+		engine.animal_service.advance_time(1.0 / 30.0)
 		for row in range(data.active_count):
-			_check(absf(job.output[0][row] - (0.01 - 1.0 / 30.0)) < 0.000001, "wander crosses zero")
-			_check(absf(job.output[1][row] - (-0.1 - 1.0 / 30.0)) < 0.000001, "negative perception timer remains negative")
-			var panic := data.sheep_panic_strength[row]
+			_check(absf(data.memory_perception_remaining[row] - (-0.1 - 1.0 / 30.0)) < 0.000001, "CPU perception timer crosses zero")
 			if data.identity_kind[row] == AnimalEntity.Kind.SHEEP:
-				panic = maxf(0.0, panic - (1.0 / 30.0) / duration) if duration > 0.0 else 0.0
-			_check(absf(job.output[2][row] - panic) < 0.000001, "panic matches CPU including zero duration")
-		_check(job.commit(data), "timer columns commit")
+				_check(absf(data.motion_wander_remaining[row] - (0.01 - 1.0 / 30.0)) < 0.000001, "CPU wander crosses zero")
+				var expected: float = maxf(0.0, 0.5 - (1.0 / 30.0) / duration) if duration > 0.0 else 0.0
+				_check(absf(data.sheep_panic_strength[row] - expected) < 0.000001, "CPU panic preserves zero-duration semantics")
 
 func _random_sequence() -> void:
 	var expected: Array = []
 	var data: AnimalData = engine.entity_service.data
-	for backend in ["cpu", "gpu"]:
+	for repetition in range(2):
 		engine.reset_simulation()
 		engine.paused = true
 		engine.config.sheep.wander_weight = 1.0
@@ -126,20 +122,17 @@ func _random_sequence() -> void:
 		for row in range(data.active_count):
 			data.motion_wander_remaining[row] = 1.5
 			data.motion_wander_point[row] = Vector2(100, 100)
-		engine.compute_service.timers_backend = backend
 		for step in range(100):
 			engine.animal_service.advance_time(1.0 / 30.0)
 			var value := [engine.rng.state, data.motion_wander_point.duplicate(), data.motion_wander_remaining.duplicate()]
-			if backend == "cpu":
+			if repetition == 0:
 				expected.append(value)
 			else:
-				_check(value == expected[step], "float64 timers preserve RNG and wander sequence at step %d" % step)
-	engine.compute_service.timers_backend = "cpu"
+				_check(value == expected[step], "CPU timers preserve RNG and wander sequence at step %d" % step)
 
 func _interactions() -> void:
 	var data: AnimalData = engine.entity_service.data
 	var entities: EntityService = engine.entity_service
-	engine.compute_service.movement_backend = "gpu"
 	for approaching in [true, false]:
 		engine.reset_simulation()
 		engine.paused = true
@@ -158,27 +151,24 @@ func _interactions() -> void:
 		entities.update_movement(0.02)
 		engine.wolf_system.resolve_interactions(wolf, 0.02)
 		_check(bool(data.identity_alive[sheep.row]) != approaching, "interaction uses this step's GPU positions when entering or leaving capture range")
-	engine.compute_service.movement_backend = "cpu"
 
 func _queue() -> void:
 	var service := HeldDevice.new()
 	root.add_child(service)
-	service.backend = "gpu"
 	service.startup()
 	var job := SheepComputeJob.new()
-	job.snapshot = engine.animal_system.decision_snapshot(PackedInt32Array([0]), true)
-	job.grid = GridService.build_snapshot(job.snapshot, false)
+	job.snapshot = engine.animal_system.decision_snapshot(PackedInt32Array([0]))
+	job.grid = GridService.build_snapshot(job.snapshot)
 	_check(service.submit(job), "background sheep request accepted")
 	service.entered.wait()
 	var compute: ComputeShaderService = engine.compute_service
 	engine.compute_service = service
 	var release := WorkerThreadPool.add_task(service.gate.post)
-	service.movement_backend = "gpu"
 	var data: AnimalData = engine.entity_service.data
-	_check(service.run_numeric(data, 1.0 / 30.0, NumericComputeJob.Pass.MOVEMENT) == 1, "foreground movement follows an in-flight sheep request")
+	_check(service.run_movement(data, 1.0 / 30.0), "foreground movement follows an in-flight sheep request")
 	WorkerThreadPool.wait_for_task_completion(release)
 	_check(job.state == Job.State.COMPLETED and service.busy, "movement wait leaves sheep completion unapplied")
-	_check(service.run_numeric(data, 1.0 / 30.0, NumericComputeJob.Pass.MOVEMENT) == 1, "completed sheep result does not occupy foreground slot")
+	_check(service.run_movement(data, 1.0 / 30.0), "completed sheep result does not occupy foreground slot")
 	var completed := service._take_completed()
 	_check(completed == job, "sheep completion remains available for step-start flush")
 	engine.compute_service = compute
@@ -186,31 +176,18 @@ func _queue() -> void:
 	service.queue_free()
 
 func _failures() -> void:
-	var original: ComputeShaderService = engine.compute_service
 	var service := FailedNumeric.new()
 	root.add_child(service)
 	service.startup()
-	engine.compute_service = service
 	var data: AnimalData = engine.entity_service.data
-	service.movement_backend = "auto"
 	var position := data.motion_position.duplicate()
-	_check(service.run_numeric(data, 1.0 / 30.0, NumericComputeJob.Pass.MOVEMENT) == 0 and data.motion_position == position, "auto returns untouched input to CPU fallback")
-	_check(service.available(), "numeric failure does not disable other kernels")
-	service.movement_backend = "gpu"
-	var step: int = engine.step_count
-	engine.simulate_step(1.0 / 30.0)
-	_check(engine.step_failed and engine.paused and engine.step_count == step, "forced GPU failure pauses without completing an inconsistent step")
-	var timer := data.motion_wander_remaining.duplicate()
-	engine.simulate_step(1.0 / 30.0)
-	_check(data.motion_wander_remaining == timer, "failed step cannot partially advance again before reset")
-	engine.compute_service = original
+	_check(not service.run_movement(data, 1.0 / 30.0), "GPU error fails instead of selecting CPU")
+	_check(data.motion_position == position and not service.available(), "failed GPU leaves movement untouched and disables submissions")
 	service.shutdown()
 	service.queue_free()
-	engine.reset_simulation()
-	_check(not engine.step_failed, "reset clears failed-step latch")
 
 func _run() -> void:
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 0
 	scene.simulation_config.arena_size = Vector2(1280, 720)
@@ -223,8 +200,6 @@ func _run() -> void:
 	engine.set_process(false)
 	engine.paused = true
 	engine.compute_service.shutdown()
-	engine.compute_service.movement_backend = "cpu"
-	engine.compute_service.backend = "gpu"
 	engine.compute_service.startup()
 	if DisplayServer.get_name() == "headless":
 		_check(not engine.compute_service.available(), "headless refuses GPU passes")

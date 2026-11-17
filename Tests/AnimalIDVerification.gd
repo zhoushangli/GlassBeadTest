@@ -20,7 +20,7 @@ func _run() -> void:
 	_check(not AnimalID.is_valid(AnimalID.INVALID) and not AnimalID.is_valid(1 << 32), "zero life serial is reserved")
 	_check(AnimalID.make(3, 7) == 12884901895 and AnimalID.make(0xFFFFFFFF, 0xFFFFFFFF) == -1, "bit layout and sign bit match contract")
 	_check(AnimalID.is_valid(-1), "negative identity is valid")
-	var scene: Node = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	var scene: Node = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 0
 	root.add_child(scene)

@@ -6,7 +6,7 @@ var data: AnimalData
 func _init(storage: AnimalData) -> void:
 	data = storage
 
-func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu: bool = false) -> AnimalSnapshot:
+func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2])) -> AnimalSnapshot:
 	# 1) Capture common inputs and species membership before submitting worker jobs.
 	var engine := g_gameplayEngine
 	var snapshot := AnimalSnapshot.new()
@@ -18,7 +18,6 @@ func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu:
 	snapshot.distance = snapshot.config.separation_distance
 	snapshot.interval = snapshot.config.perception_interval
 	snapshot.due = due
-	snapshot.gpu = gpu
 	snapshot.sheep = engine.entity_service.sheep_rows.duplicate()
 	snapshot.wolves = engine.entity_service.wolf_rows.duplicate()
 	snapshot.dogs = engine.entity_service.dog_rows.duplicate()
@@ -33,12 +32,11 @@ func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu:
 	snapshot.memory_perception_remaining = data.memory_perception_remaining.slice(0, data.active_count)
 	snapshot.wolf_hunting = data.wolf_hunting.slice(0, data.active_count)
 
-	# 2) Copy optional columns only for the species or GPU passes that need them.
-	if due.has(0) or gpu:
-		snapshot.sheep_panic_strength = data.sheep_panic_strength.slice(0, data.active_count)
-		snapshot.sheep_panic_source = data.sheep_panic_source.slice(0, data.active_count)
-		snapshot.sheep_panic_revision = data.sheep_panic_revision.slice(0, data.active_count)
-		snapshot.motion_wander_point = data.motion_wander_point.slice(0, data.active_count)
+	# 2) Capture sheep inputs for the required GPU pass.
+	snapshot.sheep_panic_strength = data.sheep_panic_strength.slice(0, data.active_count)
+	snapshot.sheep_panic_source = data.sheep_panic_source.slice(0, data.active_count)
+	snapshot.sheep_panic_revision = data.sheep_panic_revision.slice(0, data.active_count)
+	snapshot.motion_wander_point = data.motion_wander_point.slice(0, data.active_count)
 
 	if due.has(1) or due.has(2):
 		snapshot.motion_facing = data.motion_facing.slice(0, data.active_count)
@@ -280,12 +278,6 @@ func perceive(animal: AnimalEntity, delta: float) -> void:
 			memory_perception_remaining[row] *= fmod(data.identity_entity_id[row] * 0.618034, 1.0)
 		memory_perception_ready[row] = 1
 
-	if data.identity_kind[row] == AnimalEntity.Kind.SHEEP:
-		var started := Time.get_ticks_usec() if g_gameplayEngine.profile_service.detailed_stats_enabled else 0
-		g_gameplayEngine.sheep_system._scan_neighbors(animal, g_gameplayEngine.grid_service)
-		if g_gameplayEngine.profile_service.detailed_stats_enabled:
-			g_gameplayEngine.profile_service.record_hotspot("NeighborScan", started)
-
 func _scan_separation(animal: AnimalEntity, service: GridService) -> void:
 	var row := animal.row
 	data.motion_separation[row] = Vector2.ZERO
@@ -348,18 +340,6 @@ func move_towards(animal: AnimalEntity, point: Vector2, speed: float, _delta: fl
 	data.motion_intent[row] = AnimalData.MotionIntent.POINT
 	data.motion_movement_goal[row] = point
 	data.motion_speed_limit[row] = speed
-
-func update_steering(delta: float) -> void:
-	g_gameplayEngine.sheep_system.update_steering(delta)
-	g_gameplayEngine.wolf_system.prepare_motion_goals()
-	g_gameplayEngine.dog_system.prepare_motion_goals()
-
-	for row in range(data.active_count):
-		if data.motion_intent[row] != AnimalData.MotionIntent.POINT:
-			continue
-
-		var difference := data.motion_movement_goal[row] - data.motion_position[row]
-		data.motion_desired_velocity[row] = difference.normalized() * minf(data.motion_speed_limit[row], difference.length() / maxf(delta, 0.00001))
 
 func submit_velocity(animal: AnimalEntity, desired: Vector2, speed: float) -> void:
 	var row := animal.row

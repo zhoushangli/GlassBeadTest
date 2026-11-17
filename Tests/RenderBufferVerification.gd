@@ -64,7 +64,7 @@ func _compare(label: String) -> void:
 	_check(engine.rng.state == state, label + " rendering consumes no RNG")
 
 func _run() -> void:
-	var scene: Node = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	var scene: Node = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 0
 	root.add_child(scene)

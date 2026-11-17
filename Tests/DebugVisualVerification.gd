@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ReferenceSimulation = preload("res://Tests/ReferenceSimulation.gd")
+
 var checks: int = 0
 var failures: int = 0
 var engine: Node
@@ -61,7 +63,7 @@ func _run() -> void:
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	capture_directory = "res://output/ecs-visuals/" + Time.get_datetime_string_from_system().replace(":", "-") + "_" + str(OS.get_process_id())
 	DirAccess.make_dir_recursive_absolute(capture_directory)
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 276
 	scene.simulation_config.arena_size = Vector2(1280, 720)
@@ -165,10 +167,10 @@ func _run() -> void:
 	await _key(KEY_F1)
 	_check(not debug.show_details and debug.howl_events.is_empty(), "F1 input disables visuals and clears pulses")
 
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	var region_job := DogPerceptionJob.new()
 	region_job.snapshot = engine.animal_system.decision_snapshot(PackedInt32Array([2]))
-	region_job.grid = GridService.build_snapshot(region_job.snapshot)
+	region_job.grid = ReferenceSimulation.build_snapshot(region_job.snapshot)
 	region_job.rows = region_job.snapshot.dogs
 	region_job.execute()
 	engine.dog_system.apply_decision(region_job)

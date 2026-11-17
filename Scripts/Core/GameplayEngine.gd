@@ -69,14 +69,10 @@ func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationCo
 	render_service.container = entity_service.container
 	debug_service.hud = debug_hud
 	running = true
-	for argument in OS.get_cmdline_user_args():
-		if argument.begins_with("--compute="):
-			compute_service.backend = argument.trim_prefix("--compute=")
-		elif argument.begins_with("--movement-compute="):
-			compute_service.movement_backend = argument.trim_prefix("--movement-compute=")
-		elif argument.begins_with("--timers-compute="):
-			compute_service.timers_backend = argument.trim_prefix("--timers-compute=")
 	compute_service.startup()
+	if not compute_service.available():
+		fail_step("GPU initialization failed: " + compute_service.failure)
+		return
 	animal_service.startup()
 	job_service.startup()
 	grid_service.startup()
@@ -229,9 +225,20 @@ func _process(delta: float) -> void:
 	simulation_frame_completed.emit(frame_ms)
 
 func fail_step(message: String) -> void:
+	if step_failed:
+		return
+
 	step_failed = true
 	paused = true
-	push_error(message + ": " + compute_service.fallback_reason + " " + compute_service.failure)
+	running = false
+	var details := "%s\n\nRenderer: %s\nGPU: %s" % [message, RenderingServer.get_current_rendering_method(), RenderingServer.get_video_adapter_name()]
+	push_error(details)
+	call_deferred("_show_compute_error", details)
+
+func _show_compute_error(message: String) -> void:
+	if DisplayServer.get_name() != "headless":
+		OS.alert(message, "GPU Compute Error")
+	get_tree().quit(1)
 
 func simulate_step(delta: float) -> void:
 	if step_failed:
@@ -243,6 +250,9 @@ func simulate_step(delta: float) -> void:
 
 	# 1) Commit completed logic without waiting, then advance animal time.
 	animal_service.apply_completed()
+	if step_failed:
+		return
+
 	profile_service.end_stage("ApplyCompleted")
 	animal_service.advance_time(delta)
 	if step_failed:
@@ -250,6 +260,9 @@ func simulate_step(delta: float) -> void:
 
 	profile_service.end_stage("AdvanceTime")
 	animal_service.schedule_updates(delta)
+	if step_failed:
+		return
+
 	profile_service.end_stage("ScheduleUpdates")
 
 	# 2) Move using the latest valid intent, independently of background work.

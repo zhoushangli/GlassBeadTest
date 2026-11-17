@@ -1,7 +1,8 @@
 class_name ComputeShaderService
 extends Service
 
-const SHADER_PATH := "res://Shaders/Simulation/SheepCompute.glsl"
+const SHEEP_SHADER: RDShaderFile = preload("res://Shaders/Simulation/SheepCompute.glsl")
+const MOVEMENT_SHADER: RDShaderFile = preload("res://Shaders/Simulation/NumericCompute.glsl")
 
 class Metrics extends RefCounted:
 	var main_wait_ms: float = 0.0
@@ -21,7 +22,7 @@ class Metrics extends RefCounted:
 	var upload_bytes: int = 0
 	var download_bytes: int = 0
 	var gpu_sequence: int = -1
-	var backend: String = "cpu"
+	var backend: String = "gpu"
 
 	func to_dictionary() -> Dictionary:
 		return {"main_wait_ms": main_wait_ms, "pack_ms": pack_ms, "upload_submit_ms": upload_submit_ms, "gpu_ms": gpu_ms,
@@ -30,11 +31,7 @@ class Metrics extends RefCounted:
 			"execute_ms": execute_ms, "latency_ms": latency_ms, "processing_ms": processing_ms,
 			"upload_bytes": upload_bytes, "download_bytes": download_bytes, "gpu_sequence": gpu_sequence, "backend": backend}
 
-var backend: String = "auto"
-var movement_backend: String = "auto"
-var timers_backend: String = "cpu"
-var numeric_samples: Dictionary = {"Movement": [], "Timers": []}
-var fallback_reason: String = ""
+var numeric_samples: Dictionary = {"Movement": []}
 var owner_thread_id: int = 0
 var failure: String:
 	get:
@@ -59,7 +56,6 @@ var _active: SheepComputeJob
 var _sequence: int = 0
 var _foreground: NumericComputeJob
 var _numeric_kernels: Dictionary = {}
-var _numeric_failures: Dictionary = {}
 
 var _rd: RenderingDevice
 var _shader := RID()
@@ -70,16 +66,11 @@ var _capacities := PackedInt32Array([0, 0, 0])
 
 func _startup() -> void:
 	_failure = ""
-	_numeric_failures.clear()
-	fallback_reason = ""
 	_stopping = false
 	_wake = Semaphore.new()
 	_ready = Semaphore.new()
-	if backend == "cpu":
-		return
 	if not _supports_device():
 		_failure = "RenderingDevice unavailable with %s / %s" % [DisplayServer.get_name(), RenderingServer.get_current_rendering_method()]
-		fallback_reason = _failure
 		return
 
 	var error := _thread.start(_thread_main)
@@ -87,13 +78,12 @@ func _startup() -> void:
 		_failure = "Compute thread creation failed: %s" % error
 	else:
 		_ready.wait()
-	fallback_reason = failure
 
 func _supports_device() -> bool:
 	return DisplayServer.get_name() != "headless" and RenderingServer.get_current_rendering_method() in ["forward_plus", "mobile"]
 
 func available() -> bool:
-	return started and backend != "cpu" and _thread.is_started() and failure.is_empty()
+	return started and _thread.is_started() and failure.is_empty()
 
 func submit(job: SheepComputeJob) -> bool:
 	if not available() or job == null or job.state != Job.State.IDLE or job.is_cancelled() or job.snapshot == null or job.grid == null:
@@ -143,10 +133,7 @@ func _thread_main() -> void:
 
 			_mutex.lock()
 			if not job.error.is_empty():
-				if job is NumericComputeJob:
-					_numeric_failures[job.pass_kind] = job.error
-				else:
-					_failure = job.error
+				_failure = job.error
 			job.state = Job.State.COMPLETED
 			if job is NumericComputeJob:
 				_foreground = null
@@ -159,6 +146,51 @@ func _initialize_device() -> void:
 	_rd = RenderingServer.create_local_rendering_device()
 	if _rd == null:
 		_failure = "Local RenderingDevice creation failed"
+		return
+
+	_failure = _initialize_sheep_pipeline()
+	if _failure.is_empty():
+		_failure = _initialize_movement_pipeline()
+
+func _initialize_sheep_pipeline() -> String:
+	var spirv := SHEEP_SHADER.get_spirv()
+	if spirv == null or spirv.bytecode_compute.is_empty():
+		return "Imported sheep shader has no compute bytecode"
+	if not spirv.compile_error_compute.is_empty():
+		return spirv.compile_error_compute
+
+	_shader = _rd.shader_create_from_spirv(spirv)
+	if not _shader.is_valid():
+		return "Compute shader creation failed"
+
+	_pipeline = _rd.compute_pipeline_create(_shader)
+	if not _pipeline.is_valid():
+		return "Compute pipeline creation failed"
+
+	return ""
+
+func _initialize_movement_pipeline() -> String:
+	if not _numeric_kernels.has(0):
+		_numeric_kernels[0] = {"shader": RID(), "pipeline": RID(), "uniform": RID(),
+			"buffers": [RID(), RID(), RID(), RID()], "capacities": PackedInt32Array([0, 0, 0, 0]), "parameters": PackedByteArray()}
+	var kernel: Dictionary = _numeric_kernels[0]
+	if not kernel.shader.is_valid():
+		var shader_file := MOVEMENT_SHADER
+		var spirv := shader_file.get_spirv()
+		if spirv == null or spirv.bytecode_compute.is_empty():
+			return "Imported numeric shader has no compute bytecode"
+		if not spirv.compile_error_compute.is_empty():
+			return spirv.compile_error_compute
+
+		kernel.shader = _rd.shader_create_from_spirv(spirv)
+		if not kernel.shader.is_valid():
+			return "Numeric shader creation failed"
+
+		kernel.pipeline = _rd.compute_pipeline_create(kernel.shader)
+		if not kernel.pipeline.is_valid():
+			return "Numeric pipeline creation failed"
+
+	return ""
 
 func _take_completed(invalid_only: bool = false) -> SheepComputeJob:
 	_mutex.lock()
@@ -201,8 +233,6 @@ func flush() -> void:
 	profile.record_duration("Async/Compute/Apply", (Time.get_ticks_usec() - applied_at) / 1000.0)
 	profile.record_duration("Async/Compute/Latency", (Time.get_ticks_usec() - job.snapshot.captured_usec) / 1000.0)
 	profile.count_event("Failed/Compute" if not job.error.is_empty() else "Applied/Compute")
-	if not job.error.is_empty():
-		fallback_reason = job.error
 
 	job.state = Job.State.APPLIED
 	job.release_input()
@@ -234,24 +264,6 @@ func execute_gpu(job: SheepComputeJob) -> PackedByteArray:
 	assert(OS.get_thread_caller_id() == owner_thread_id)
 	if job.is_cancelled():
 		return PackedByteArray()
-	if not _shader.is_valid():
-		var source := RDShaderSource.new()
-		source.source_compute = FileAccess.get_file_as_string(SHADER_PATH).replace("#[compute]", "")
-		var spirv := _rd.shader_compile_spirv_from_source(source)
-		if not spirv.compile_error_compute.is_empty():
-			job.error = spirv.compile_error_compute
-			return PackedByteArray()
-
-		_shader = _rd.shader_create_from_spirv(spirv)
-		if not _shader.is_valid():
-			job.error = "Compute shader creation failed"
-			return PackedByteArray()
-
-		_pipeline = _rd.compute_pipeline_create(_shader)
-		if not _pipeline.is_valid():
-			job.error = "Compute pipeline creation failed"
-			return PackedByteArray()
-
 	var metrics := job.metrics
 	var started_at := Time.get_ticks_usec()
 	var sizes := PackedInt32Array([job.input_bytes.size(), job.index_bytes.size(), metrics.download_bytes])
@@ -328,28 +340,19 @@ func execute_gpu(job: SheepComputeJob) -> PackedByteArray:
 		job.error = "Compute readback size mismatch"
 	return output
 
-# Return 1 for committed GPU output, 0 for CPU handling, or -1 for a forced-GPU failure.
-# e.g. timers_backend = "cpu" makes the TIMERS pass return 0 without changing storage.
-func run_numeric(storage: AnimalData, delta: float, kind: NumericComputeJob.Pass) -> int:
-	var selected_backend := movement_backend if kind == NumericComputeJob.Pass.MOVEMENT else timers_backend
-	if selected_backend == "cpu" or storage.active_count == 0:
-		return 0
+func run_movement(storage: AnimalData, delta: float) -> bool:
 	if not available():
-		return -1 if selected_backend == "gpu" else 0
-
-	_mutex.lock()
-	var failed: bool = _numeric_failures.has(kind)
-	_mutex.unlock()
-	if failed:
-		return -1 if selected_backend == "gpu" else 0
+		return false
+	if storage.active_count == 0:
+		return true
 
 	var job := NumericComputeJob.new()
-	job.capture(storage, g_gameplayEngine.config, delta, kind)
+	job.capture(storage, g_gameplayEngine.config, delta)
 	job.compute = self
 	_mutex.lock()
 	if _stopping or _foreground != null:
 		_mutex.unlock()
-		return -1 if selected_backend == "gpu" else 0
+		return false
 
 	_sequence += 1
 	job.sequence = _sequence
@@ -384,39 +387,20 @@ func run_numeric(storage: AnimalData, delta: float, kind: NumericComputeJob.Pass
 		samples.pop_front()
 
 	if not committed:
-		fallback_reason = job.error if not job.error.is_empty() else "Numeric result no longer matches the simulation step"
+		_mutex.lock()
+		_failure = job.error if not job.error.is_empty() else "Movement result no longer matches the simulation step"
+		_mutex.unlock()
 		profile.count_event("Failed/" + String(job.stage))
-		return -1 if selected_backend == "gpu" else 0
+		return false
 
 	job.state = Job.State.APPLIED
-	return 1
+	return true
 
 func execute_numeric_gpu(job: NumericComputeJob) -> PackedByteArray:
 	assert(OS.get_thread_caller_id() == owner_thread_id)
-	if not _numeric_kernels.has(job.pass_kind):
-		_numeric_kernels[job.pass_kind] = {"shader": RID(), "pipeline": RID(), "uniform": RID(),
-			"buffers": [RID(), RID(), RID(), RID()], "capacities": PackedInt32Array([0, 0, 0, 0]), "parameters": PackedByteArray()}
-	var kernel: Dictionary = _numeric_kernels[job.pass_kind]
-	if not kernel.shader.is_valid():
-		var source := RDShaderSource.new()
-		source.source_compute = FileAccess.get_file_as_string("res://Shaders/Simulation/TimerCompute.glsl" if job.pass_kind == NumericComputeJob.Pass.TIMERS else "res://Shaders/Simulation/NumericCompute.glsl").replace("#[compute]", "")
-		var spirv: RDShaderSPIRV = _rd.shader_compile_spirv_from_source(source)
-		if not spirv.compile_error_compute.is_empty():
-			job.error = spirv.compile_error_compute
-			return PackedByteArray()
-
-		kernel.shader = _rd.shader_create_from_spirv(spirv)
-		if not kernel.shader.is_valid():
-			job.error = "Numeric shader creation failed"
-			return PackedByteArray()
-
-		kernel.pipeline = _rd.compute_pipeline_create(kernel.shader)
-		if not kernel.pipeline.is_valid():
-			job.error = "Numeric pipeline creation failed"
-			return PackedByteArray()
-
+	var kernel: Dictionary = _numeric_kernels[0]
 	var started_at := Time.get_ticks_usec()
-	var parameters := job.timer_parameters.to_byte_array() if job.pass_kind == NumericComputeJob.Pass.TIMERS else job.parameters.to_byte_array()
+	var parameters := job.parameters.to_byte_array()
 	var sizes := PackedInt32Array([maxi(4, job.input_bytes.size()), job.index_bytes.size(), job.metrics.download_bytes, parameters.size()])
 	for index in range(4):
 		if sizes[index] <= kernel.capacities[index]:

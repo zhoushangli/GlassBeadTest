@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ReferenceSimulation = preload("res://Tests/ReferenceSimulation.gd")
+
 var checks: int = 0
 var failures: int = 0
 var engine: Node
@@ -39,15 +41,19 @@ func _step(count: int) -> void:
 	engine.animal_service.refresh_config()
 	for index in range(count):
 		engine.job_service.invalidate_async()
+		while engine.compute_service.busy:
+			engine.compute_service._process(0.0)
+			OS.delay_msec(1)
 		engine.animal_service.waiting.clear()
 		for kind in range(3):
 			engine.animal_service.update_elapsed[kind] = 1.0
 		engine.animal_service.schedule_updates(0.0)
-		while not engine.job_service.async_jobs.is_empty():
+		while not engine.job_service.async_jobs.is_empty() or engine.compute_service.busy:
 			for job: Job in engine.job_service.async_jobs.values():
 				while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
 					OS.delay_msec(1)
 			engine.animal_service.apply_completed()
+		OS.delay_msec(1)
 		engine.simulate_step(1.0 / 60.0)
 		engine.job_service.invalidate_async()
 		engine.animal_service.waiting.clear()
@@ -184,17 +190,17 @@ func _verify_sheep() -> void:
 	sheep = _animal(AnimalEntity.Kind.SHEEP, Vector2(400, 300)) as AnimalEntity
 	var neighbor := _animal(AnimalEntity.Kind.SHEEP, Vector2(440, 300))
 	data.motion_velocity[neighbor.row] = Vector2.DOWN * 20.0
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	data.motion_velocity[neighbor.row] = Vector2.UP * 20.0
-	g_gameplayEngine.sheep_system.perceive(sheep, 1.0 / 60.0)
+	ReferenceSimulation.new(g_gameplayEngine.entity_service.data).perceive(sheep, 1.0 / 60.0)
 	_check(data.sheep_neighbor_count[sheep.row] == 1 and data.sheep_alignment[sheep.row].y > 0.0, "BOID reads snapshot velocity")
 
 	var dog := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(350, 300))
-	engine.grid_service.rebuild()
-	g_gameplayEngine.dog_system.accumulate_sheep_pressure()
-	g_gameplayEngine.sheep_system.perceive(sheep, 1.0 / 60.0)
+	ReferenceSimulation.rebuild(engine.grid_service)
+	ReferenceSimulation.accumulate_pressure(g_gameplayEngine.grid_service, AnimalEntity.Kind.SHEEPDOG)
+	ReferenceSimulation.new(g_gameplayEngine.entity_service.data).perceive(sheep, 1.0 / 60.0)
 	g_gameplayEngine.animal_system.decide(sheep, 1.0 / 60.0)
-	g_gameplayEngine.animal_system.update_steering(1.0 / 60.0)
+	ReferenceSimulation.new(g_gameplayEngine.entity_service.data).update_all_steering(1.0 / 60.0)
 	_check(data.sheep_dog_pressure[sheep.row].length() > 0.0 and data.motion_desired_velocity[sheep.row].x > 0.0, "dog pushes sheep away")
 
 	data.motion_position[dog.row] = Vector2(100, 500)
@@ -207,31 +213,31 @@ func _verify_continuous_sheep() -> void:
 	engine.config.sheep.wander_weight = 0.0
 	engine.config.sheep.cohesion_weight = 0.0
 	engine.config.sheep.alignment_weight = 0.0
-	engine.grid_service.rebuild()
-	engine.wolf_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(engine.grid_service)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
 	var far := data.sheep_threat_strength[sheep.row]
 	data.motion_position[wolf.row] = Vector2(450, 300)
-	engine.grid_service.rebuild()
-	engine.wolf_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(engine.grid_service)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
 	var near := data.sheep_threat_strength[sheep.row]
 	_check(near > far, "closer wolf continuously increases pressure")
 
 	data.wolf_hunting[wolf.row] = 1
-	engine.wolf_system.accumulate_sheep_pressure()
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
 	_check(is_equal_approx(data.sheep_threat_strength[sheep.row], minf(1.0, near * engine.config.sheep.hunting_pressure_multiplier)), "hunting multiplier strengthens local pressure")
 
 	data.sheep_threat_strength[sheep.row] = 1.0
 	data.sheep_threat_direction[sheep.row] = Vector2.LEFT
 	data.sheep_dog_pressure[sheep.row] = Vector2.RIGHT
-	engine.sheep_system.update_steering(1.0)
+	ReferenceSimulation.new(engine.entity_service.data).update_steering(1.0)
 	_check(data.motion_desired_velocity[sheep.row].x < 0.0 and data.motion_speed_limit[sheep.row] == engine.config.sheep.flee_speed, "maximum danger suppresses opposing dog pressure and selects escape speed")
 
 	data.sheep_threat_direction[sheep.row] = Vector2.ZERO
-	engine.sheep_system.update_steering(1.0)
+	ReferenceSimulation.new(engine.entity_service.data).update_steering(1.0)
 	_check(not data.motion_desired_velocity[sheep.row].is_zero_approx(), "opposed threats retain deterministic escape")
 
 	engine.sheep_system.receive_howl(sheep, Vector2(450, 300))
-	engine.sheep_system.perceive(sheep, engine.config.sheep.panic_duration * 0.5)
+	ReferenceSimulation.new(engine.entity_service.data).perceive(sheep, engine.config.sheep.panic_duration * 0.5)
 	_check(is_equal_approx(data.sheep_panic_strength[sheep.row], 0.5), "panic decays linearly in simulation time")
 
 	var draft: SimulationConfig = engine.config.copy_config()
@@ -252,7 +258,7 @@ func _verify_grid_and_pressure() -> void:
 	engine.config.grid_cell_size = 30
 	var data: AnimalData = engine.entity_service.data
 	var grid: GridService = engine.grid_service
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	_check(grid.members.is_empty() and grid.get_nearby_indices(Vector2(300, 300), 10.0).is_empty(), "empty grid queries are safe")
 
 	var first := _animal(AnimalEntity.Kind.SHEEP, Vector2(299, 300))
@@ -260,7 +266,7 @@ func _verify_grid_and_pressure() -> void:
 	var wolf := _animal(AnimalEntity.Kind.WOLF, Vector2(300, 300))
 	data.motion_velocity[first.row] = Vector2(10, 0)
 	data.motion_velocity[second.row] = Vector2(0, 20)
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	_check(grid.width == 43 and grid.height == 24, "grid dimensions round up at 30 pixels")
 	_check(grid.row_cells[second.row] == 10 * grid.width + 10, "flat index uses integer cell coordinates")
 
@@ -270,25 +276,25 @@ func _verify_grid_and_pressure() -> void:
 	_check(grid.get_nearby_indices(Vector2(-100, -100), 1.0).is_empty() and grid.get_nearby_indices(Vector2(2000, 1000), 1.0).is_empty(), "outside queries do not wrap grid rows")
 	_check(grid.cell_at(Vector2.ZERO) == 0 and grid.cell_at(engine.config.arena_size) == grid.width * grid.height - 1, "boundary cell mapping is clamped")
 
-	engine.sheep_system._scan_neighbors(first, grid)
+	ReferenceSimulation.new(engine.entity_service.data)._scan_neighbors(first, grid)
 	_check(data.sheep_neighbor_count[first.row] == 1 and data.sheep_local_flock_center[first.row] == Vector2(300, 300), "shared flock sums exclude the reader")
 	_check(data.sheep_alignment[first.row] == Vector2(0, 20), "shared alignment sums exclude the reader velocity")
 	_check(grid.sheep_center(Vector2(300, 300), 60.0) == Vector2(299.5, 300), "protection center is weighted by sheep counts")
 
 	engine.config.sheep.flock_radius = 1.0
 	engine.config.sheep.alignment_radius = 1.0
-	grid.rebuild()
-	engine.sheep_system._scan_neighbors(first, grid)
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.new(engine.entity_service.data)._scan_neighbors(first, grid)
 	_check(data.sheep_neighbor_count[first.row] == 0 and data.sheep_alignment[first.row] == Vector2.ZERO, "hot radius changes refresh shared stencils")
 
 	var old_id := first.id
 	engine.entity_service.capture(first)
 	engine.entity_service.remove_expired(1.0)
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	_check(grid.members.size() == 2 and grid.get_nearby_indices(Vector2(300, 300), 1.0, AnimalEntity.Kind.SHEEP).size() == 1, "death and row swaps rebuild correct membership")
 
 	var replacement := _animal(AnimalEntity.Kind.SHEEP, Vector2(330, 300))
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	_check(data.live(first) == null and replacement.id != old_id and grid.members.size() == 3, "slot reuse does not resurrect grid identities")
 
 	engine.entity_service.clear()
@@ -298,7 +304,7 @@ func _verify_grid_and_pressure() -> void:
 	_animal(AnimalEntity.Kind.SHEEP, Vector2(300, 300))
 	_animal(AnimalEntity.Kind.SHEEP, Vector2(310, 300))
 	_animal(AnimalEntity.Kind.SHEEP, Vector2(340, 300))
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	_check(grid.sheep_center(Vector2(320, 300), 90.0).is_equal_approx(Vector2(950.0 / 3.0, 300)), "protection center weights occupied cells by sheep count")
 
 	_empty()
@@ -309,9 +315,9 @@ func _verify_grid_and_pressure() -> void:
 		data.wolf_resting[source.row] = 1
 		data.wolf_rest_elapsed[source.row] = -100.0
 	_animal(AnimalEntity.Kind.SHEEPDOG, Vector2(420, 250))
-	grid.rebuild()
-	engine.wolf_system.accumulate_sheep_pressure()
-	engine.dog_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.SHEEPDOG)
 	_check(data.sheep_threat_direction[sheep.row].is_zero_approx() and data.sheep_threat_strength[sheep.row] != 0, "opposed wolves cancel force but retain danger")
 	_check(data.sheep_dog_pressure[sheep.row].is_equal_approx(Vector2(0, 1.0 - 50.0 / 90.0)), "dog pressure has its own distance-weighted channel")
 
@@ -336,7 +342,7 @@ func _verify_grid_and_pressure() -> void:
 
 	data.motion_position[left.row] = Vector2(420 - engine.config.sheep.wolf_pressure_distance, 300)
 	_step(1)
-	_check(data.sheep_threat_strength[sheep.row] == 0, "linear wolf pressure reaches zero at its distance boundary")
+	_check(absf(data.sheep_threat_strength[sheep.row]) <= 0.000001, "linear wolf pressure reaches zero at its distance boundary: %.9f" % data.sheep_threat_strength[sheep.row])
 
 	data.motion_position[left.row].x -= 1.0
 	_step(1)
@@ -432,7 +438,7 @@ func _verify_dogs() -> void:
 	var anchor := _animal(AnimalEntity.Kind.SHEEP, Vector2(500, 300)) as AnimalEntity
 	var stray := _animal(AnimalEntity.Kind.SHEEP, Vector2(680, 300)) as AnimalEntity
 	var dog := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(600, 300)) as AnimalEntity
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	data.dog_region[dog.row] = engine.grid_service.debug_snapshot.region_at(data.motion_position[anchor.row])
 	data.dog_assignment_remaining[dog.row] = 100.0
 	data.motion_facing[dog.row] = Vector2.RIGHT
@@ -979,7 +985,7 @@ func _verify_batch_steering() -> void:
 	data.motion_position[sheep.row] = Vector2(700, 400)
 	engine.animal_system.move_towards(dog, Vector2(700, 400), 60.0, 1.0 / 60.0)
 	var state: int = engine.rng.state
-	engine.animal_system.update_steering(1.0 / 60.0)
+	ReferenceSimulation.new(engine.entity_service.data).update_all_steering(1.0 / 60.0)
 	_check(data.motion_desired_velocity[sheep.row].is_equal_approx(expected), "batch sheep steering preserves alignment and smoothing without a state")
 	_check(data.motion_movement_goal[wolf.row].is_equal_approx(Vector2(600, 400 - engine.config.wolf.strategy_offset)), "batch wolf side strategy offsets last seen position")
 	_check(data.motion_movement_goal[dog.row].is_equal_approx(Vector2(700 + engine.config.sheepdog.collect_distance, 400)), "batch dog collect point stays outside sheep relative to flock")
@@ -1013,12 +1019,12 @@ func _verify_batch_steering() -> void:
 	data.brain_current_behavior[wolf.row] = AnimalEntity.Behavior.RETREAT
 	data.wolf_nearest_threat[wolf.row] = dog
 	engine.animal_system.move_towards(wolf, data.motion_position[wolf.row], 50.0, 1.0 / 60.0)
-	engine.animal_system.update_steering(1.0 / 60.0)
+	ReferenceSimulation.new(engine.entity_service.data).update_all_steering(1.0 / 60.0)
 	_check(data.motion_desired_velocity[wolf.row].x < 0.0, "batch retreat moves away from actual threat")
 
 	data.motion_intent[wolf.row] = AnimalData.MotionIntent.STOP
 	data.motion_desired_velocity[wolf.row] = Vector2.ZERO
-	engine.animal_system.update_steering(1.0 / 60.0)
+	ReferenceSimulation.new(engine.entity_service.data).update_all_steering(1.0 / 60.0)
 	_check(data.motion_desired_velocity[wolf.row] == Vector2.ZERO, "stop intent cannot reuse previous point velocity")
 
 	data.motion_intent[dog.row] = AnimalData.MotionIntent.POINT
@@ -1040,44 +1046,44 @@ func _verify_pressure_sampling() -> void:
 	var wolf := _animal(AnimalEntity.Kind.WOLF, Vector2(300, 300))
 	var dog := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(401, 250))
 	engine.config.sheep.wolf_pressure_distance = 100.0
-	grid.rebuild()
-	engine.wolf_system.accumulate_sheep_pressure()
-	engine.dog_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.SHEEPDOG)
 	_check(data.sheep_threat_strength[sheep.row] == 0 and data.sheep_threat_direction[sheep.row] == Vector2.ZERO, "interpolation does not create a wolf threat outside exact radius")
 
 	data.motion_position[wolf.row] = Vector2(302, 307)
-	grid.rebuild()
-	engine.wolf_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
 	_check(data.sheep_threat_strength[sheep.row] > 0 and data.sheep_threat_direction[sheep.row].x > 0.0, "sampled pressure points away inside exact radius")
 
 	var before := data.sheep_threat_direction[sheep.row]
 	data.motion_position[sheep.row] += Vector2(1, 0)
-	grid.rebuild()
-	engine.wolf_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
 	_check(data.sheep_threat_strength[sheep.row] == 0 and not data.sheep_threat_direction[sheep.row].is_equal_approx(before), "within-cell motion reaches zero pressure at exact radius")
 
 	data.motion_position[sheep.row].x += 0.01
-	grid.rebuild()
-	engine.wolf_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
 	_check(data.sheep_threat_strength[sheep.row] == 0, "subpixel motion beyond true wolf radius clears threat")
 
 	data.motion_position[dog.row] = Vector2(401, 100)
-	grid.rebuild()
-	engine.dog_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.SHEEPDOG)
 	_check(data.sheep_dog_pressure[sheep.row] == Vector2.ZERO, "dog field is zero outside actual radius")
 	_check(grid.pressure_sample_count == 4, "one dense sheep cell shares four pressure nodes")
 
 	engine.entity_service.capture(wolf)
 	engine.entity_service.remove_expired(1.0)
-	grid.rebuild()
-	engine.wolf_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.WOLF)
 	_check(data.sheep_threat_strength[sheep.row] == 0 and data.sheep_threat_direction[sheep.row] == Vector2.ZERO, "dead pressure source does not survive row compaction")
 
 	engine.entity_service.capture(neighbor)
 	engine.entity_service.remove_expired(1.0)
 	data.motion_position[dog.row] = Vector2(401, 250)
-	grid.rebuild()
-	engine.dog_system.accumulate_sheep_pressure()
+	ReferenceSimulation.rebuild(grid)
+	ReferenceSimulation.accumulate_pressure(engine.grid_service, AnimalEntity.Kind.SHEEPDOG)
 	var offset := data.motion_position[sheep.row] - data.motion_position[dog.row]
 	var exact: Vector2 = offset.normalized() * (1.0 - offset.length() / engine.config.sheep.herding_distance)
 	_check(grid.pressure_sample_count == 0 and data.sheep_dog_pressure[sheep.row].is_equal_approx(exact), "sparse cell avoids field setup and preserves exact pressure after density transition")
@@ -1097,7 +1103,7 @@ func _verify_shared_protection() -> void:
 	data.dog_assignment_remaining[other.row] = 10.0
 	data.motion_facing[dog.row] = Vector2.RIGHT
 	data.motion_facing[other.row] = Vector2.LEFT
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	engine.dog_system.perceive(dog, 1.0 / 60.0)
 	engine.dog_system.perceive(other, 1.0 / 60.0)
 	_check(engine.dog_system.shared_group_count == 1 and engine.dog_system.shared_group_hits > 0, "same-cell anchors reuse one protection group")
@@ -1105,19 +1111,19 @@ func _verify_shared_protection() -> void:
 	_check(data.dog_wolf_candidates[dog.row].has(wolf) and not data.dog_wolf_candidates[other.row].has(wolf), "shared wolf candidates do not share individual vision")
 
 	data.motion_position[neighbor.row] += Vector2(2, 0)
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	engine.dog_system.perceive(dog, 1.0 / 60.0)
 	_check(data.dog_protection_center[dog.row].is_equal_approx(Vector2(611.5, 310.5)), "within-cell sheep movement updates shared patrol center")
 
 	data.motion_position[neighbor.row] = Vector2(640, 320)
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	engine.dog_system.perceive(dog, 1.0 / 60.0)
 	engine.dog_system.perceive(other, 1.0 / 60.0)
 	_check(engine.dog_system.shared_group_count == 2, "cross-cell anchors build separate protection groups")
 
 	data.motion_position[dog.row] = Vector2(1100, 600)
 	data.dog_returning[dog.row] = 1
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	engine.dog_system.perceive(dog, 1.0 / 60.0)
 	_check(engine.dog_system.shared_group_count == 1 and engine.dog_system.shared_candidate_groups == 0, "returning dog reads flock center without preparing target candidates")
 
@@ -1127,7 +1133,7 @@ func _verify_shared_protection() -> void:
 func _run() -> void:
 	verification_directory = "res://output/verification/" + Time.get_datetime_string_from_system().replace(":", "-") + "_" + str(OS.get_process_id())
 	DirAccess.make_dir_recursive_absolute(verification_directory)
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	authored = scene.simulation_config
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 276

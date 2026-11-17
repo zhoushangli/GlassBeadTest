@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ReferenceSimulation = preload("res://Tests/ReferenceSimulation.gd")
+
 class ProbeJob extends Job:
 	var delay_ms: int = 0
 	var applied: Array[int]
@@ -185,18 +187,19 @@ func _equivalence(total: int) -> void:
 		_check(engine.job_service.pending.is_empty() and engine.job_service.working.is_empty() and engine.job_service.completed.is_empty(), "simulation stage queues drained")
 
 func _wait_decisions() -> void:
-	while not engine.job_service.async_jobs.is_empty():
+	while not engine.job_service.async_jobs.is_empty() or engine.compute_service.busy:
 		for job: Job in engine.job_service.async_jobs.values():
 			while job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
 				OS.delay_msec(1)
 		engine.animal_service.apply_completed()
+		OS.delay_msec(1)
 
 func _dog_snapshot() -> void:
 	_setup(0, true)
 	var entities: EntityService = engine.entity_service
 	var sheep := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(300, 300))[0]
 	var dogs := entities.spawn(AnimalEntity.Kind.SHEEPDOG, 2, Vector2(300, 300))
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	engine.dog_system.begin_spatial_step()
 	engine.dog_system.perceive_batch(1.0 / 60.0)
 	_check(entities.data.dog_protected_sheep[dogs[0].row] == sheep and entities.data.dog_protected_sheep[dogs[1].row] == sheep, "simultaneous anchor choice allows shared protection")
@@ -208,7 +211,7 @@ func _dog_snapshot() -> void:
 	entities.data.dog_protected_sheep[dogs[0].row] = null
 	entities.data.dog_protected_sheep[dogs[1].row] = sheep
 	entities.data.dog_assignment_remaining[dogs[1].row] = 100.0
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	engine.dog_system.begin_spatial_step()
 	engine.dog_system.perceive_batch(1.0 / 60.0)
 	_check(entities.data.dog_protected_sheep[dogs[0].row] == other, "old anchor coverage penalty remains effective")
@@ -225,7 +228,7 @@ func _grid_oracle() -> void:
 			entities.data.motion_velocity[animal.row] = Vector2(index, -index)
 
 	var grid: GridService = engine.grid_service
-	grid.rebuild()
+	ReferenceSimulation.rebuild(grid)
 	var nodes := PackedInt32Array()
 	for cell in range(grid.width * grid.height):
 		var sheep_count := grid.cell_counts[cell * 3]
@@ -260,15 +263,15 @@ func _grid_oracle() -> void:
 
 func _perception_reference() -> void:
 	_setup(137, false)
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	for row in engine.entity_service.sheep_rows:
-		engine.sheep_system.perceive(engine.entity_service.data.handles[row], 1.0 / 60.0)
+		ReferenceSimulation.new(engine.entity_service.data).perceive(engine.entity_service.data.handles[row], 1.0 / 60.0)
 	for row in engine.entity_service.wolf_rows:
 		engine.wolf_system.perceive(engine.entity_service.data.handles[row], 1.0 / 60.0)
 	var reference := _state()
 	_setup(137, true)
-	engine.grid_service.rebuild()
-	engine.sheep_system.perceive_batch(1.0 / 60.0)
+	ReferenceSimulation.rebuild(engine.grid_service)
+	ReferenceSimulation.new(engine.entity_service.data).perceive_batch(1.0 / 60.0)
 	engine.wolf_system.perceive_batch(1.0 / 60.0)
 	_check(_state() == reference, "sheep and wolf batch perception preserves original sequential behavior and RNG")
 
@@ -322,12 +325,12 @@ func _async_contracts() -> void:
 	sheep = entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(300, 300))[0]
 	var survivor := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(310, 300))[0]
 	var snapshot: AnimalSnapshot = engine.animal_system.decision_snapshot()
-	var captured_grid := GridService.build_snapshot(snapshot)
-	var output := SheepPerceptionJob.new()
+	var captured_grid := ReferenceSimulation.build_snapshot(snapshot)
+	var output := ReferenceSimulation.SheepJob.new()
 	output.rows = snapshot.sheep
 	output.snapshot = snapshot
 	output.grid = captured_grid
-	SheepSystem.calculate_snapshot(output)
+	ReferenceSimulation.calculate_snapshot(output)
 	entities.capture(sheep)
 	entities.remove_expired(1.0)
 	data.motion_desired_velocity[survivor.row] = Vector2.INF
@@ -363,22 +366,22 @@ func _packed_batches() -> void:
 		data.motion_facing[dog.row] = Vector2.RIGHT
 		data.dog_protected_sheep[dog.row] = sheep[0]
 		data.dog_protection_center[dog.row] = Vector2(300, 300)
-	engine.grid_service.rebuild()
+	ReferenceSimulation.rebuild(engine.grid_service)
 	var common: AnimalSystem = engine.animal_system
-	var sheep_job := SheepPerceptionJob.new()
+	var sheep_job := ReferenceSimulation.SheepJob.new()
 	common.prepare_job(sheep_job, 1.0 / 60.0)
 	sheep_job.rows = PackedInt32Array([sheep[2].row, sheep[0].row])
-	engine.sheep_system.calculate_batch(sheep_job)
-	engine.sheep_system.apply_batch(sheep_job)
+	ReferenceSimulation.new(engine.entity_service.data).calculate_batch(sheep_job)
+	ReferenceSimulation.new(engine.entity_service.data).apply_batch(sheep_job)
 	_check(data.sheep_local_flock_center[sheep[2].row] == sheep_job.centers[0] and data.sheep_local_flock_center[sheep[0].row] == sheep_job.centers[1], "packed sheep submission follows noncontiguous input order")
 	sheep_job.rows = PackedInt32Array([sheep[1].row])
 	data.memory_perception_ready[sheep[1].row] = 1
 	data.memory_perception_remaining[sheep[1].row] = 1.0
 	data.motion_separation[sheep[1].row] = Vector2(12, 34)
-	engine.sheep_system.calculate_batch(sheep_job)
+	ReferenceSimulation.new(engine.entity_service.data).calculate_batch(sheep_job)
 	_check(sheep_job.centers.size() == 1 and sheep_job.refresh_flags == PackedByteArray([0]) and sheep_job.separations[0] == Vector2(12, 34), "reused sheep batch shrinks and keeps unrefreshed separation")
 	sheep_job.rows.clear()
-	engine.sheep_system.calculate_batch(sheep_job)
+	ReferenceSimulation.new(engine.entity_service.data).calculate_batch(sheep_job)
 	_check(sheep_job.centers.is_empty() and sheep_job.nearby_offsets == PackedInt32Array([0]) and sheep_job.nearby_members.is_empty(), "empty reused sheep batch clears member ranges")
 
 	var wolf_job := WolfPerceptionJob.new()
@@ -436,7 +439,7 @@ func _packed_batches() -> void:
 	engine.dog_system.calculate_anchors(anchor_job)
 	_check(anchor_job.anchor_rows.is_empty(), "empty reused anchor batch clears output")
 
-	var grid_job := GridAggregateJob.new()
+	var grid_job := ReferenceSimulation.GridJob.new()
 	grid_job.grid = GridSnapshot.new()
 	grid_job.grid.width = 2
 	grid_job.grid.height = 2
@@ -457,7 +460,7 @@ func _packed_batches() -> void:
 
 func _run() -> void:
 	_queues()
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 137
 	scene.simulation_config.arena_size = Vector2(1280, 720)

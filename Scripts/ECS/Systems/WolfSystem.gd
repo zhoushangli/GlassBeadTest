@@ -52,9 +52,6 @@ func apply_decision(job: WolfPerceptionJob) -> void:
 			begin_hunt(animal, prey)
 		g_gameplayEngine.advance_decision(animal)
 
-func accumulate_sheep_pressure() -> void:
-	g_gameplayEngine.grid_service.accumulate_pressure(AnimalEntity.Kind.WOLF)
-
 func find_dog(animal: AnimalEntity, radius: float) -> AnimalEntity:
 	var row := animal.row
 	var result: AnimalEntity

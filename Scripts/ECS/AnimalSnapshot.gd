@@ -15,7 +15,6 @@ var sheep := PackedInt32Array()
 var wolves := PackedInt32Array()
 var dogs := PackedInt32Array()
 var config: SimulationConfig
-var gpu: bool = false
 
 var identity_animal_id := PackedInt64Array()
 var identity_entity_id := PackedInt64Array()

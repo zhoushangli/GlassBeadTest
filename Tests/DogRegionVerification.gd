@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ReferenceSimulation = preload("res://Tests/ReferenceSimulation.gd")
+
 var checks: int = 0
 var failures: int = 0
 var engine: Node
@@ -17,7 +19,7 @@ func _check(condition: bool, label: String) -> void:
 func _job() -> DogPerceptionJob:
 	var job := DogPerceptionJob.new()
 	job.snapshot = engine.animal_system.decision_snapshot(PackedInt32Array([2]))
-	job.grid = GridService.build_snapshot(job.snapshot)
+	job.grid = ReferenceSimulation.build_snapshot(job.snapshot)
 	job.rows = job.snapshot.dogs
 	job.execute()
 	return job
@@ -35,7 +37,7 @@ func _aggregates() -> void:
 		var sheep := entities.spawn(AnimalEntity.Kind.SHEEP, 1, point)[0]
 		data.motion_velocity[sheep.row] = Vector2(sheep.row, sheep.row * 2)
 	entities.spawn(AnimalEntity.Kind.WOLF, 1, points[0])
-	var grid := GridService.build_snapshot(engine.animal_system.decision_snapshot())
+	var grid := ReferenceSimulation.build_snapshot(engine.animal_system.decision_snapshot())
 	_check(grid.region_width == 11 and grid.region_height == 6, "partial edge regions use ceiling dimensions")
 	_check(grid.region_at(points[0]) != grid.region_at(points[1]) and grid.region_at(points[1]) == grid.region_at(points[2]), "120 px boundaries group four fine cells")
 	var region := grid.region_at(points[1])
@@ -111,7 +113,7 @@ func _cross_region() -> void:
 	_check(data.memory_target[dog.row] == wolf and data.dog_collected_sheep[dog.row] == null, "exclusive drive task suppresses collection")
 
 func _run() -> void:
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	scene.simulation_config = scene.simulation_config.copy_config()
 	scene.simulation_config.initial_total = 0
 	scene.simulation_config.arena_size = Vector2(1300, 720)

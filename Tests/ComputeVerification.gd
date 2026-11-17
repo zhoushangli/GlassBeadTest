@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ReferenceSimulation = preload("res://Tests/ReferenceSimulation.gd")
+
 var checks: int = 0
 var failures: int = 0
 var engine: Node
@@ -27,7 +29,7 @@ func _vector(actual: Vector2, expected: Vector2, label: String) -> void:
 func _receive(snapshot: AnimalSnapshot) -> SheepComputeJob:
 	var job := SheepComputeJob.new()
 	job.snapshot = snapshot
-	job.grid = GridService.build_snapshot(snapshot, false)
+	job.grid = GridService.build_snapshot(snapshot)
 	_check(compute.submit(job), "GPU service accepts immutable input")
 	var deadline := Time.get_ticks_msec() + 10000
 	var result: SheepComputeJob
@@ -48,12 +50,12 @@ func _snapshot() -> AnimalSnapshot:
 	return snapshot
 
 func _compare(snapshot: AnimalSnapshot, label: String) -> void:
-	var grid := GridService.build_snapshot(snapshot)
-	var expected := SheepPerceptionJob.new()
+	var grid := ReferenceSimulation.build_snapshot(snapshot)
+	var expected := ReferenceSimulation.SheepJob.new()
 	expected.rows = snapshot.sheep if snapshot.due.has(0) else PackedInt32Array()
 	expected.snapshot = snapshot
 	expected.grid = grid
-	SheepSystem.calculate_snapshot(expected)
+	ReferenceSimulation.calculate_snapshot(expected)
 	var result := await _receive(snapshot)
 	if not result.error.is_empty():
 		_check(false, label + " returns a result")
@@ -82,7 +84,11 @@ func _reset() -> void:
 	engine.paused = true
 
 func _run() -> void:
-	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
+	for shader_file in [ComputeShaderService.SHEEP_SHADER, ComputeShaderService.MOVEMENT_SHADER]:
+		var spirv: RDShaderSPIRV = shader_file.get_spirv()
+		_check(spirv != null and not spirv.bytecode_compute.is_empty() and spirv.compile_error_compute.is_empty(), "imported shader contains valid compute bytecode")
+
+	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
 	var settings: SimulationConfig = scene.simulation_config.copy_config()
 	settings.initial_total = 0
 	settings.arena_size = Vector2(1280, 720)
@@ -90,56 +96,46 @@ func _run() -> void:
 	root.add_child(scene)
 	engine = root.get_node("g_gameplayEngine")
 	engine.paused = true
-	engine.compute_service.shutdown()
-	engine.compute_service.backend = "auto" if DisplayServer.get_name() == "headless" else "cpu"
-	engine.compute_service.startup()
-	_check(not engine.compute_service._thread.is_started(), "CPU or headless mode does not start a device thread")
+	engine.set_process(false)
 	compute = ComputeShaderService.new()
 	root.add_child(compute)
-	compute.backend = "gpu"
 	compute.startup()
-	if DisplayServer.get_name() == "headless":
-		_check(not compute.available(), "headless compute unavailable")
-		engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(200, 200))
-		engine.animal_service.schedule_updates(1.0)
-		_check(engine.job_service.async_jobs.has(&"Grid") and not engine.job_service.async_jobs[&"Grid"].snapshot.gpu, "headless uses CPU jobs")
-	else:
-		_check(compute.available(), "Forward+ compute available")
-		await _compare(_snapshot(), "empty")
-		engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(200, 200))
-		await _compare(_snapshot(), "single")
-		engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 12, Vector2(200, 200))
-		engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 2, Vector2(200, 200))
-		engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 2, Vector2(220, 200))
-		await _compare(_snapshot(), "overlap and shared pressure")
-		var snapshot := _snapshot()
-		snapshot.distance = 0.0
-		snapshot.config.sheep.wolf_pressure_distance = 0.0
-		snapshot.config.sheep.herding_distance = 0.0
-		await _compare(snapshot, "zero radii")
-		_reset()
-		var sheep: Array[AnimalEntity] = engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 96)
-		engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 12)
-		engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 6)
-		var data: AnimalData = engine.entity_service.data
-		for animal in sheep:
-			var row: int = animal.row
-			data.motion_velocity[row] = Vector2(row * 0.5, -row * 0.2)
-			data.sheep_panic_strength[row] = 0.4 if row % 3 == 0 else 0.0
-			data.sheep_panic_source[row] = Vector2(400, 400)
-			data.memory_perception_ready[row] = int(row % 2 == 0)
-			data.memory_perception_remaining[row] = 0.1 if row % 2 == 0 else 0.0
-		for row in engine.entity_service.wolf_rows:
-			data.wolf_hunting[row] = int(row % 2 == 0)
-		await _compare(_snapshot(), "mixed velocities panic and cached perception")
-		await _compare(engine.animal_system.decision_snapshot(PackedInt32Array([1]), true), "pressure without sheep decisions")
-		_reset()
-		for point in [Vector2(12, 94), Vector2(1268, 662), Vector2(100, 200), Vector2(230, 200), Vector2(230.01, 200), Vector2(229.99, 200)]:
-			engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, point)
-		engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(100, 200))
-		engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(140, 200))
-		await _compare(_snapshot(), "arena and influence boundaries")
-		await _lifecycle()
+	_check(compute.available(), "Forward+ compute available")
+	await _compare(_snapshot(), "empty")
+	engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(200, 200))
+	await _compare(_snapshot(), "single")
+	engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 12, Vector2(200, 200))
+	engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 2, Vector2(200, 200))
+	engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 2, Vector2(220, 200))
+	await _compare(_snapshot(), "overlap and shared pressure")
+	var snapshot := _snapshot()
+	snapshot.distance = 0.0
+	snapshot.config.sheep.wolf_pressure_distance = 0.0
+	snapshot.config.sheep.herding_distance = 0.0
+	await _compare(snapshot, "zero radii")
+	_reset()
+	var sheep: Array[AnimalEntity] = engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 96)
+	engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 12)
+	engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 6)
+	var data: AnimalData = engine.entity_service.data
+	for animal in sheep:
+		var row: int = animal.row
+		data.motion_velocity[row] = Vector2(row * 0.5, -row * 0.2)
+		data.sheep_panic_strength[row] = 0.4 if row % 3 == 0 else 0.0
+		data.sheep_panic_source[row] = Vector2(400, 400)
+		data.memory_perception_ready[row] = int(row % 2 == 0)
+		data.memory_perception_remaining[row] = 0.1 if row % 2 == 0 else 0.0
+	for row in engine.entity_service.wolf_rows:
+		data.wolf_hunting[row] = int(row % 2 == 0)
+	await _compare(_snapshot(), "mixed velocities panic and cached perception")
+	await _compare(engine.animal_system.decision_snapshot(PackedInt32Array([1])), "pressure without sheep decisions")
+	_reset()
+	for point in [Vector2(12, 94), Vector2(1268, 662), Vector2(100, 200), Vector2(230, 200), Vector2(230.01, 200), Vector2(229.99, 200)]:
+		engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, point)
+	engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(100, 200))
+	engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(140, 200))
+	await _compare(_snapshot(), "arena and influence boundaries")
+	await _lifecycle()
 	compute.shutdown()
 	compute.queue_free()
 	engine.stop_simulation()
@@ -169,7 +165,6 @@ func _lifecycle() -> void:
 	engine.sheep_system.apply_decision(panic_output)
 	_check(data.motion_desired_velocity[replacement.row] == Vector2(11, 13), "new panic rejects old GPU steering")
 	engine.compute_service.shutdown()
-	engine.compute_service.backend = "gpu"
 	engine.compute_service.startup()
 	engine.animal_service.schedule_updates(1.0)
 	var deadline := Time.get_ticks_msec() + 10000
