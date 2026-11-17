@@ -23,6 +23,8 @@ func execute() -> void:
 		var started := Time.get_ticks_usec()
 		resize_output()
 		stats = AnimalSystem.batch_stats(snapshot.stats, snapshot.detailed)
+
+		# 1) Evaluate visibility and dog threats without reading live animal storage.
 		for index in range(rows.size()):
 			var row := rows[index]
 			refresh_flags[index] = int(not snapshot.memory_perception_ready[row] or snapshot.memory_perception_remaining[row] <= 0.0)
@@ -33,6 +35,7 @@ func execute() -> void:
 			visible_flags[index] = int(visible)
 			last_positions[index] = snapshot.motion_position[target_row] if visible else snapshot.memory_last_seen_position[row]
 			last_velocities[index] = snapshot.motion_velocity[target_row] if visible else snapshot.memory_last_seen_velocity[row]
+
 			var best := -1
 			var distance: float = snapshot.config.wolf.dog_threat_distance * (2.0 if snapshot.wolf_retreating[row] else 1.0)
 			for other in snapshot.dogs:
@@ -40,6 +43,7 @@ func execute() -> void:
 				if next < distance or (is_equal_approx(next, distance) and best >= 0 and snapshot.identity_entity_id[other] < snapshot.identity_entity_id[best]):
 					best = other
 					distance = next
+
 			threat_rows[index] = best
 			prey_rows[index] = -1
 			if not snapshot.wolf_hunting[row] and not snapshot.wolf_resting[row] and not snapshot.wolf_retreating[row] and best < 0:
@@ -52,6 +56,7 @@ func execute() -> void:
 					if next < distance or (is_equal_approx(next, distance) and prey_rows[index] >= 0 and snapshot.identity_entity_id[other] < snapshot.identity_entity_id[prey_rows[index]]):
 						prey_rows[index] = other
 						distance = next
+
 		execute_ms = (Time.get_ticks_usec() - started) / 1000.0
 		return
 

@@ -126,7 +126,7 @@ func _state() -> Dictionary:
 		"captures": engine.entity_service.capture_count, "time": engine.simulation_time}
 	for property in data.get_property_list():
 		var name: String = property.name
-		if name in ["identity_uid", "settings", "handles", "brain_agent", "brain_player"]:
+		if name in ["identity_animal_id", "settings", "handles", "brain_instance"]:
 			continue
 		if name.begins_with("identity_") or name.begins_with("motion_") or name.begins_with("memory_") or name.begins_with("sheep_") or name.begins_with("wolf_") or name.begins_with("dog_") or name == "brain_current_behavior":
 			result[name] = _value(data.get(name))

@@ -249,6 +249,7 @@ static func build_snapshot(snapshot: AnimalSnapshot, aggregate: bool = true) -> 
 		if kinds[row] == AnimalEntity.Kind.SHEEP:
 			position_sums[cell] += point
 			velocity_sums[cell] += velocities[row]
+
 	for bucket in range(cells * 3):
 		offsets[bucket + 1] = offsets[bucket] + counts[bucket]
 	var cursors := offsets.duplicate()
@@ -270,6 +271,7 @@ static func build_snapshot(snapshot: AnimalSnapshot, aggregate: bool = true) -> 
 			occupancy_max = maxi(occupancy_max, occupancy)
 		if counts[cell * 3] > 0:
 			occupied.append(cell)
+
 	var settings: SheepConfig = snapshot.config.sheep
 	var job := GridAggregateJob.new()
 	job.rows = occupied
@@ -283,6 +285,7 @@ static func build_snapshot(snapshot: AnimalSnapshot, aggregate: bool = true) -> 
 	job.alignment_offsets = snapshot_offsets(settings.alignment_radius, size)
 	if aggregate:
 		job.execute()
+
 	var flock_count := PackedInt32Array()
 	var flock_sum := PackedVector2Array()
 	var aligned_count := PackedInt32Array()
@@ -297,6 +300,8 @@ static func build_snapshot(snapshot: AnimalSnapshot, aggregate: bool = true) -> 
 		flock_sum[cell] = job.flock_sums[index]
 		aligned_count[cell] = job.alignment_counts[index]
 		aligned_sum[cell] = job.alignment_sums[index]
+
+	# 3) Deduplicate pressure sample nodes shared by densely populated sheep cells.
 	var needed := PackedByteArray()
 	needed.resize((columns + 1) * (height + 1))
 	var nodes := PackedInt32Array()
@@ -309,6 +314,8 @@ static func build_snapshot(snapshot: AnimalSnapshot, aggregate: bool = true) -> 
 		if not needed[node]:
 			needed[node] = 1
 			nodes.append(node)
+
+	# 4) Publish snapshot columns and aggregate occupied 4-by-4-cell dog regions.
 	var grid := GridSnapshot.new()
 	grid.cell_size = size
 	grid.width = columns
@@ -335,10 +342,10 @@ static func build_snapshot(snapshot: AnimalSnapshot, aggregate: bool = true) -> 
 	grid.occupied = occupied
 	grid.captured_usec = snapshot.captured_usec
 	grid.time = snapshot.time
-	grid.slots = snapshot.row_to_slot
-	grid.uids = snapshot.identity_uid
+	grid.animal_ids = snapshot.identity_animal_id
 	grid.region_width = ceili(columns / 4.0)
 	grid.region_height = ceili(height / 4.0)
+
 	var regions := grid.region_width * grid.region_height
 	grid.region_counts.resize(regions)
 	grid.region_centers.resize(regions)
@@ -348,6 +355,7 @@ static func build_snapshot(snapshot: AnimalSnapshot, aggregate: bool = true) -> 
 		grid.region_counts[region] += counts[cell * 3]
 		grid.region_centers[region] += position_sums[cell]
 		grid.region_velocities[region] += velocity_sums[cell]
+
 	for region in range(regions):
 		if grid.region_counts[region] == 0:
 			continue
@@ -355,6 +363,7 @@ static func build_snapshot(snapshot: AnimalSnapshot, aggregate: bool = true) -> 
 		grid.occupied_regions.append(region)
 		grid.region_centers[region] /= grid.region_counts[region]
 		grid.region_velocities[region] /= grid.region_counts[region]
+
 	return grid
 
 static func snapshot_offsets(radius: float, size: float) -> PackedInt32Array:
@@ -386,6 +395,7 @@ func install_snapshot(grid: GridSnapshot) -> void:
 	flock_position_sums = grid.flock_sums
 	alignment_counts = grid.alignment_counts
 	alignment_velocity_sums = grid.alignment_sums
+
 	_pressure_needed = grid.pressure_needed
 	wolf_pressure.resize((width + 1) * (height + 1))
 	wolf_pressure.fill(Vector2.ZERO)
@@ -394,6 +404,7 @@ func install_snapshot(grid: GridSnapshot) -> void:
 	pressure_source_pairs = 0
 	pressure_nodes = grid.pressure_nodes
 	pressure_sample_count = grid.pressure_sample_count
+
 	reset_spatial_stats()
 	if spatial_stats_enabled:
 		spatial_nonempty_cells = grid.nonempty_cells
@@ -485,6 +496,7 @@ static func snapshot_pressure(kind: AnimalEntity.Kind, snapshot: AnimalSnapshot,
 						var distance: float = positions[row].distance_to(source)
 						if distance > radius:
 							continue
+
 						if is_wolf:
 							strengths[row] = minf(1.0, strengths[row] + (1.0 - distance / radius) * multiplier)
 						if not in_range[row]:

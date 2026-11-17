@@ -3,8 +3,7 @@ extends RefCounted
 
 var captured_usec: int = 0
 var time: float = 0.0
-var slots := PackedInt32Array()
-var uids := PackedInt64Array()
+var animal_ids := PackedInt64Array()
 var region_width: int = 0
 var region_height: int = 0
 var region_counts := PackedInt32Array()
@@ -25,6 +24,8 @@ var flock_sums := PackedVector2Array()
 var alignment_sums := PackedVector2Array()
 var kinds := PackedInt32Array()
 var counts := PackedInt32Array()
+# Index contiguous species buckets with a final sentinel offset.
+# e.g. sheep members in cell c occupy members[offsets[c * 3] : offsets[c * 3 + 1]].
 var offsets := PackedInt32Array()
 var members := PackedInt32Array()
 var row_cells := PackedInt32Array()

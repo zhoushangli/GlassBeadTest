@@ -7,6 +7,7 @@ func _init(storage: AnimalData) -> void:
 	data = storage
 
 func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu: bool = false) -> AnimalSnapshot:
+	# 1) Capture common inputs and species membership before submitting worker jobs.
 	var engine := g_gameplayEngine
 	var snapshot := AnimalSnapshot.new()
 	snapshot.captured_usec = Time.get_ticks_usec()
@@ -22,10 +23,9 @@ func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu:
 	snapshot.wolves = engine.entity_service.wolf_rows.duplicate()
 	snapshot.dogs = engine.entity_service.dog_rows.duplicate()
 
-	snapshot.identity_uid = data.identity_uid.slice(0, data.active_count)
+	snapshot.identity_animal_id = data.identity_animal_id.slice(0, data.active_count)
 	snapshot.identity_entity_id = data.identity_entity_id.slice(0, data.active_count)
 	snapshot.identity_kind = PackedInt32Array(Array(data.identity_kind.slice(0, data.active_count)))
-	snapshot.row_to_slot = data.row_to_slot.slice(0, data.active_count)
 	snapshot.motion_position = data.motion_position.slice(0, data.active_count)
 	snapshot.motion_velocity = data.motion_velocity.slice(0, data.active_count)
 	snapshot.motion_separation = data.motion_separation.slice(0, data.active_count)
@@ -33,6 +33,7 @@ func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu:
 	snapshot.memory_perception_remaining = data.memory_perception_remaining.slice(0, data.active_count)
 	snapshot.wolf_hunting = data.wolf_hunting.slice(0, data.active_count)
 
+	# 2) Copy optional columns only for the species or GPU passes that need them.
 	if due.has(0) or gpu:
 		snapshot.sheep_panic_strength = data.sheep_panic_strength.slice(0, data.active_count)
 		snapshot.sheep_panic_source = data.sheep_panic_source.slice(0, data.active_count)
@@ -59,6 +60,7 @@ func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu:
 		snapshot.dog_protection_center = data.dog_protection_center.slice(0, data.active_count)
 
 	if due.has(1) or due.has(2):
+		# 1) Convert live handles to snapshot-local rows before leaving the main thread.
 		snapshot.memory_target.resize(data.active_count)
 		snapshot.memory_target.fill(-1)
 		var observers := PackedInt32Array()
@@ -69,12 +71,14 @@ func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu:
 		for row in observers:
 			var handle := data.live(data.memory_target[row])
 			snapshot.memory_target[row] = handle.row if handle != null else -1
+
 	if due.has(2):
 		snapshot.dog_collected_sheep.resize(data.active_count)
 		snapshot.dog_collected_sheep.fill(-1)
 		for row in snapshot.dogs:
 			var collected := data.live(data.dog_collected_sheep[row])
 			snapshot.dog_collected_sheep[row] = collected.row if collected != null else -1
+
 	snapshot.prepare_ms = (Time.get_ticks_usec() - snapshot.captured_usec) / 1000.0
 	return snapshot
 
@@ -101,18 +105,17 @@ static func snapshot_separation(row: int, snapshot: AnimalSnapshot, grid: GridSn
 			separation += direction * (1.0 - length / distance)
 	return separation
 
+# Resolve snapshot identity against current storage instead of trusting an old row.
+# e.g. a captured animal resolves to null even if its former row now holds a survivor.
 func snapshot_animal(snapshot: AnimalSnapshot, index: int) -> AnimalEntity:
-	if index < 0:
+	if index < 0 or index >= snapshot.identity_animal_id.size():
 		return null
 
-	var slot: int = snapshot.row_to_slot[index]
-	if slot >= data.slot_to_row.size():
-		return null
-
-	var row := data.slot_to_row[slot]
-	return data.handles[row] if row < data.active_count and data.identity_alive[row] and data.identity_uid[row] == snapshot.identity_uid[index] else null
+	var row := data.row_of_id(snapshot.identity_animal_id[index])
+	return data.handles[row] if row >= 0 and row < data.active_count and data.identity_alive[row] else null
 
 func apply_snapshot_perception(row: int, snapshot_row: int, snapshot: AnimalSnapshot, separation: Vector2, refresh: bool, target: int, visible: bool, last_position: Vector2, last_velocity: Vector2) -> void:
+	# 1) Subtract snapshot age so completed work does not restart an old sampling interval.
 	if refresh:
 		data.motion_separation[row] = separation
 		data.memory_perception_ready[row] = 1
@@ -216,6 +219,7 @@ func can_see(animal: AnimalEntity, point: Vector2) -> bool:
 	var offset := point - data.motion_position[row]
 	if offset.length_squared() > data.memory_vision_radius_squared[row]:
 		return false
+
 	return offset.is_zero_approx() or data.motion_facing[row].dot(offset.normalized()) + 0.000001 >= data.memory_vision_cos[row]
 
 func observe_target(animal: AnimalEntity, delta: float) -> void:
@@ -321,7 +325,11 @@ func decide(animal: AnimalEntity, delta: float) -> void:
 	data.motion_intent[row] = AnimalData.MotionIntent.STOP
 	data.motion_desired_velocity[row] = Vector2.ZERO
 	data.motion_speed_limit[row] = settings.move_speed
-	data.brain_player[row].update(delta)
+	var profile: ProfileService = g_gameplayEngine.profile_service
+	var started_at := Time.get_ticks_usec() if profile.performance_stats_enabled else 0
+	data.brain_instance[row].update(delta)
+	if profile.performance_stats_enabled:
+		profile.record_duration("Brain/Update", (Time.get_ticks_usec() - started_at) / 1000.0)
 
 func get_wander_point(animal: AnimalEntity, distance: float) -> Vector2:
 	var motion_wander_point := data.motion_wander_point

@@ -12,11 +12,13 @@ func advance_time(delta: float) -> void:
 		for index in range(4):
 			data.wolf_strategy_failures[row][index] = maxf(0.0, data.wolf_strategy_failures[row][index] - settings.strategy_decay * delta)
 		data.wolf_howl_elapsed[row] += delta
+
 		if data.wolf_resting[row]:
 			data.wolf_rest_elapsed[row] += delta
 			data.wolf_resting[row] = int(data.wolf_rest_elapsed[row] < settings.rest_duration)
 			if not data.wolf_resting[row]:
 				g_gameplayEngine.animal_system.decide(data.handles[row], 0.0)
+
 		if data.wolf_hunting[row]:
 			data.wolf_hunt_elapsed[row] += delta
 			if data.live(data.memory_target[row]) == null or data.wolf_hunt_elapsed[row] >= settings.hunt_duration or (not data.memory_target_visible[row] and data.memory_unseen_elapsed[row] >= settings.memory_duration):
@@ -27,6 +29,8 @@ func apply_decision(job: WolfPerceptionJob) -> void:
 	var snapshot := job.snapshot
 	var common: AnimalSystem = g_gameplayEngine.animal_system
 	common.submit_stats(job.stats)
+
+	# 1) Revalidate life identities and hunt state before applying delayed perception.
 	for index in range(job.rows.size()):
 		var snapshot_row := job.rows[index]
 		var animal := common.snapshot_animal(snapshot, snapshot_row)
@@ -189,6 +193,7 @@ func begin_hunt(animal: AnimalEntity, prey: AnimalEntity) -> void:
 	data.wolf_charging[row] = 0
 	data.wolf_howled[row] = 0
 
+	# 1) Sample a strategy with lower weight for recent failures.
 	var total: float = 0.0
 	for index in range(4):
 		total += 1.0 / (1.0 + data.wolf_strategy_failures[row][index])
@@ -198,6 +203,7 @@ func begin_hunt(animal: AnimalEntity, prey: AnimalEntity) -> void:
 		if choice <= 0.0 or index == 4 - 1:
 			data.wolf_strategy[row] = index
 			break
+
 	common.observe_target(animal, 0.0)
 
 func end_hunt(animal: AnimalEntity, success: bool) -> void:
@@ -224,6 +230,8 @@ func resolve_interactions(animal: AnimalEntity, _delta: float) -> void:
 	var row := animal.row
 	var settings: WolfConfig = data.settings[row]
 	var common: AnimalSystem = g_gameplayEngine.animal_system
+
+	# 1) Apply a pending howl at the post-movement positions.
 	if data.wolf_howl_pending[row]:
 		data.wolf_howl_pending[row] = 0
 		g_gameplayEngine.debug_service.record_howl(animal)
@@ -231,17 +239,20 @@ func resolve_interactions(animal: AnimalEntity, _delta: float) -> void:
 			var sheep := data.handles[sheep_row]
 			if data.identity_alive[sheep.row] and motion_position[row].distance_to(motion_position[sheep.row]) <= settings.howl_radius:
 				g_gameplayEngine.sheep_system.receive_howl(sheep, motion_position[row])
+
 	if not data.wolf_hunting[row] or data.brain_current_behavior[row] != AnimalEntity.Behavior.CHASE:
 		return
 	if not common.is_live(animal, data.live(memory_target[row])):
 		end_hunt(animal, false)
 		return
 
+	# 2) Let a nearby dog interrupt the hunt before checking capture distance.
 	data.wolf_nearest_threat[row] = find_dog(animal, settings.dog_threat_distance)
 	if common.is_live(animal, data.live(data.wolf_nearest_threat[row])):
 		end_hunt(animal, false)
 		data.wolf_retreating[row] = 1
 		return
+
 	if common.can_see(animal, motion_position[data.live(memory_target[row]).row]) and motion_position[row].distance_to(motion_position[data.live(memory_target[row]).row]) <= settings.capture_distance:
 		if g_gameplayEngine.entity_service.capture(data.live(memory_target[row])):
 			end_hunt(animal, true)

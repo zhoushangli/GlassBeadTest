@@ -54,12 +54,13 @@ func _shutdown() -> void:
 	dog_system = null
 
 func advance_decision(animal: AnimalEntity) -> void:
-	var uid: int = g_gameplayEngine.entity_service.data.identity_uid[animal.row]
+	var id: int = g_gameplayEngine.entity_service.data.identity_animal_id[animal.row]
 	var now: float = g_gameplayEngine.simulation_time
-	animal_system.decide(animal, now - _last_decision.get(uid, now))
-	_last_decision[uid] = now
+	animal_system.decide(animal, now - _last_decision.get(id, now))
+	_last_decision[id] = now
 
 func advance_time(delta: float) -> void:
+	# 1) Run the optional GPU timer pass before updating live state on the CPU.
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	var profile: ProfileService = g_gameplayEngine.profile_service
 	var detail_started := Time.get_ticks_usec() if profile.detailed_stats_enabled else 0
@@ -68,14 +69,16 @@ func advance_time(delta: float) -> void:
 		g_gameplayEngine.fail_step("GPU timers failed")
 		return
 
+	# 2) Advance timers, renew wander goals and invalidate lost targets.
 	var sheep_settings: SheepConfig = g_gameplayEngine.config.sheep
 	var duration: float = sheep_settings.panic_duration
 	var wander: bool = sheep_settings.wander_weight > 0.0
-	var active_uids: Dictionary = {}
+	var active_ids: Dictionary = {}
 	for row in range(data.active_count):
 		if numeric == 0:
 			data.motion_wander_remaining[row] -= delta
 			data.memory_perception_remaining[row] -= delta
+
 		if data.identity_kind[row] == AnimalEntity.Kind.SHEEP:
 			if numeric == 0:
 				data.sheep_panic_strength[row] = maxf(0.0, data.sheep_panic_strength[row] - delta / duration) if duration > 0.0 else 0.0
@@ -83,26 +86,30 @@ func advance_time(delta: float) -> void:
 				animal_system.get_wander_point(data.handles[row], 85.0)
 			continue
 
-		var uid := data.identity_uid[row]
-		active_uids[uid] = true
+		var id := data.identity_animal_id[row]
+		active_ids[id] = true
 		data.memory_unseen_elapsed[row] += delta
 		var target := data.live(data.memory_target[row])
 		if target == null:
 			data.memory_target[row] = null
 			data.memory_target_visible[row] = 0
+
 		if data.identity_kind[row] == AnimalEntity.Kind.SHEEPDOG and data.dog_collected_sheep[row] != null and data.live(data.dog_collected_sheep[row]) == null:
 			data.dog_collected_sheep[row] = null
 			data.motion_intent[row] = AnimalData.MotionIntent.STOP
 			data.motion_desired_velocity[row] = Vector2.ZERO
-		if not _last_decision.has(uid) or (target == null and data.brain_current_behavior[row] in [AnimalEntity.Behavior.CHASE, AnimalEntity.Behavior.STALK, AnimalEntity.Behavior.DRIVE]):
+
+		if not _last_decision.has(id) or (target == null and data.brain_current_behavior[row] in [AnimalEntity.Behavior.CHASE, AnimalEntity.Behavior.STALK, AnimalEntity.Behavior.DRIVE]):
 			advance_decision(data.handles[row])
+
 	if profile.detailed_stats_enabled:
 		profile.record_duration("AdvanceTime/ActiveLoop", (Time.get_ticks_usec() - detail_started) / 1000.0)
 		detail_started = Time.get_ticks_usec()
 
-	for uid in _last_decision.keys():
-		if not active_uids.has(uid):
-			_last_decision.erase(uid)
+	# 3) Remove obsolete decision timestamps before advancing species-specific timers.
+	for id in _last_decision.keys():
+		if not active_ids.has(id):
+			_last_decision.erase(id)
 	if profile.detailed_stats_enabled:
 		profile.record_duration("AdvanceTime/DecisionHistory", (Time.get_ticks_usec() - detail_started) / 1000.0)
 		detail_started = Time.get_ticks_usec()
@@ -120,6 +127,7 @@ func apply_completed() -> void:
 	g_gameplayEngine.grid_service.reset_spatial_stats()
 	g_gameplayEngine.job_service.flush()
 	g_gameplayEngine.compute_service.flush()
+
 	var now := Time.get_ticks_usec()
 	var elapsed := (now - _window_started) / 1000000.0
 	if elapsed >= 1.0:
@@ -135,6 +143,8 @@ func schedule_updates(delta: float) -> void:
 	var compute: ComputeShaderService = engine.compute_service
 	if compute.backend == "gpu" and not compute.available():
 		return
+
+	# 1) Select due species without queuing catch-up work behind an unfinished batch.
 	var jobs: JobService = engine.job_service
 	var rates := [engine.config.sheep_update_hz, engine.config.wolf_update_hz, engine.config.sheepdog_update_hz]
 	var due := PackedInt32Array()
@@ -159,16 +169,18 @@ func schedule_updates(delta: float) -> void:
 		due.append(kind)
 		waiting[kind] = true
 		requested[kind] += 1
+
 	if due.is_empty():
 		return
 
-	# 1) Copy live inputs once; grid construction and species work use immutable snapshots.
+	# 2) Copy live inputs once; grid construction and species work use immutable snapshots.
 	var prepared_at := Time.get_ticks_usec()
 	var gpu := compute.available()
 	var snapshot := animal_system.decision_snapshot(due, gpu)
 	snapshot.prepare_ms = (Time.get_ticks_usec() - prepared_at) / 1000.0
 	engine.profile_service.record_duration("Snapshot/Prepare", snapshot.prepare_ms)
 	snapshot.captured_usec = prepared_at
+
 	var job := GridAggregateJob.new()
 	job.stage = &"Grid"
 	job.snapshot = snapshot
@@ -178,6 +190,7 @@ func schedule_updates(delta: float) -> void:
 			waiting.erase(kind)
 
 func apply_grid(grid: GridSnapshot, snapshot: AnimalSnapshot, sheep_job: SheepComputeJob = null, grid_ms: float = 0.0) -> void:
+	# 1) Complete GPU aggregates before exposing the shared grid to species jobs.
 	var engine := g_gameplayEngine
 	if snapshot.gpu and sheep_job == null:
 		var job := SheepComputeJob.new()
@@ -192,6 +205,7 @@ func apply_grid(grid: GridSnapshot, snapshot: AnimalSnapshot, sheep_job: SheepCo
 			job.release_input()
 		return
 
+	# 2) Dispatch each due species against the same captured inputs.
 	engine.grid_service.install_snapshot(grid)
 	for kind in snapshot.due:
 		if kind == AnimalEntity.Kind.SHEEP and sheep_job != null:
@@ -233,10 +247,12 @@ func apply_decision(job: Job) -> void:
 			wolf_system.apply_decision(job as WolfPerceptionJob)
 		AnimalEntity.Kind.SHEEPDOG:
 			dog_system.apply_decision(job as DogPerceptionJob)
+
 	var apply_ms := (Time.get_ticks_usec() - started_at) / 1000.0
 	var profile: ProfileService = g_gameplayEngine.profile_service
 	profile.record_duration("Species/" + String(stage_for(kind)) + "/Apply", apply_ms)
 	applied[kind] += 1
+
 	if kind == AnimalEntity.Kind.SHEEP:
 		var metrics := (job as SheepComputeJob).metrics if job is SheepComputeJob else ComputeShaderService.Metrics.new()
 		metrics.backend = "gpu" if job is SheepComputeJob else "cpu"

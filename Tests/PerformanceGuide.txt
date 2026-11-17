@@ -281,3 +281,39 @@ GPU movement, numeric timers and dog regions (2026-11-16):
   Use the same windowed entry for ComputeVerification.gd and DebugVisualVerification.gd.
   NumericComputeVerification intentionally injects one forced GPU failure and expects its error message, then verifies reset recovery.
   Headless validates CPU/fallback behavior only. Rendered captures and automated UI checks do not replace human behavioral acceptance.
+
+
+AnimalID, memory behavior trees and render traversal (2026-11-16):
+  Scripts/ECS/AnimalID.gd packs (slot << 32) | uid. Slot is the high unsigned 32 bits; uid is the low unsigned 32 bits.
+  INVALID=0, and zero life serials are reserved. Negative signed int64 values can be valid identities.
+  AnimalID provides make/get_slot/is_valid; it does not allocate per-animal wrapper objects or decide storage liveness.
+  EntityService owns the private monotonic 32-bit life serial counter. Reset, clear and stop do not reset it.
+  A spawn batch exceeding remaining serial capacity is rejected before row/RNG mutations; serials never wrap.
+  AnimalEntity contains id and row. AnimalData uses identity_animal_id and resolves full IDs via row_of_id/row_of/live.
+  Cached rows are accepted only after a full-ID comparison; aliases resolve to the canonical storage handle.
+  identity_entity_id remains the display/spawn-order number used for deterministic tie breaks and staggered timing.
+  Snapshots/debug events/decision histories use full AnimalID; independent uid/slot snapshot columns were removed.
+  GPU numeric output stays validated by step and structure version. Full IDs remain on the CPU and are not truncated.
+
+  Wolves/dogs retain independent BTInstance task trees and Blackboard objects in AnimalData.brain_instance.
+  EntityService is the common Node agent/owner; it exports wolf_behavior_tree/sheepdog_behavior_tree resources.
+  Blackboard key animal binds the lightweight handle. Task _setup caches that handle for the current life.
+  Slot reuse aborts and clears the old tree, then initializes it against the fresh Blackboard handle.
+  No per-animal AnimalAgent or BTPlayer nodes remain. Sheep still creates no behavior tree.
+  Clear explicitly releases pooled instances to break the data -> tree -> task -> data reference cycle.
+  Worker shutdown precedes entity/tree cleanup; AnimalService shuts down after entity trees are released.
+
+  RenderService retains its count/capacity pass and fills all three species buffers in one retained-row pass.
+  Local Packed column references avoid repeated field access. Per-species order, stride, padding, colors,
+  normalized facing, corpse retention, unused buffer suffixes and capacity reuse remain identical.
+  Three shared MultiMesh submissions remain; no extra render cache framework is introduced.
+
+  Benchmark result_version=8 renames active_bt_players to active_bt_instances and adds startup_ms plus animal_logic_node_count.
+  Brain/Update measures each behavior-tree update, overlaps its containing simulation stage, and must not be added to it.
+  max_steps_per_frame=1 remains the authored setting. Performance fixtures explicitly test both one- and two-step limits.
+  Tests/AnimalIDVerification.gd covers signed layout, stale references, alias resolution, reuse and allocator exhaustion.
+  Tests/BrainInstanceVerification.gd covers shared host, independent tasks, pooled setup, row swaps and reference release.
+  Tests/RenderBufferVerification.gd compares every buffer element with the original three-pass reference, including unused suffixes.
+  CPU entry: Godot --headless --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/<verification>.gd
+  AnimalIDVerification intentionally logs two exhausted-allocator errors; those requests must reject without mutation.
+  Evidence: output/identity-bt-20261116_205512/REPORT.txt contains phase measurements and deterministic trace comparisons.

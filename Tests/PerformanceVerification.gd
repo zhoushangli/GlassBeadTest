@@ -244,8 +244,17 @@ func _verify() -> void:
 	profile.begin_capture()
 	engine.paused = false
 	engine._accumulator = 0.0
+	var step_limit: int = engine.config.max_steps_per_frame
+	engine.config.max_steps_per_frame = 2
 	engine._process(2.0 / engine.config.simulation_hz)
 	_check(profile.capture_samples_ms["Steps/Total"].size() == 2 and profile.capture_samples_ms["Render/Sync"].size() == 1, "two simulation steps share one render sync")
+	profile.reset()
+	profile.begin_capture()
+	engine.config.max_steps_per_frame = 1
+	engine._accumulator = 0.0
+	engine._process(2.0 / engine.config.simulation_hz)
+	_check(profile.capture_samples_ms["Steps/Total"].size() == 1 and profile.capture_samples_ms["Render/Sync"].size() == 1, "one-step cap drops backlog and still synchronizes once")
+	engine.config.max_steps_per_frame = step_limit
 	engine.paused = true
 	profile.set_performance_stats_enabled(false)
 	profile.begin_capture()

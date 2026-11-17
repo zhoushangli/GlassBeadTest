@@ -5,7 +5,7 @@ func _init() -> void:
 	behavior = AnimalEntity.Behavior.STALK
 
 func _execute(delta: float) -> void:
-	var wolf := agent.entity as AnimalEntity
+	var wolf := animal
 	var settings: WolfConfig = data.settings[wolf.row]
 	var common: AnimalSystem = g_gameplayEngine.animal_system
 	if data.wolf_strategy[wolf.row] == AnimalEntity.Strategy.HOWL and not data.wolf_howled[wolf.row] and data.wolf_howl_elapsed[wolf.row] >= settings.howl_cooldown and data.motion_position[wolf.row].distance_to(data.memory_last_seen_position[wolf.row]) <= settings.howl_trigger_distance:

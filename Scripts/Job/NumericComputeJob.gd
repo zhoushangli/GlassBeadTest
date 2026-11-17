@@ -19,6 +19,7 @@ var parameters := PackedFloat32Array()
 var timer_parameters := PackedFloat64Array()
 
 func capture(storage: AnimalData, settings: SimulationConfig, interval: float, kind: Pass) -> void:
+	# 1) Copy fixed-step inputs and record the storage generation required at commit.
 	var started_at := Time.get_ticks_usec()
 	pass_kind = kind
 	stage = &"Movement" if kind == Pass.MOVEMENT else &"Timers"
@@ -31,6 +32,7 @@ func capture(storage: AnimalData, settings: SimulationConfig, interval: float, k
 	parameters = PackedFloat32Array([interval, settings.sheep.steering_rate, 12.0, 94.0,
 		settings.arena_size.x - 12.0, settings.arena_size.y - 58.0, settings.sheep.panic_duration, 0.0,
 		settings.sheep.move_speed, settings.wolf.move_speed, settings.sheepdog.move_speed, 0.0])
+
 	if kind == Pass.MOVEMENT:
 		columns = [storage.motion_position.slice(0, count), storage.motion_velocity.slice(0, count),
 			storage.motion_facing.slice(0, count), storage.motion_desired_velocity.slice(0, count),
@@ -39,6 +41,7 @@ func capture(storage: AnimalData, settings: SimulationConfig, interval: float, k
 	else:
 		columns = [storage.motion_wander_remaining.slice(0, count), storage.memory_perception_remaining.slice(0, count),
 			storage.sheep_panic_strength.slice(0, count), storage.identity_kind.slice(0, count)]
+
 	metrics.prepare_ms = (Time.get_ticks_usec() - started_at) / 1000.0
 
 func execute() -> void:
@@ -57,8 +60,10 @@ func execute() -> void:
 			input_bytes.append_array(columns[index].to_byte_array())
 		index_bytes.append_array(PackedInt32Array(Array(columns[3])).to_byte_array())
 		metrics.download_bytes = maxi(8, count * 24)
+
 	metrics.upload_bytes = input_bytes.size() + index_bytes.size()
 	metrics.pack_ms = (Time.get_ticks_usec() - started_at) / 1000.0
+
 	var bytes := compute.execute_numeric_gpu(self)
 	if not error.is_empty():
 		return
@@ -77,8 +82,11 @@ func execute() -> void:
 			if (value is Vector2 and not value.is_finite()) or (value is float and not is_finite(value)):
 				error = "Numeric output contains a non-finite value"
 				return
+
 	metrics.decode_ms = (Time.get_ticks_usec() - started_at) / 1000.0
 
+# Commit only to the unchanged simulation step and preserve corpse and pooled suffixes.
+# e.g. a movement result replaces rows before active_count without dropping retained corpse positions.
 func commit(storage: AnimalData) -> bool:
 	if state != State.COMPLETED or not error.is_empty() or version != g_gameplayEngine.job_service.async_version or step != g_gameplayEngine.step_count or count != storage.active_count or structure_version != storage.structure_version:
 		return false
@@ -86,6 +94,7 @@ func commit(storage: AnimalData) -> bool:
 	var names := ["motion_position", "motion_velocity", "motion_facing", "motion_desired_velocity"] if pass_kind == Pass.MOVEMENT else ["motion_wander_remaining", "memory_perception_remaining", "sheep_panic_strength"]
 	if output.size() != names.size():
 		return false
+
 	for index in range(names.size()):
 		if output[index].size() != count:
 			return false
@@ -94,5 +103,6 @@ func commit(storage: AnimalData) -> bool:
 		var column: Variant = output[index]
 		column.append_array(storage.get(names[index]).slice(count))
 		storage.set(names[index], column)
+
 	state = State.APPLIED
 	return true

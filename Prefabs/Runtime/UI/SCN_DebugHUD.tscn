@@ -78,7 +78,7 @@ offset_top = 5.0
 offset_right = 1260.0
 offset_bottom = 29.0
 theme_override_font_sizes/font_size = 15
-text = "1 Sheep   2 Wolf   3 Dog   |   Shift: +10   |   Space Pause   N Step   R Reset   F1 Overlays   F3 Debug"
+text = "WASD Move   MMB Drag   Wheel Zoom   |   1 Sheep   2 Wolf   3 Dog   Shift: +10   |   Space Pause   N Step   R Reset   F1 Overlays   F3 Debug"
 
 [node name="Selection" type="Label" parent="Screen/Footer"]
 offset_left = 20.0
@@ -164,6 +164,22 @@ text = "Pause"
 layout_mode = 2
 text = "X"
 tooltip_text = "Close [Esc]"
+
+[node name="Scenarios" type="HBoxContainer" parent="Screen/Parameters/Margin/Column"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Small" type="Button" parent="Screen/Parameters/Margin/Column/Scenarios"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Small: 200"
+tooltip_text = "Load 200 entities in a 1280 x 720 arena using Default CFG behavior settings, then Apply."
+
+[node name="Large" type="Button" parent="Screen/Parameters/Margin/Column/Scenarios"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Large: 5000"
+tooltip_text = "Load 5000 entities in a 5120 x 2880 arena using Default CFG behavior settings, then Apply."
 
 [node name="Tabs" type="TabContainer" parent="Screen/Parameters/Margin/Column"]
 layout_mode = 2

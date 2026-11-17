@@ -25,7 +25,7 @@ const PRESET_VERSION: int = 7
 @export_range(1, 240, 1) var sheepdog_update_hz: int = 12
 
 @export_group("World - restart required")
-## 场地宽高，单位为像素；应用修改需要重启模拟，运行时数值表单不编辑此向量。
+## 场地宽高，单位为像素；参数面板分别编辑宽高，应用修改需要重启模拟。
 ## e.g. Vector2(1280, 720) 表示宽 1280、高 720。
 @export var arena_size := Vector2(1280.0, 720.0)
 ## 统一模拟随机种子；相同配置和操作顺序可重现随机结果，应用修改需要重启。
@@ -88,15 +88,18 @@ func get_initial_counts() -> Vector3i:
 	var counts := Vector3i.ZERO
 	if initial_total == 0 or ratio_sum <= 0.0:
 		return counts
+
 	var remainders: Array[float] = []
 	for kind in range(3):
 		var share := initial_total * ratios[kind] / ratio_sum
 		counts[kind] = floori(share)
 		remainders.append(share - counts[kind])
+
 	for index in range(initial_total - counts.x - counts.y - counts.z):
 		var kind := remainders.find(remainders.max())
 		counts[kind] += 1
 		remainders[kind] = -1.0
+
 	return counts
 
 func requires_restart(previous: SimulationConfig) -> bool:

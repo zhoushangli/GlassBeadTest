@@ -55,6 +55,7 @@ func release_input() -> void:
 	index_bytes = PackedByteArray()
 
 func _pack() -> void:
+	# 1) Serialize numeric columns in the order consumed by SheepCompute.glsl.
 	var settings: SheepConfig = snapshot.config.sheep
 	var values := PackedFloat32Array([grid.cell_size, snapshot.distance, settings.flock_radius, settings.alignment_radius,
 		settings.wolf_pressure_distance, settings.herding_distance, settings.hunting_pressure_multiplier, settings.move_speed,
@@ -67,6 +68,7 @@ func _pack() -> void:
 	fallback.resize(positions.size())
 	for row in range(positions.size()):
 		fallback[row] = Vector2.from_angle(ids[row] * 2.399963)
+
 	var bytes := values.to_byte_array()
 	var vector_columns: Array[PackedVector2Array] = [positions, grid.velocities, snapshot.motion_separation]
 	for column in vector_columns:
@@ -82,16 +84,21 @@ func _pack() -> void:
 	var alignment_offsets := GridService.snapshot_offsets(settings.alignment_radius, grid.cell_size)
 	var occupied: PackedInt32Array = grid.occupied
 	var nodes: PackedInt32Array = grid.pressure_nodes
+
+	# 2) Map sparse cells and nodes to compact GPU output indices.
 	var cell_map := PackedInt32Array()
 	cell_map.resize(grid.position_sums.size())
 	cell_map.fill(-1)
 	for index in range(occupied.size()):
 		cell_map[occupied[index]] = index
+
 	var node_map := PackedInt32Array()
 	node_map.resize((grid.width + 1) * (grid.height + 1))
 	node_map.fill(-1)
 	for index in range(nodes.size()):
 		node_map[nodes[index]] = index
+
+	# 3) Store integer column offsets in the shader header before appending their contents.
 	var indices := PackedInt32Array([grid.width, grid.height, positions.size(), snapshot.sheep.size(), snapshot.wolves.size(),
 		snapshot.dogs.size(), occupied.size(), nodes.size()])
 	indices.resize(26)
@@ -101,6 +108,7 @@ func _pack() -> void:
 	for index in range(columns.size()):
 		indices[header_fields[index]] = indices.size()
 		indices.append_array(columns[index])
+
 	indices[17] = flock_offsets.size() / 2
 	indices[18] = alignment_offsets.size() / 2
 	input_bytes = bytes
@@ -109,6 +117,7 @@ func _pack() -> void:
 	metrics.download_bytes = maxi(4, (occupied.size() * 8 + nodes.size() * 6 + snapshot.sheep.size() * 16) * 4)
 
 func _decode(bytes: PackedByteArray) -> void:
+	# 1) Restore per-cell flock aggregates from the compact occupied-cell output.
 	var started := Time.get_ticks_usec()
 	var values := bytes.to_float32_array()
 	var occupied: PackedInt32Array = grid.occupied
@@ -123,6 +132,8 @@ func _decode(bytes: PackedByteArray) -> void:
 		flock_sums[cell] = Vector2(values[p + 1], values[p + 2])
 		alignment_counts[cell] = int(values[p + 4])
 		alignment_sums[cell] = Vector2(values[p + 5], values[p + 6])
+
+	# 2) Expand sampled pressure nodes into fields shared by species jobs and debug drawing.
 	var wolf_field := PackedVector2Array()
 	var dog_field := PackedVector2Array()
 	wolf_field.resize((grid.width + 1) * (grid.height + 1))
@@ -134,6 +145,8 @@ func _decode(bytes: PackedByteArray) -> void:
 		wolf_field[node] = Vector2(values[p], values[p + 1])
 		dog_field[node] = Vector2(values[p + 2], values[p + 3])
 		pairs += int(values[p + 4] + values[p + 5])
+
+	# 3) Decode sheep outputs using the same result layout as the CPU perception path.
 	rows = snapshot.sheep if snapshot.due.has(0) else PackedInt32Array()
 	resize_output()
 	stats = AnimalSystem.batch_stats(snapshot.stats, snapshot.detailed)
@@ -152,6 +165,7 @@ func _decode(bytes: PackedByteArray) -> void:
 		speed_limits[index] = values[p + 13]
 		neighbor_counts[index] = int(values[p + 14])
 		refresh_flags[index] = int(values[p + 15] > 0.0)
+
 	metrics.decode_ms = (Time.get_ticks_usec() - started) / 1000.0
 
 func _int32(column: Variant) -> PackedInt32Array:

@@ -4,8 +4,8 @@
 [ext_resource type="Script" path="res://Scripts/Core/EntityService.gd" id="2"]
 [ext_resource type="Script" path="res://Scripts/Core/DebugService.gd" id="3"]
 [ext_resource type="Script" path="res://Scripts/Core/RenderService.gd" id="4"]
-[ext_resource type="PackedScene" path="res://Prefabs/Runtime/Objects/SCN_Wolf.tscn" id="5"]
-[ext_resource type="PackedScene" path="res://Prefabs/Runtime/Objects/SCN_Sheepdog.tscn" id="6"]
+[ext_resource type="BehaviorTree" path="res://Resources/AI/BT_Wolf.tres" id="5"]
+[ext_resource type="BehaviorTree" path="res://Resources/AI/BT_Sheepdog.tres" id="6"]
 [ext_resource type="Resource" path="res://Resources/Gameplay/CFG_Simulation.tres" id="7"]
 
 [ext_resource type="Script" path="res://Scripts/Core/ProfileService.gd" id="8"]
@@ -24,8 +24,8 @@ config = ExtResource("7")
 
 [node name="EntityService" type="Node2D" parent="."]
 script = ExtResource("2")
-wolf_scene = ExtResource("5")
-sheepdog_scene = ExtResource("6")
+wolf_behavior_tree = ExtResource("5")
+sheepdog_behavior_tree = ExtResource("6")
 
 [node name="DebugService" type="Node2D" parent="."]
 z_index = 10

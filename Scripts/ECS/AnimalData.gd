@@ -31,8 +31,7 @@ var memory_vision_cos: PackedFloat64Array = []
 var memory_target: Array[AnimalEntity] = []
 
 var brain_current_behavior: PackedInt64Array = []
-var brain_agent: Array[AnimalAgent] = []
-var brain_player: Array[BTPlayer] = []
+var brain_instance: Array[BTInstance] = []
 
 var sheep_local_flock_center: PackedVector2Array = []
 var sheep_neighbor_count: PackedInt64Array = []
@@ -70,11 +69,16 @@ var dog_collected_sheep: Array[AnimalEntity] = []
 
 var settings: Array[Resource] = []
 
-var identity_uid := PackedInt64Array()
+# Preserve life identity across row swaps; slot reuse receives a new serial.
+# e.g. an old handle cannot resolve to the next animal spawned in its slot.
+var identity_animal_id := PackedInt64Array()
 var row_to_slot := PackedInt32Array()
 var slot_to_row := PackedInt32Array()
 var handles: Array[AnimalEntity] = []
 var structure_version: int = 0
+
+# Partition storage into active, retained corpse and reusable pool ranges.
+# e.g. active_count = 3 and retained_count = 5 keeps corpses in rows 3 and 4.
 var active_count: int = 0
 var retained_count: int = 0
 
@@ -111,8 +115,7 @@ func append_slot() -> int:
 	memory_target.append(null)
 
 	brain_current_behavior.append(AnimalEntity.Behavior.FLOCK)
-	brain_agent.append(null)
-	brain_player.append(null)
+	brain_instance.append(null)
 
 	sheep_local_flock_center.append(Vector2.ZERO)
 	sheep_neighbor_count.append(0)
@@ -149,7 +152,7 @@ func append_slot() -> int:
 	dog_collected_sheep.append(null)
 
 	settings.append(null)
-	identity_uid.append(0)
+	identity_animal_id.append(0)
 	return row
 
 func reset_row(row: int) -> void:
@@ -222,6 +225,7 @@ func swap_rows(first: int, second: int) -> void:
 	if first == second:
 		return
 
+	# 1) Swap every column so each row continues to describe one complete animal.
 	structure_version += 1
 	var intent := motion_intent[first]
 	motion_intent[first] = motion_intent[second]
@@ -301,12 +305,9 @@ func swap_rows(first: int, second: int) -> void:
 	var value_24 = brain_current_behavior[first]
 	brain_current_behavior[first] = brain_current_behavior[second]
 	brain_current_behavior[second] = value_24
-	var value_25 = brain_agent[first]
-	brain_agent[first] = brain_agent[second]
-	brain_agent[second] = value_25
-	var value_26 = brain_player[first]
-	brain_player[first] = brain_player[second]
-	brain_player[second] = value_26
+	var value_26 = brain_instance[first]
+	brain_instance[first] = brain_instance[second]
+	brain_instance[second] = value_26
 
 	var value_27 = sheep_local_flock_center[first]
 	sheep_local_flock_center[first] = sheep_local_flock_center[second]
@@ -404,12 +405,13 @@ func swap_rows(first: int, second: int) -> void:
 	dog_collected_sheep[first] = dog_collected_sheep[second]
 	dog_collected_sheep[second] = value_58
 
+	# 2) Move identity and handle ownership with the data, then repair cached rows.
 	var value_59 = settings[first]
 	settings[first] = settings[second]
 	settings[second] = value_59
-	var value_60 = identity_uid[first]
-	identity_uid[first] = identity_uid[second]
-	identity_uid[second] = value_60
+	var value_60 = identity_animal_id[first]
+	identity_animal_id[first] = identity_animal_id[second]
+	identity_animal_id[second] = value_60
 	var handle := handles[first]
 	handles[first] = handles[second]
 	handles[second] = handle
@@ -418,27 +420,48 @@ func swap_rows(first: int, second: int) -> void:
 	if handles[second] != null:
 		handles[second].row = second
 
+	# 3) Repair both directions of the stable-slot mapping.
 	var slot := row_to_slot[first]
 	row_to_slot[first] = row_to_slot[second]
 	row_to_slot[second] = slot
 	slot_to_row[row_to_slot[first]] = first
 	slot_to_row[row_to_slot[second]] = second
 
-func row_of(handle: AnimalEntity) -> int:
-	if handle == null or handle.slot < 0 or handle.slot >= slot_to_row.size():
+# Resolve a full life identity, validating cached rows before using the slot map.
+# e.g. row_of_id(old_id) returns -1 after its slot is reused with a new serial.
+func row_of_id(id: int, cached_row: int = -1) -> int:
+	if cached_row >= 0 and cached_row < identity_animal_id.size() and identity_animal_id[cached_row] == id and id != AnimalID.INVALID:
+		return cached_row
+	if not AnimalID.is_valid(id):
 		return -1
-	var row := slot_to_row[handle.slot]
-	return row if identity_uid[row] == handle.uid else -1
+
+	var slot := AnimalID.get_slot(id)
+	if slot >= slot_to_row.size():
+		return -1
+
+	var row := slot_to_row[slot]
+	return row if row >= 0 and row < identity_animal_id.size() and identity_animal_id[row] == id else -1
+
+func row_of(handle: AnimalEntity) -> int:
+	return row_of_id(handle.id, handle.row) if handle != null else -1
 
 func live(handle: AnimalEntity) -> AnimalEntity:
-	var row := row_of(handle)
-	return handle if row >= 0 and row < active_count and identity_alive[row] else null
+	if handle == null:
+		return null
+
+	var row := handle.row
+	if row >= 0 and row < active_count and identity_animal_id[row] == handle.id:
+		return handles[row] if identity_alive[row] else null
+
+	row = row_of_id(handle.id)
+	return handles[row] if row >= 0 and row < active_count and identity_alive[row] else null
 
 func clear() -> void:
 	structure_version += 1
 	for handle in handles:
 		if handle != null:
 			handle.row = -1
+
 	identity_entity_id.clear()
 	identity_kind.clear()
 	identity_alive.clear()
@@ -467,8 +490,7 @@ func clear() -> void:
 	memory_target.clear()
 
 	brain_current_behavior.clear()
-	brain_agent.clear()
-	brain_player.clear()
+	brain_instance.clear()
 
 	sheep_local_flock_center.clear()
 	sheep_neighbor_count.clear()
@@ -506,7 +528,7 @@ func clear() -> void:
 
 	settings.clear()
 	handles.clear()
-	identity_uid.clear()
+	identity_animal_id.clear()
 	row_to_slot.clear()
 	slot_to_row.clear()
 	active_count = 0

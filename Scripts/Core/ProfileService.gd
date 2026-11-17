@@ -69,6 +69,8 @@ func begin_step() -> void:
 			last_hotspots_ms[metric] = 0.0
 			last_hotspot_calls[metric] = 0
 
+# Measure elapsed wall time since the preceding stage boundary within a simulation step.
+# e.g. AdvanceTime includes animal_service.advance_time(), while frame-level render sync is separate.
 func end_stage(metric: String) -> void:
 	var finished := Time.get_ticks_usec()
 	if performance_stats_enabled:
@@ -232,6 +234,7 @@ func _record_performance_step() -> void:
 	for metric in STAGE_NAMES:
 		_stats_stages[metric] += last_stages_ms[metric]
 		record_duration("Steps/" + metric, last_stages_ms[metric])
+
 	record_duration("Steps/Total", last_step_ms)
 	if detailed_stats_enabled:
 		for metric in HOTSPOT_NAMES:
@@ -249,15 +252,19 @@ func _publish_performance_stats() -> void:
 	if Time.get_ticks_usec() - _stats_window_started < 1000000:
 		return
 
+	# 1) Publish the completed one-second window without mixing per-step and per-call means.
 	var counts: Vector3i = g_gameplayEngine.entity_service.get_counts()
 	performance_monitors["Simulation/AliveEntities"] = counts.x + counts.y + counts.z
 	performance_monitors["Simulation/StepMean"] = _stats_step_total / maxi(1, _stats_steps)
 	performance_monitors["Simulation/StepMax"] = _stats_step_max
+
 	for id in performance_monitors:
 		if id.begins_with("Profile/"):
 			performance_monitors[id] = 0.0
+
 	for metric in _event_totals:
 		performance_monitors["Profile/" + metric + "Mean"] = _event_totals[metric] / _event_calls[metric]
+
 	_stats_step_times.sort()
 	performance_monitors["Simulation/StepP95"] = _stats_step_times[ceili(_stats_step_times.size() * 0.95) - 1] if not _stats_step_times.is_empty() else 0.0
 
@@ -275,4 +282,5 @@ func _publish_performance_stats() -> void:
 	performance_monitors["Spatial/MaxCandidates"] = _stats_max_candidates
 	performance_monitors["Spatial/NonemptyCells"] = float(_stats_cells) / maxi(1, _stats_steps)
 	performance_monitors["Spatial/MaxCellOccupancy"] = _stats_max_occupancy
+
 	_reset_stats_window()

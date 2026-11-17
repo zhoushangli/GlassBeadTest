@@ -52,6 +52,7 @@ func _dispatch_async() -> void:
 			count += 1
 
 func flush() -> void:
+	# 1) Collect finished work only; simulation steps do not wait for running async jobs.
 	_reap_retired()
 	for stage in [&"Grid", &"Sheep", &"Wolf", &"Dog"]:
 		var job: Job = async_jobs.get(stage)
@@ -62,12 +63,14 @@ func flush() -> void:
 		job.task_id = -1
 		job.state = Job.State.COMPLETED
 		async_jobs.erase(stage)
+
 		if job.version == async_version and not job.is_cancelled():
 			var apply_started := Time.get_ticks_usec()
 			var profile: ProfileService = g_gameplayEngine.profile_service
 			job.apply_result()
 			var applied_at := Time.get_ticks_usec()
 			job.state = Job.State.APPLIED
+
 			profile.record_duration("Async/" + String(stage) + "/Queue", (job.execution_started_usec - job.submitted_usec) / 1000.0)
 			profile.record_duration("Async/" + String(stage) + "/AwaitApply", (apply_started - job.execution_finished_usec) / 1000.0)
 			var work_metric := "Execute"
@@ -82,11 +85,14 @@ func flush() -> void:
 		else:
 			job.state = Job.State.DISCARDED
 			g_gameplayEngine.profile_service.count_event("Discarded/" + String(stage))
+
 		job.release_input()
 
+	# 2) Fill available worker slots after result application may have submitted new jobs.
 	_dispatch_async()
 
 func invalidate_async() -> void:
+	# 1) Retire running jobs until workers finish; reject their results by generation.
 	async_version += 1
 	for job: Job in async_jobs.values():
 		job.cancel()
@@ -137,11 +143,13 @@ func dispatch_pending() -> void:
 	for job: Job in async_jobs.values() + retired_jobs:
 		if job.state == Job.State.WORKING and not WorkerThreadPool.is_task_completed(job.task_id):
 			async_count += 1
+
 	while not pending.is_empty() and working.size() + async_count < maxi(1, max_workers):
 		var job: Job = pending.pop_front()
 		job.state = Job.State.WORKING
 		job.task_id = WorkerThreadPool.add_task(job.execute, false, String(job.stage))
 		working[job.task_id] = job
+
 	if not pending.is_empty() and working.is_empty() and async_count >= maxi(1, max_workers):
 		var job: Job = pending.pop_front()
 		job.execute()
@@ -169,7 +177,6 @@ func finish_stage() -> void:
 			_retrieve(working.keys()[0])
 
 	completed.sort_custom(_batch_before)
-
 	for job in completed:
 		job.apply_result()
 		job.state = Job.State.APPLIED

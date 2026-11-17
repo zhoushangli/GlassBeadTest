@@ -22,6 +22,7 @@ func advance_time(delta: float) -> void:
 		data.dog_assignment_remaining[row] -= delta
 		data.dog_patrol_angle[row] += settings.patrol_angular_speed * delta * (1.0 if data.identity_entity_id[row] % 2 == 0 else -1.0)
 		data.dog_guard_point[row] = common.clamp_to_arena(data.handles[row], data.dog_protection_center[row] + Vector2.from_angle(data.dog_patrol_angle[row]) * settings.guard_distance)
+
 		if data.dog_region[row] >= 0:
 			if g_gameplayEngine.entity_service.sheep_rows.is_empty():
 				data.dog_region[row] = -1
@@ -41,6 +42,7 @@ func advance_time(delta: float) -> void:
 				g_gameplayEngine.advance_decision(data.handles[row])
 		elif data.motion_position[row].distance_to(data.dog_protection_center[row]) > settings.leash_distance:
 			data.dog_returning[row] = 1
+
 		if data.dog_returning[row] and data.motion_position[row].distance_to(data.dog_guard_point[row]) <= 24.0:
 			data.dog_returning[row] = 0
 
@@ -50,6 +52,8 @@ func apply_decision(job: DogPerceptionJob) -> void:
 	common.submit_stats(job.stats)
 	var coverage := PackedInt32Array()
 	coverage.resize(job.grid.region_counts.size())
+
+	# 1) Revalidate current assignments so delayed work cannot overwrite a newer decision.
 	for index in range(job.rows.size()):
 		var snapshot_row := job.rows[index]
 		var animal := common.snapshot_animal(snapshot, snapshot_row)
@@ -80,6 +84,7 @@ func apply_decision(job: DogPerceptionJob) -> void:
 		var region := data.dog_region[row]
 		if region >= 0 and region < coverage.size():
 			coverage[region] += 1
+
 	var service: GridService = g_gameplayEngine.grid_service
 	service.dog_debug_snapshot = job.grid
 	service.dog_region_coverage = coverage
@@ -130,6 +135,7 @@ func assign_tasks() -> void:
 					proposals[best] = dog
 			if proposals.is_empty():
 				break
+
 			for animal: AnimalEntity in proposals:
 				var dog: AnimalEntity = proposals[animal]
 				assignments[dog][kind] = animal
@@ -361,6 +367,7 @@ func apply_assignment(animal: AnimalEntity, wolf: AnimalEntity, stray: AnimalEnt
 	if wolf != data.live(memory_target[row]):
 		memory_target[row] = wolf
 		common.observe_target(animal, 0.0)
+
 	data.dog_collected_sheep[row] = stray as AnimalEntity
 	if lost_wolf:
 		data.dog_returning[row] = 1
@@ -487,6 +494,7 @@ func _local_group(anchor: AnimalEntity, with_candidates: bool = false) -> Dictio
 				if point.distance_squared_to(grid.perception_positions[sheep_row]) < settings.threat_distance * settings.threat_distance:
 					threatening = true
 					break
+
 		if threatening:
 			wolves.append(row)
 

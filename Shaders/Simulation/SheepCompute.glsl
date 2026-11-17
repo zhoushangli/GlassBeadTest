@@ -7,6 +7,8 @@ layout(set = 0, binding = 1, std430) readonly buffer Indices { int ix[]; };
 layout(set = 0, binding = 2, std430) buffer Results { float out_data[]; };
 layout(push_constant, std430) uniform Pass { int stage; } pass_data;
 
+// Read packed animal vectors after the 32-float configuration header.
+// e.g. field = 2 selects velocity, while field = 4 selects cached separation.
 vec2 animal_vec(int row, int field) {
 	int p = 32 + field * ix[2] + row * 2;
 	return vec2(f[p], f[p + 1]);
@@ -45,6 +47,7 @@ vec2 cell_sum(int cell, int component) {
 
 void aggregate(int index) {
 	if (index >= ix[6]) return;
+
 	int cell = ix[ix[19] + index];
 	ivec2 c = ivec2(cell % ix[0], cell / ix[0]);
 	for (int kind = 0; kind < 2; ++kind) {
@@ -66,6 +69,7 @@ void aggregate(int index) {
 
 void pressure_node(int index) {
 	if (index >= ix[7]) return;
+
 	int node = ix[ix[21] + index];
 	vec2 point = vec2(node % (ix[0] + 1), node / (ix[0] + 1)) * f[0];
 	int p = ix[6] * 8 + index * 6;
@@ -108,6 +112,8 @@ vec2 sample_field(vec2 point, int kind) {
 
 void sheep(int index) {
 	if (index >= ix[3]) return;
+
+	// 1) Read shared flock aggregates and refresh local separation only when due.
 	int row = ix[ix[11] + index];
 	vec2 point = animal_vec(row, 0);
 	int cell = ix[ix[10] + row];
@@ -137,6 +143,8 @@ void sheep(int index) {
 			}
 		}
 	}
+
+	// 2) Use shared pressure in dense cells while retaining exact source-radius checks.
 	vec2 threat = vec2(0.0);
 	vec2 dog = vec2(0.0);
 	float strength = 0.0;
@@ -163,6 +171,8 @@ void sheep(int index) {
 		if (kind == 0) threat = strength > 0.0 ? force : vec2(0.0);
 		else dog = force;
 	}
+
+	// 3) Blend danger, dog pressure, flock motion and wandering into a bounded intent.
 	float panic = animal_value(row, 6);
 	float danger = max(strength, panic);
 	vec2 escape = limit_vector(threat + safe_normalize(point - animal_vec(row, 8)) * panic, 1.0);
@@ -173,6 +183,7 @@ void sheep(int index) {
 	steering += flock * mix(1.0, 0.25, danger);
 	steering += safe_normalize(animal_vec(row, 10) - point) * speed * f[10] * (1.0 - danger);
 	steering += separation * f[7] * f[11];
+
 	int p = ix[6] * 8 + ix[7] * 6 + index * 16;
 	store_vec(p, separation);
 	store_vec(p + 2, center);
@@ -187,6 +198,8 @@ void sheep(int index) {
 }
 
 void main() {
+	// Dispatch aggregates, pressure nodes and sheep in separate passes with host-side barriers.
+	// e.g. stage 2 reads the aggregate and pressure outputs produced by stages 0 and 1.
 	int index = int(gl_GlobalInvocationID.x);
 	if (pass_data.stage == 0) aggregate(index);
 	else if (pass_data.stage == 1) pressure_node(index);

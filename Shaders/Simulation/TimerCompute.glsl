@@ -14,8 +14,11 @@ void main() {
 	if (row >= count) {
 		return;
 	}
+
+	// 1) Advance double-precision countdowns using simulation delta rather than wall time.
 	result[row] = values[row] - config[0];
 	result[count + row] = values[count + row] - config[0];
+
 	double panic = values[count * 2 + row];
 	if (indices[2 + row] == 0) {
 		panic = config[1] > 0.0 ? max(0.0, panic - config[0] / config[1]) : 0.0;

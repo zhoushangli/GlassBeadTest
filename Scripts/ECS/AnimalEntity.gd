@@ -14,11 +14,10 @@ const KIND_NAMES := ["Sheep", "Wolf", "Sheepdog"]
 
 const STRATEGY_NAMES := ["Frontal", "Side", "Rear", "Howl"]
 
-var slot: int = -1
-var uid: int = 0
+var id: int = AnimalID.INVALID
 
 # Track the current data row; only storage lifecycle code updates it.
-# e.g. a row swap preserves slot and uid while updating row.
+# e.g. a row swap preserves id while updating row.
 var row: int = -1
 
 var enabled: bool:

@@ -196,6 +196,7 @@ func _local_group(region: int, stats: Dictionary) -> Group:
 		if center.distance_squared_to(snapshot.motion_position[sheep]) <= radius * radius:
 			sum += snapshot.motion_position[sheep]
 			count += 1
+
 	var group_wolves := PackedInt32Array()
 	var threat_distance: float = snapshot.config.sheepdog.threat_distance
 	var wolves_nearby := GridService.query_snapshot(center, radius + threat_distance, AnimalEntity.Kind.WOLF, grid, stats)
@@ -205,8 +206,10 @@ func _local_group(region: int, stats: Dictionary) -> Group:
 			if center.distance_squared_to(snapshot.motion_position[sheep]) <= radius * radius and snapshot.motion_position[wolf].distance_squared_to(snapshot.motion_position[sheep]) <= threat_distance * threat_distance:
 				threatening = true
 				break
+
 		if threatening:
 			group_wolves.append(wolf)
+
 	var result := Group.new()
 	result.center = sum / count if count > 0 else center
 	result.count = count

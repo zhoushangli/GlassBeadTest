@@ -5,7 +5,7 @@ func _init() -> void:
 	behavior = AnimalEntity.Behavior.REST
 
 func _execute(delta: float) -> void:
-	var wolf := agent.entity as AnimalEntity
+	var wolf := animal
 	var common: AnimalSystem = g_gameplayEngine.animal_system
 	if data.wolf_retreating[wolf.row]:
 		data.wolf_retreating[wolf.row] = 0

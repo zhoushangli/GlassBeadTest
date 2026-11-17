@@ -90,10 +90,10 @@ func stop_simulation() -> void:
 	running = false
 	compute_service.shutdown()
 	job_service.shutdown()
+	entity_service.shutdown()
 	animal_service.shutdown()
 	debug_service.shutdown()
 	profile_service.shutdown()
-	entity_service.shutdown()
 	render_service.shutdown()
 	grid_service.shutdown()
 	_pending_spawns.clear()
@@ -161,6 +161,7 @@ func load_preset(path: String = PRESET_PATH) -> SimulationConfig:
 	var loaded := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as SimulationConfig
 	if loaded == null or loaded.preset_version != SimulationConfig.PRESET_VERSION or not loaded.validate().is_empty():
 		return null
+
 	return loaded.copy_config()
 
 func request_spawn(kind: AnimalEntity.Kind, count: int) -> void:
@@ -180,6 +181,7 @@ func random_position() -> Vector2:
 func _process(delta: float) -> void:
 	if not running:
 		return
+
 	update_frequency()
 
 	# 1) Apply UI commands before iterating entities, including while paused.
@@ -218,6 +220,8 @@ func _process(delta: float) -> void:
 	var frame_started := Time.get_ticks_usec()
 	for index in range(steps):
 		simulate_step(interval)
+
+	# 3) Synchronize presentation once after all fixed steps in this display frame.
 	if render_service.dirty:
 		render_service.sync()
 	var frame_ms := (Time.get_ticks_usec() - frame_started) / 1000.0
@@ -243,6 +247,7 @@ func simulate_step(delta: float) -> void:
 	animal_service.advance_time(delta)
 	if step_failed:
 		return
+
 	profile_service.end_stage("AdvanceTime")
 	animal_service.schedule_updates(delta)
 	profile_service.end_stage("ScheduleUpdates")
@@ -253,11 +258,15 @@ func simulate_step(delta: float) -> void:
 	entity_service.update_movement(delta)
 	if step_failed:
 		return
+
 	profile_service.end_stage("Movement")
+
+	# 3) Resolve captures after movement, then compact rows before the next step.
 	animal_service.resolve_interactions(delta)
 	profile_service.end_stage("Interaction")
 	entity_service.remove_expired(delta)
 	profile_service.end_stage("Cleanup")
+
 	render_service.mark_dirty()
 	debug_service.advance_visuals(delta)
 	simulation_time += delta

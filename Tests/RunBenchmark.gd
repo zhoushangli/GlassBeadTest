@@ -4,6 +4,7 @@ var job_totals: Dictionary = {}
 var async_totals: Dictionary = {}
 var async_sequences: Dictionary = {}
 var compute_backend: String = "auto"
+var startup_ms: float = 0.0
 var wolf_frequency: int = 0
 var dog_frequency: int = 0
 var debug_grids: bool = false
@@ -283,6 +284,7 @@ func _fail(message: String) -> void:
 	quit(1)
 
 func _start() -> void:
+	var startup_started := Time.get_ticks_usec()
 	scene = load("res://Levels/Map/SCN_Root.tscn").instantiate()
 	var settings: SimulationConfig = scene.simulation_config.copy_config()
 	if population >= 0:
@@ -318,6 +320,7 @@ func _start() -> void:
 		settings.initial_total = 0
 	scene.simulation_config = settings
 	root.add_child(scene)
+	startup_ms = (Time.get_ticks_usec() - startup_started) / 1000.0
 	engine = root.get_node("g_gameplayEngine")
 	engine.job_service.max_workers = jobs_workers
 	if jobs_mode != "default":
@@ -359,9 +362,6 @@ func _start() -> void:
 
 	if motion_mode == "random":
 		engine.set_process(false)
-		for player in engine.entity_service.data.brain_player:
-			if player != null:
-				player.active = false
 	engine.simulation_stepped.connect(_record_step)
 	engine.simulation_frame_completed.connect(_record_frame)
 	DisplayServer.window_set_title("GlassBeadTest - %s %d animals" % [layout, configured_counts.x + configured_counts.y + configured_counts.z])
@@ -408,7 +408,7 @@ func _run_fixed_steps() -> void:
 		stage_totals[stage] /= fixed_steps
 
 	var result := {
-		"result_version": 7, "label": label, "motion_mode": motion_mode, "motion_state_sha256": _motion_hash(), "active_bt_players": _active_bt_players(), "mode": "fixed_steps", "job_timings_mean_ms": _job_means(),
+		"result_version": 8, "label": label, "motion_mode": motion_mode, "motion_state_sha256": _motion_hash(), "active_bt_instances": _active_bt_instances(), "startup_ms": startup_ms, "mode": "fixed_steps", "job_timings_mean_ms": _job_means(),
 		"jobs_parallel_enabled": engine.job_service.parallel_enabled, "job_workers": jobs_workers, "warmup_steps": warmup_steps,
 		"measured_steps": fixed_steps, "simulation_hz": engine.config.simulation_hz,
 		"step_mean_ms": total / fixed_steps, "step_p95_ms": times[mini(times.size() - 1, ceili(times.size() * 0.95) - 1)],
@@ -692,7 +692,7 @@ func _finish(elapsed: float) -> void:
 
 	var result := {
 		"job_timings_mean_ms": _job_means(), "jobs_parallel_enabled": engine.job_service.parallel_enabled,
-		"result_version": 7, "jobs_mode": jobs_mode, "job_workers": jobs_workers, "job_stages": engine.job_service.parallel_stages, "label": label, "sampling": sampling,
+		"result_version": 8, "jobs_mode": jobs_mode, "job_workers": jobs_workers, "job_stages": engine.job_service.parallel_stages, "label": label, "sampling": sampling,
 		"visibility": {"hud": hud_visible, "overlay": overlay, "animals": animals_visible, "debug_grids": debug_grids},
 		"stages_mean_ms": stages_mean, "hotspots": hotspots, "debug": debug,
 		"preprocessing_mean_per_step": preprocessing_mean,
@@ -709,7 +709,8 @@ func _finish(elapsed: float) -> void:
 			"units": {"Steps": "per simulation step", "Frames": "per display frame", "Render": "per sync", "Async": "per completed job", "Compute": "per request", "Numeric": "per synchronous pass", "Species": "per application", "Debug": "per call", "Snapshot": "per snapshot"}},
 		"frame_observations": frame_observations,
 		"animal_presentation_node_count": _count_nodes(scene.get_node("World/Animals")) - 1 + int("render_service" in engine),
-		"active_bt_players": _active_bt_players(),
+		"animal_logic_node_count": _count_nodes(scene.get_node("World/Animals")) - 4,
+		"active_bt_instances": _active_bt_instances(), "startup_ms": startup_ms,
 		"motion_state_sha256": _motion_hash(),
 		"entities": entities_count, "scenario": scenario, "layout_version": 1,
 		"tier": tier, "tiles": tiles, "layout": layout, "engine": Engine.get_version_info(),
@@ -829,10 +830,14 @@ func _count_nodes(node: Node) -> int:
 		count += _count_nodes(child)
 	return count
 
-func _active_bt_players() -> int:
+func _active_bt_instances() -> int:
+	if motion_mode == "random":
+		return 0
+
+	var data: AnimalData = engine.entity_service.data
 	var count := 0
-	for player in engine.entity_service.data.brain_player:
-		if player != null and player.active:
+	for row in range(data.active_count):
+		if data.identity_alive[row] and data.brain_instance[row] != null:
 			count += 1
 	return count
 

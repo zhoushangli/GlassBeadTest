@@ -76,9 +76,9 @@ func _verify_resources_and_vision() -> void:
 	var dog := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(400, 300))
 	for animal in [sheep, wolf, dog]:
 		if animal == sheep:
-			_check(data.brain_player[animal.row] == null, "sheep has no behavior tree")
+			_check(data.brain_instance[animal.row] == null, "sheep has no behavior tree")
 		else:
-			_check(data.brain_player[animal.row].get_bt_instance() != null and data.brain_player[animal.row].update_mode == BTPlayer.MANUAL, "manual behavior tree is instantiated")
+			_check(data.brain_instance[animal.row] != null and data.brain_instance[animal.row].get_agent() == engine.entity_service, "memory behavior tree is initialized")
 		data.motion_facing[animal.row] = Vector2.RIGHT
 		if data.identity_kind[animal.row] != AnimalEntity.Kind.SHEEP:
 			var radius: float = data.settings[animal.row].perception_radius
@@ -281,7 +281,7 @@ func _verify_grid_and_pressure() -> void:
 	engine.sheep_system._scan_neighbors(first, grid)
 	_check(data.sheep_neighbor_count[first.row] == 0 and data.sheep_alignment[first.row] == Vector2.ZERO, "hot radius changes refresh shared stencils")
 
-	var old_uid := first.uid
+	var old_id := first.id
 	engine.entity_service.capture(first)
 	engine.entity_service.remove_expired(1.0)
 	grid.rebuild()
@@ -289,7 +289,7 @@ func _verify_grid_and_pressure() -> void:
 
 	var replacement := _animal(AnimalEntity.Kind.SHEEP, Vector2(330, 300))
 	grid.rebuild()
-	_check(data.live(first) == null and replacement.uid != old_uid and grid.members.size() == 3, "slot reuse does not resurrect grid identities")
+	_check(data.live(first) == null and replacement.id != old_id and grid.members.size() == 3, "slot reuse does not resurrect grid identities")
 
 	engine.entity_service.clear()
 	_check(grid.members.is_empty() and grid.width == 0, "entity clear releases the spatial snapshot")
@@ -818,11 +818,10 @@ func _verify_ecs_storage() -> void:
 	data.memory_target[wolf.row] = prey
 	data.dog_protected_sheep[dog.row] = prey
 	data.dog_collected_sheep[dog.row] = prey
-	var old_uid := prey.uid
-	var old_slot := prey.slot
-	var agent := data.brain_agent[prey.row]
-	var player := data.brain_player[prey.row]
-	_check(player == null, "sheep pooling needs no behavior tree")
+	var old_id := prey.id
+	var old_slot := AnimalID.get_slot(prey.id)
+	var tree_instance := data.brain_instance[prey.row]
+	_check(tree_instance == null, "sheep pooling needs no behavior tree")
 
 	data.sheep_panic_strength[prey.row] = 1
 	data.sheep_threat_strength[prey.row] = 0.6
@@ -830,17 +829,17 @@ func _verify_ecs_storage() -> void:
 	data.motion_velocity[prey.row] = Vector2(20, 10)
 	data.motion_velocity[dog.row] = Vector2(7, 9)
 	data.dog_protection_center[dog.row] = Vector2(800, 250)
-	var dog_uid := dog.uid
+	var dog_id := dog.id
 	engine.debug_service.selected = prey
 	_check(service.capture(prey) and not service.capture(prey), "death captures exactly once")
 	_check(data.live(data.memory_target[wolf.row]) == null and engine.debug_service.selected == null, "death invalidates target and selection immediately")
 
 	service.remove_expired()
-	_check(not prey.enabled and _render_visible(prey) and player == null and agent == null, "disabled life keeps a short corpse presentation")
+	_check(not prey.enabled and _render_visible(prey) and tree_instance == null, "disabled life keeps a short corpse presentation")
 	_check(data.sheep_panic_strength[prey.row] == 1.0 and data.sheep_threat_strength[prey.row] == 0.6 and data.sheep_panic_source[prey.row] == Vector2(350, 250), "row swap preserves continuous sheep fields")
 	_check(data.active_count == 2 and data.retained_count == 3 and not service.entities.has(prey), "corpse is outside the contiguous active prefix")
-	_check(dog.row == 0 and dog.uid == dog_uid and data.motion_position[dog.row] == Vector2(900, 300) and data.motion_velocity[dog.row] == Vector2(7, 9) and data.dog_protection_center[dog.row] == Vector2(800, 250), "row swap preserves identity and independent component fields")
-	_check(data.brain_agent[dog.row].entity == dog and data.live(data.dog_collected_sheep[dog.row]) == null, "row swap preserves scene association and invalidates dog references")
+	_check(dog.row == 0 and dog.id == dog_id and data.motion_position[dog.row] == Vector2(900, 300) and data.motion_velocity[dog.row] == Vector2(7, 9) and data.dog_protection_center[dog.row] == Vector2(800, 250), "row swap preserves identity and independent component fields")
+	_check(data.brain_instance[dog.row].get_blackboard().get_var(&"animal") == dog and data.live(data.dog_collected_sheep[dog.row]) == null, "row swap preserves tree association and invalidates dog references")
 
 	for row in range(data.row_to_slot.size()):
 		_check(data.slot_to_row[data.row_to_slot[row]] == row, "slot mapping follows row swap")
@@ -849,16 +848,16 @@ func _verify_ecs_storage() -> void:
 	_check(data.identity_death_remaining[prey.row] == remaining, "pause freezes corpse lifetime")
 
 	var extra := _animal(AnimalEntity.Kind.SHEEP, Vector2(700, 400))
-	_check(extra.slot != old_slot and _render_visible(prey), "spawning cannot reuse a visible corpse")
+	_check(AnimalID.get_slot(extra.id) != old_slot and _render_visible(prey), "spawning cannot reuse a visible corpse")
 
 	_step(20)
 	_check(not _render_visible(prey) and data.retained_count == data.active_count, "expired corpse enters the reusable suffix")
 
 	var allocated := data.row_to_slot.size()
 	var replacement := _animal(AnimalEntity.Kind.SHEEP, Vector2(600, 400))
-	_check(replacement.slot == old_slot and replacement.uid != old_uid and data.row_to_slot.size() == allocated, "reuse keeps the slot and allocates a new uid without growing storage")
+	_check(AnimalID.get_slot(replacement.id) == old_slot and replacement.id != old_id and data.row_to_slot.size() == allocated, "reuse keeps the slot and allocates a new AnimalID without growing storage")
 	_check(data.row_of(prey) == -1 and data.live(prey) == null and data.live(data.memory_target[wolf.row]) == null, "old life handle cannot follow a reused slot")
-	_check(data.brain_agent[replacement.row] == null and data.brain_player[replacement.row] == null, "reuse preserves sheep presentation without a behavior tree")
+	_check(data.brain_instance[replacement.row] == null, "reuse preserves sheep presentation without a behavior tree")
 	_check(data.sheep_panic_strength[replacement.row] == 0.0 and data.sheep_threat_strength[replacement.row] == 0.0 and data.sheep_panic_source[replacement.row] == Vector2.ZERO and data.motion_velocity[replacement.row] == Vector2.ZERO and data.memory_target[replacement.row] == null, "reuse clears previous life state")
 	engine.render_service.sync()
 	_check(_render_transform(replacement).origin == Vector2(600, 400) and replacement.enabled, "reuse synchronizes spawn presentation")
@@ -867,17 +866,17 @@ func _verify_ecs_storage() -> void:
 	service.remove_expired()
 	_check(data.active_count == 2 and service.get_counts() == Vector3i(0, 1, 1), "compaction does not skip consecutive deaths")
 
-	var last_uid := dog.uid
+	var last_id := dog.id
 	for index in range(3):
 		engine.reset_simulation()
 	_check(data.row_to_slot.size() == allocated and service.get_counts() == Vector3i.ZERO, "empty resets retain allocated storage without growth")
 
 	var new_dog := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(900, 300))
-	_check(new_dog.uid > last_uid and data.live(dog) == null, "reset does not recycle uid values")
+	_check(new_dog.id != last_id and data.live(dog) == null, "reset does not recycle AnimalIDs")
 
 	service.clear()
 	var after_clear := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(900, 300))
-	_check(after_clear.uid > new_dog.uid and data.live(new_dog) == null, "clear cannot revive an old handle")
+	_check(after_clear.id != new_dog.id and data.live(new_dog) == null, "clear cannot revive an old handle")
 
 func _verify_debug_panel() -> void:
 	var data: AnimalData = g_gameplayEngine.entity_service.data
@@ -1205,14 +1204,14 @@ func _verify_multimesh() -> void:
 	var state: int = engine.rng.state
 	engine._process(0.0)
 	_check(not render.dirty and _render_transform(sheep).origin.is_equal_approx(Vector2(222, 333)), "paused structural edits flush render data")
-	_check(engine.rng.state == state and data.brain_agent[sheep.row] == null, "rendering consumes no RNG and sheep creates no agent")
-	_check(data.brain_player[wolf.row] != data.brain_player[other.row] and data.brain_player[wolf.row].get_blackboard() != data.brain_player[other.row].get_blackboard(), "wolves own independent players and blackboards")
-	data.brain_player[wolf.row].get_blackboard().set_var("old_life", 123)
-	var player := data.brain_player[wolf.row]
-	var old_uid := wolf.uid
+	_check(engine.rng.state == state and data.brain_instance[sheep.row] == null, "rendering consumes no RNG and sheep creates no agent")
+	_check(data.brain_instance[wolf.row] != data.brain_instance[other.row] and data.brain_instance[wolf.row].get_blackboard() != data.brain_instance[other.row].get_blackboard(), "wolves own independent instances and blackboards")
+	data.brain_instance[wolf.row].get_blackboard().set_var("old_life", 123)
+	var tree_instance := data.brain_instance[wolf.row]
+	var old_id := wolf.id
 	engine.reset_simulation()
 	var replacement := _animal(AnimalEntity.Kind.WOLF, Vector2(300, 300))
-	_check(data.brain_player[replacement.row] == player and replacement.uid != old_uid and not player.get_blackboard().has_var("old_life") and data.brain_agent[replacement.row].entity == replacement, "agent reuse clears blackboard and rebinds the new life")
+	_check(data.brain_instance[replacement.row] == tree_instance and replacement.id != old_id and not tree_instance.get_blackboard().has_var("old_life") and data.brain_instance[replacement.row].get_blackboard().get_var(&"animal") == replacement, "tree reuse clears blackboard and rebinds the new life")
 	var flock := service.spawn(AnimalEntity.Kind.SHEEP, 12, Vector2(600, 400))
 	render.sync()
 	var capacity := render.instances[0].multimesh.instance_count

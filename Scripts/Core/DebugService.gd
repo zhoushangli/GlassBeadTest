@@ -18,6 +18,7 @@ var show_details: bool = false:
 		if not value:
 			howl_events.clear()
 		queue_redraw()
+
 var selected_only: bool = true
 var visual_options: Dictionary[String, bool] = {
 	"wolf_vision": true, "dog_vision": true,
@@ -44,8 +45,10 @@ func _shutdown() -> void:
 func _process(_delta: float) -> void:
 	if not started or not g_gameplayEngine.running:
 		return
+
 	if overlay_enabled:
 		refresh()
+
 	if hud_enabled and is_instance_valid(hud):
 		var started := Time.get_ticks_usec() if g_gameplayEngine.profile_service.performance_stats_enabled else 0
 		hud.refresh()
@@ -79,6 +82,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				show_details = not show_details
 			_:
 				return
+
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		select_at(get_global_mouse_position())
@@ -94,6 +98,7 @@ func select_at(point: Vector2) -> void:
 			if distance < nearest_distance:
 				selected = animal
 				nearest_distance = distance
+
 	queue_redraw()
 
 func clear_selection() -> void:
@@ -115,6 +120,7 @@ func selection_text() -> String:
 		return "Click an animal to inspect its behavior and target."
 	if data.identity_kind[selected.row] == AnimalEntity.Kind.SHEEP:
 		return "Sheep #%d | %s" % [data.identity_entity_id[selected.row], g_gameplayEngine.debug_details(selected)]
+
 	var target_text := "none"
 	if g_gameplayEngine.animal_system.is_live(selected, data.live(data.memory_target[selected.row])):
 		target_text = "%s #%d" % [AnimalEntity.KIND_NAMES[data.identity_kind[data.live(data.memory_target[selected.row]).row]], data.identity_entity_id[data.live(data.memory_target[selected.row]).row]]
@@ -145,7 +151,7 @@ func record_howl(animal: AnimalEntity) -> void:
 		"position": data.motion_position[row], "radius": data.settings[row].howl_radius,
 		"duration": visual.howl_visual_duration, "elapsed": 0.0,
 		"color": visual.howl_color, "id": data.identity_entity_id[row],
-		"uid": animal.uid,
+		"animal_id": animal.id,
 	})
 
 func advance_visuals(delta: float) -> void:
@@ -177,7 +183,7 @@ func _draw() -> void:
 					_draw_animal(animal)
 		if visual_options["howl"]:
 			for event in howl_events:
-				if selected_only and (selected == null or selected.uid != event["uid"]):
+				if selected_only and (selected == null or selected.id != event["animal_id"]):
 					continue
 
 				var progress: float = clampf(event["elapsed"] / event["duration"], 0.0, 1.0)
@@ -186,6 +192,7 @@ func _draw() -> void:
 				draw_circle(event["position"], event["radius"], Color(color, color.a * 0.08))
 				draw_arc(event["position"], event["radius"], 0.0, TAU, 48, Color(color, color.a * 0.4), 1.0, true)
 				draw_arc(event["position"], event["radius"] * progress, 0.0, TAU, 48, color, 2.0, true)
+
 	if g_gameplayEngine.profile_service.performance_stats_enabled:
 		g_gameplayEngine.profile_service.record_debug_time("OverlayDrawCPUTime", started_at)
 
@@ -208,6 +215,7 @@ func _draw_animal(animal: AnimalEntity) -> void:
 		draw_arc(point, radius, direction - half_angle, direction + half_angle, 32, edge, width, true)
 		draw_line(point, points[1], edge, width, true)
 		draw_line(point, points[-1], edge, width, true)
+
 	if data.live(data.memory_target[row]) != null:
 		if visual_options["tracking"]:
 			if data.memory_target_visible[row]:
@@ -220,10 +228,12 @@ func _draw_animal(animal: AnimalEntity) -> void:
 			draw_arc(data.memory_last_seen_position[row], 7.0, 0.0, TAU, 20, color, width, true)
 			draw_line(data.memory_last_seen_position[row] - Vector2(4, 0), data.memory_last_seen_position[row] + Vector2(4, 0), color, width)
 			draw_line(data.memory_last_seen_position[row] - Vector2(0, 4), data.memory_last_seen_position[row] + Vector2(0, 4), color, width)
+
 	if visual_options["movement"]:
 		if not visual_options["tracking"] or data.live(data.memory_target[row]) == null or not data.motion_movement_goal[row].is_equal_approx(data.memory_last_seen_position[row]):
 			draw_line(point, data.motion_movement_goal[row], Color("#f4f7ed"), width, true)
 		draw_circle(data.motion_movement_goal[row], 3.0, Color("#f4f7ed"))
+
 	if visual_options["protection"] and data.identity_kind[row] == AnimalEntity.Kind.SHEEPDOG:
 		draw_arc(data.dog_protection_center[row], data.settings[row].local_flock_radius, 0.0, TAU, 48, Color("#93c5fd"), width, true)
 		draw_circle(data.dog_protection_center[row], 4.0, Color("#93c5fd"))
@@ -265,8 +275,8 @@ func _draw_grids() -> void:
 				draw_rect(rectangle.intersection(bounds), Color(0.5, 0.8, 0.8, 0.10))
 		_draw_grid_lines(bounds, size, Color(0.6, 0.85, 0.85, 0.28), 1.0 / zoom)
 		if selected != null:
-			var snapshot_row := grid.slots.find(selected.slot)
-			if snapshot_row >= 0 and grid.uids[snapshot_row] == selected.uid:
+			var snapshot_row := grid.animal_ids.find(selected.id)
+			if snapshot_row >= 0:
 				var cell := grid.row_cells[snapshot_row]
 				draw_rect(Rect2(Vector2(cell % grid.width, floori(float(cell) / grid.width)) * size, Vector2.ONE * size), Color("#f4f7ed"), false, 1.5 / zoom)
 
@@ -294,5 +304,6 @@ func _draw_grids() -> void:
 				draw_rect(rectangle, Color("#facc15"), false, 2.0 / zoom)
 				draw_line(data.motion_position[selected.row], grid.region_centers[region], Color("#facc15"), 1.5 / zoom)
 				draw_line(grid.region_centers[region], data.dog_protection_center[selected.row], Color("#93c5fd"), 1.0 / zoom)
+
 	if g_gameplayEngine.profile_service.performance_stats_enabled:
 		g_gameplayEngine.profile_service.record_duration("Debug/GridDrawCPU", (Time.get_ticks_usec() - started_at) / 1000.0)

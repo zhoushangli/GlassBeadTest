@@ -100,54 +100,75 @@ func sync() -> void:
 	var counts := Vector3i.ZERO
 	for row in range(data.retained_count):
 		counts[data.identity_kind[row]] += 1
-	last_fill_ms = 0.0
-	last_submit_ms = 0.0
+
+	var fill_started := Time.get_ticks_usec()
+
+	# Transfer the outer array reference before mutating reusable species buffers.
+	# e.g. buffers = [] releases the service reference until frame_buffers is submitted.
+	var frame_buffers: Array[PackedFloat32Array] = buffers
+	buffers = []
+	var scales := PackedVector2Array()
 	for kind in range(3):
-		var started_at := Time.get_ticks_usec()
 		var multimesh := instances[kind].multimesh
-		var buffer := buffers[kind]
-		buffers[kind] = PackedFloat32Array()
 		if counts[kind] > multimesh.instance_count:
 			multimesh.instance_count = counts[kind]
-			buffer.resize(counts[kind] * 12)
-		var scale: Vector2 = _visuals[kind].scale
+			frame_buffers[kind].resize(counts[kind] * 12)
+		scales.append(_visuals[kind].scale)
+
+	var positions := data.motion_position
+	var facings := data.motion_facing
+	var kinds := data.identity_kind
+	var alive := data.identity_alive
+	var behaviors := data.brain_current_behavior
+	var pressures := data.sheep_dog_pressure
+	var threats := data.sheep_threat_strength
+	var panic := data.sheep_panic_strength
+	var cursors := Vector3i.ZERO
+
+	# 1) Fill all species buffers in one row traversal, preserving per-species order.
+	for row in range(data.retained_count):
+		var kind := kinds[row]
+		var buffer: PackedFloat32Array = frame_buffers[kind]
+		var index := cursors[kind]
+		var point := positions[row]
+		var facing := facings[row].normalized()
+		var scale := scales[kind]
 		var colors := _colors[kind]
-		var index := 0
+		var color := colors[behaviors[row]]
+		if not alive[row]:
+			color = Color("#7b8794")
+		elif kind == AnimalEntity.Kind.SHEEP:
+			color = colors[AnimalEntity.Behavior.FLOCK].lerp(colors[AnimalEntity.Behavior.HERDED], minf(1.0, pressures[row].length()))
+			color = color.lerp(colors[AnimalEntity.Behavior.FLEE], maxf(threats[row], panic[row]))
 
-		# 1) Pack transforms and colors without updating individual scene nodes.
-		for row in range(data.retained_count):
-			if data.identity_kind[row] != kind:
-				continue
+		# Store the 2D transform and color in Godot's 12-float instance layout.
+		# e.g. offsets 3 and 7 contain position.x and position.y; offsets 8 to 11 contain RGBA.
+		buffer[index] = -facing.y * scale.x
+		buffer[index + 1] = -facing.x * scale.y
+		buffer[index + 3] = point.x
+		buffer[index + 4] = facing.x * scale.x
+		buffer[index + 5] = -facing.y * scale.y
+		buffer[index + 7] = point.y
+		buffer[index + 8] = color.r
+		buffer[index + 9] = color.g
+		buffer[index + 10] = color.b
+		buffer[index + 11] = color.a
+		cursors[kind] = index + 12
 
-			var point := data.motion_position[row]
-			var facing := data.motion_facing[row].normalized()
-			var color := colors[data.brain_current_behavior[row]]
-			if not data.identity_alive[row]:
-				color = Color("#7b8794")
-			elif kind == AnimalEntity.Kind.SHEEP:
-				color = colors[AnimalEntity.Behavior.FLOCK].lerp(colors[AnimalEntity.Behavior.HERDED], minf(1.0, data.sheep_dog_pressure[row].length()))
-				color = color.lerp(colors[AnimalEntity.Behavior.FLEE], maxf(data.sheep_threat_strength[row], data.sheep_panic_strength[row]))
-			buffer[index] = -facing.y * scale.x
-			buffer[index + 1] = -facing.x * scale.y
-			buffer[index + 3] = point.x
-			buffer[index + 4] = facing.x * scale.x
-			buffer[index + 5] = -facing.y * scale.y
-			buffer[index + 7] = point.y
-			buffer[index + 8] = color.r
-			buffer[index + 9] = color.g
-			buffer[index + 10] = color.b
-			buffer[index + 11] = color.a
-			index += 12
-		last_fill_ms += (Time.get_ticks_usec() - started_at) / 1000.0
+	last_fill_ms = (Time.get_ticks_usec() - fill_started) / 1000.0
 
-		# 2) Submit one contiguous buffer per species and hide the unused suffix.
-		started_at = Time.get_ticks_usec()
+	# 2) Submit each contiguous species buffer and retain unused capacity.
+	var submit_started := Time.get_ticks_usec()
+	for kind in range(3):
+		var multimesh := instances[kind].multimesh
 		if multimesh.instance_count > 0:
-			multimesh.buffer = buffer
+			multimesh.buffer = frame_buffers[kind]
 		multimesh.visible_instance_count = counts[kind]
-		buffers[kind] = buffer
-		last_submit_ms += (Time.get_ticks_usec() - started_at) / 1000.0
+
+	buffers = frame_buffers
+	last_submit_ms = (Time.get_ticks_usec() - submit_started) / 1000.0
 	dirty = false
+
 	var profile: ProfileService = g_gameplayEngine.profile_service
 	profile.record_duration("Render/Sync", (Time.get_ticks_usec() - sync_started) / 1000.0)
 	profile.record_duration("Render/Fill", last_fill_ms)

@@ -4,19 +4,19 @@ extends BTCondition
 @export var condition: StringName
 
 var data: AnimalData
+var animal: AnimalEntity
 
 func _setup() -> void:
 	data = g_gameplayEngine.entity_service.data
+	animal = blackboard.get_var(&"animal", null)
 
 func _generate_name() -> String:
 	return "Check " + str(condition)
 
 func _tick(_delta: float) -> Status:
-	if not is_instance_valid(agent):
+	if data.live(animal) == null:
 		return FAILURE
-	var animal := agent.entity as AnimalEntity
-	if animal == null or animal.row < 0 or not data.identity_alive[animal.row]:
-		return FAILURE
+
 	var met := false
 	match condition:
 		&"has_threat":

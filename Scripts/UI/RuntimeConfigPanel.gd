@@ -2,6 +2,8 @@ class_name RuntimeConfigPanel
 extends PanelContainer
 
 const FIELD_HELP := {
+	"World.arena_width": "场地宽度（px）；应用后重启模拟并重新适配镜头。\n例如：小场景 1280，大场景 5120。",
+	"World.arena_height": "场地高度（px）；应用后重启模拟并重新适配镜头。\n例如：小场景 720，大场景 2880。",
 	"World.max_steps_per_frame": "每个显示帧最多执行的模拟步数；超过上限的整步积压会舍弃，可热应用。\n例如：max_steps_per_frame = 4。",
 	"World.sheep_update_hz": "羊后台逻辑请求频率上限（Hz）；不等待任务，不积压请求。\n例如：sheep_update_hz = 24。",
 	"World.wolf_update_hz": "狼后台逻辑请求频率上限（Hz）。\n例如：wolf_update_hz = 12。",
@@ -83,6 +85,8 @@ func _ready() -> void:
 	$Margin/Column/Actions/Defaults.pressed.connect(_restore_defaults)
 	$Margin/Column/Presets/Save.pressed.connect(_save)
 	$Margin/Column/Presets/Load.pressed.connect(_load)
+	$Margin/Column/Scenarios/Small.pressed.connect(_load_scenario.bind(false))
+	$Margin/Column/Scenarios/Large.pressed.connect(_load_scenario.bind(true))
 
 func initialize(engine: Node) -> void:
 	gameplay_engine = engine
@@ -102,6 +106,7 @@ func close() -> void:
 	get_viewport().gui_release_focus()
 
 func set_draft(settings: SimulationConfig) -> void:
+	# 1) Edit a detached draft so field changes do not mutate the running simulation.
 	draft = settings.copy_config()
 	var selected_tab := maxi(0, tabs.current_tab)
 	for child in tabs.get_children():
@@ -109,6 +114,7 @@ func set_draft(settings: SimulationConfig) -> void:
 		child.queue_free()
 	editors.clear()
 
+	# 2) Rebuild numeric editors from the resources' Inspector groups and range hints.
 	for section_name: String in draft.get_sections():
 		var section: Resource = draft.get_sections()[section_name]
 		var scroll := ScrollContainer.new()
@@ -125,8 +131,10 @@ func set_draft(settings: SimulationConfig) -> void:
 			if (property.usage & PROPERTY_USAGE_GROUP) != 0:
 				group_name = property.name
 				continue
-			if (property.usage & PROPERTY_USAGE_EDITOR) == 0 or property.hint != PROPERTY_HINT_RANGE:
+			var is_arena_size: bool = section == draft and property.name == "arena_size"
+			if (property.usage & PROPERTY_USAGE_EDITOR) == 0 or (property.hint != PROPERTY_HINT_RANGE and not is_arena_size):
 				continue
+
 			if not group_name.is_empty():
 				var heading := Label.new()
 				heading.text = group_name
@@ -134,7 +142,12 @@ func set_draft(settings: SimulationConfig) -> void:
 				heading.add_theme_font_size_override("font_size", 14)
 				rows.add_child(heading)
 				group_name = ""
-			_add_editor(rows, section_name, section, property)
+
+			if is_arena_size:
+				_add_editor(rows, section_name, section, {"name": "arena_width", "hint_string": "128,32768,1", "type": TYPE_FLOAT})
+				_add_editor(rows, section_name, section, {"name": "arena_height", "hint_string": "200,32768,1", "type": TYPE_FLOAT})
+			else:
+				_add_editor(rows, section_name, section, property)
 
 	tabs.current_tab = mini(selected_tab, tabs.get_tab_count() - 1)
 	_update_apply_state()
@@ -157,7 +170,13 @@ func _add_editor(rows: VBoxContainer, section_name: String, section: Resource, p
 	spin.min_value = limits[0].to_float()
 	spin.max_value = limits[1].to_float()
 	spin.step = limits[2].to_float() if limits.size() > 2 else 1.0
-	spin.set_value_no_signal(float(section.get(property.name)))
+	match str(property.name):
+		"arena_width":
+			spin.set_value_no_signal(draft.arena_size.x)
+		"arena_height":
+			spin.set_value_no_signal(draft.arena_size.y)
+		_:
+			spin.set_value_no_signal(float(section.get(property.name)))
 	spin.tooltip_text = label.tooltip_text
 	row.add_child(spin)
 	editors[section_name + "." + str(property.name)] = spin
@@ -165,7 +184,14 @@ func _add_editor(rows: VBoxContainer, section_name: String, section: Resource, p
 
 func _value_changed(value: float, section_name: String, property_name: StringName, value_type: int) -> void:
 	var section: Resource = draft.get_sections()[section_name]
-	section.set(property_name, int(value) if value_type == TYPE_INT else value)
+	match property_name:
+		&"arena_width":
+			draft.arena_size.x = value
+		&"arena_height":
+			draft.arena_size.y = value
+		_:
+			section.set(property_name, int(value) if value_type == TYPE_INT else value)
+
 	_update_apply_state()
 
 func _update_apply_state() -> void:
@@ -178,7 +204,7 @@ func _update_apply_state() -> void:
 		message.text = error
 	elif restart:
 		var counts := draft.get_initial_counts()
-		message.text = "Apply restarts the simulation. Initial population: %d sheep, %d wolves, %d dogs." % [counts.x, counts.y, counts.z]
+		message.text = "Apply restarts at %d x %d px: %d sheep, %d wolves, %d dogs." % [draft.arena_size.x, draft.arena_size.y, counts.x, counts.y, counts.z]
 	else:
 		message.text = "Apply updates current animals. Elapsed timers are preserved; new thresholds apply next step."
 
@@ -202,6 +228,15 @@ func _on_applied(restarted: bool) -> void:
 func _restore_defaults() -> void:
 	set_draft(gameplay_engine.defaults)
 	message.text = "Default CFG values loaded into the form. Apply when ready."
+
+func _load_scenario(large: bool) -> void:
+	# 1) Load a reproducible scene draft using the authored behavior and clock defaults.
+	var settings: SimulationConfig = gameplay_engine.defaults.copy_config()
+	settings.initial_total = 5000 if large else 200
+	settings.arena_size = Vector2(5120, 2880) if large else Vector2(1280, 720)
+	set_draft(settings)
+	tabs.current_tab = 0
+	get_viewport().gui_release_focus()
 
 func _save() -> void:
 	var result: Error = gameplay_engine.save_preset()

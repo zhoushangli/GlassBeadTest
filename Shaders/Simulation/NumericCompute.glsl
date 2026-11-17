@@ -29,8 +29,10 @@ void main() {
 	if (row >= count) {
 		return;
 	}
+
 	float delta = config[0];
 
+	// 1) Read the column layout packed by NumericComputeJob.execute().
 	vec2 previous = vector_at(0, row, count);
 	vec2 velocity = vector_at(1, row, count);
 	vec2 facing = vector_at(2, row, count);
@@ -40,6 +42,8 @@ void main() {
 	int kind = indices[2 + count + row];
 	vec2 lower = vec2(config[2], config[3]);
 	vec2 upper = vec2(config[4], config[5]);
+
+	// 2) Resolve point goals or smooth sheep steering before integration.
 	if (intent == 1) {
 		vec2 difference = vector_at(4, row, count) - previous;
 		float distance = length(difference);
@@ -49,6 +53,7 @@ void main() {
 		vec2 steering = limited(desired + boundary / 40.0 * speed * 2.0, speed);
 		velocity = mix(velocity, steering, min(1.0, config[1] * delta));
 	}
+
 	vec2 separation = kind == 0 ? vec2(0.0) : vector_at(5, row, count) * config[8 + kind];
 	velocity = limited((intent == 2 ? velocity : desired) + separation, speed);
 	vec2 position = clamp(previous + velocity * delta, lower, upper);
@@ -56,6 +61,8 @@ void main() {
 	if (abs(velocity.x) >= 0.00001 || abs(velocity.y) >= 0.00001) {
 		facing = normalize(velocity);
 	}
+
+	// 3) Write the four contiguous vector columns decoded by NumericComputeJob.execute().
 	store_vector(0, row, count, position);
 	store_vector(1, row, count, velocity);
 	store_vector(2, row, count, facing);

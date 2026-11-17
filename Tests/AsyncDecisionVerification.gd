@@ -165,7 +165,7 @@ func _snapshots() -> void:
 	entities.capture(sheep)
 	entities.remove_expired(10.0)
 	var replacement := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(550, 300))[0]
-	_check(engine.animal_system.snapshot_animal(job.snapshot, 0) == null, "reused slot rejects previous uid")
+	_check(engine.animal_system.snapshot_animal(job.snapshot, 0) == null, "reused slot rejects previous AnimalID")
 	engine.job_service.flush()
 	_check(not data.wolf_hunting[wolf.row] and data.memory_target[wolf.row] != replacement, "dead prey result cannot target replacement after row swaps")
 	var fresh := _job(AnimalEntity.Kind.WOLF)
@@ -189,7 +189,7 @@ func _shared_inputs() -> void:
 	entities.capture(entities.data.handles[0])
 	entities.remove_expired(10.0)
 	var snapshot: AnimalSnapshot = engine.animal_system.decision_snapshot(PackedInt32Array([0]))
-	_check(snapshot.motion_position.size() == entities.data.active_count and snapshot.identity_uid.size() == entities.data.active_count, "capture excludes inactive retained rows")
+	_check(snapshot.motion_position.size() == entities.data.active_count and snapshot.identity_animal_id.size() == entities.data.active_count, "capture excludes inactive retained rows")
 	_check(snapshot.memory_target.is_empty() and snapshot.dog_returning.is_empty() and snapshot.wolf_resting.is_empty(), "sheep-only capture omits wolf and dog decision columns")
 	var grid := GridService.build_snapshot(snapshot)
 	var point := snapshot.motion_position[0]

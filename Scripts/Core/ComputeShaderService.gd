@@ -118,6 +118,7 @@ func submit(job: SheepComputeJob) -> bool:
 	return true
 
 func _thread_main() -> void:
+	# 1) Create and release the local RenderingDevice on its owning thread.
 	owner_thread_id = OS.get_thread_caller_id()
 	_initialize_device()
 	_ready.post()
@@ -139,6 +140,7 @@ func _thread_main() -> void:
 
 			job.metrics.device_queue_ms = (Time.get_ticks_usec() - job.submitted_usec) / 1000.0
 			job.run_profiled()
+
 			_mutex.lock()
 			if not job.error.is_empty():
 				if job is NumericComputeJob:
@@ -150,6 +152,7 @@ func _thread_main() -> void:
 				_foreground = null
 				job.completed.post()
 			_mutex.unlock()
+
 	_release_device()
 
 func _initialize_device() -> void:
@@ -185,6 +188,7 @@ func flush() -> void:
 	var job := _take_completed()
 	if job == null:
 		return
+
 	if job.is_cancelled() or job.version != g_gameplayEngine.job_service.async_version:
 		_discard(job)
 		return
@@ -199,6 +203,7 @@ func flush() -> void:
 	profile.count_event("Failed/Compute" if not job.error.is_empty() else "Applied/Compute")
 	if not job.error.is_empty():
 		fallback_reason = job.error
+
 	job.state = Job.State.APPLIED
 	job.release_input()
 
@@ -323,12 +328,15 @@ func execute_gpu(job: SheepComputeJob) -> PackedByteArray:
 		job.error = "Compute readback size mismatch"
 	return output
 
+# Return 1 for committed GPU output, 0 for CPU handling, or -1 for a forced-GPU failure.
+# e.g. timers_backend = "cpu" makes the TIMERS pass return 0 without changing storage.
 func run_numeric(storage: AnimalData, delta: float, kind: NumericComputeJob.Pass) -> int:
 	var selected_backend := movement_backend if kind == NumericComputeJob.Pass.MOVEMENT else timers_backend
 	if selected_backend == "cpu" or storage.active_count == 0:
 		return 0
 	if not available():
 		return -1 if selected_backend == "gpu" else 0
+
 	_mutex.lock()
 	var failed: bool = _numeric_failures.has(kind)
 	_mutex.unlock()
@@ -351,12 +359,16 @@ func run_numeric(storage: AnimalData, delta: float, kind: NumericComputeJob.Pass
 	job.state = Job.State.PENDING
 	_foreground = job
 	_mutex.unlock()
+
+	# 1) Wait for this fixed-step numeric result before allowing dependent simulation work.
 	var waiting_at := Time.get_ticks_usec()
 	_wake.post()
 	job.completed.wait()
 	var wait_ms := (Time.get_ticks_usec() - waiting_at) / 1000.0
 	var applied_at := Time.get_ticks_usec()
 	var committed := job.commit(storage)
+
+	# 2) Record end-to-end costs, including waiting and decoding rather than GPU time alone.
 	job.metrics.main_wait_ms = wait_ms
 	job.metrics.apply_ms = (Time.get_ticks_usec() - applied_at) / 1000.0
 	job.metrics.execute_ms = (job.execution_finished_usec - job.execution_started_usec) / 1000.0
@@ -370,6 +382,7 @@ func run_numeric(storage: AnimalData, delta: float, kind: NumericComputeJob.Pass
 	samples.append(job.metrics.to_dictionary())
 	if samples.size() > 4096:
 		samples.pop_front()
+
 	if not committed:
 		fallback_reason = job.error if not job.error.is_empty() else "Numeric result no longer matches the simulation step"
 		profile.count_event("Failed/" + String(job.stage))

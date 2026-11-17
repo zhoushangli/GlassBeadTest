@@ -100,7 +100,7 @@ func _run() -> void:
 	var rng_state: int = engine.rng.state
 	engine.render_service.sync()
 	var expected_color: Color = sheep_visual.behavior_colors["Herded"].lerp(sheep_visual.behavior_colors["Flee"], 0.5)
-	_check(data.brain_agent[sheep.row] == null and _render_color(sheep).is_equal_approx(expected_color), "sheep blends continuous pressure colors without a behavior tree")
+	_check(data.brain_instance[sheep.row] == null and _render_color(sheep).is_equal_approx(expected_color), "sheep blends continuous pressure colors without a behavior tree")
 	_check(engine.rng.state == rng_state, "continuous sheep presentation does not consume simulation RNG")
 
 	data.sheep_dog_pressure[sheep.row] = Vector2.ZERO
