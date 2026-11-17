@@ -1,6 +1,14 @@
 class_name DogPerceptionJob
 extends Job
 
+class Group extends RefCounted:
+	var center := Vector2.ZERO
+	var count: int = 0
+	var wolves := PackedInt32Array()
+	var sheep := PackedInt32Array()
+
+var groups: Array[Group] = []
+
 var separations := PackedVector2Array()
 var refresh_flags := PackedByteArray()
 var remaining := PackedFloat64Array()
@@ -9,6 +17,9 @@ var visible_flags := PackedByteArray()
 var last_positions := PackedVector2Array()
 var last_velocities := PackedVector2Array()
 
+var region_ids := PackedInt32Array()
+var region_coverage := PackedInt32Array()
+var region_threats := PackedInt32Array()
 var anchor_rows := PackedInt32Array()
 var centers := PackedVector2Array()
 var reassigned_flags := PackedByteArray()
@@ -25,14 +36,14 @@ var stray_offsets := PackedInt32Array()
 var strays := PackedInt32Array()
 
 func execute() -> void:
-	if context.has("version"):
+	if snapshot != null:
 		_calculate_decision()
 		return
 
 	target.calculate_batch(self)
 
 func apply_result() -> void:
-	if context.has("version"):
+	if snapshot != null:
 		target.apply_decision(self)
 		return
 
@@ -41,71 +52,79 @@ func apply_result() -> void:
 func _calculate_decision() -> void:
 	var started := Time.get_ticks_usec()
 	resize_output()
-	stats = AnimalSystem.batch_stats(context)
-	var settings: Dictionary = context.settings
+	stats = AnimalSystem.batch_stats(snapshot.stats, snapshot.detailed)
+	var settings: SheepdogConfig = snapshot.config.sheepdog
 	var radius: float = settings.local_flock_radius
-	var anchors: PackedInt32Array = context.dog_protected_sheep.duplicate()
-	var coverage := PackedInt32Array()
-	coverage.resize(context.motion_position.size())
-
-	# 1) Choose anchors using the previous round's coverage.
-	for sheep in context.sheep:
-		for dog in rows:
-			if anchors[dog] >= 0 and context.motion_position[anchors[dog]].distance_to(context.motion_position[sheep]) < radius:
-				coverage[sheep] += 1
-
+	var assignments := snapshot.dog_region.duplicate()
+	region_coverage.resize(grid.region_counts.size())
+	region_coverage.fill(0)
+	region_threats.resize(grid.region_counts.size())
+	region_threats.fill(0)
 	for dog in rows:
-		var current: int = anchors[dog]
-		if current >= 0 and context.dog_assignment_remaining[dog] > 0.0:
+		if grid.has_region(assignments[dog]):
+			region_coverage[assignments[dog]] += 1
+
+	# 1) Assign occupied regions in stable entity-ID order.
+	var ordered: Array[int] = []
+	for dog in rows:
+		ordered.append(dog)
+	ordered.sort_custom(func(first: int, second: int) -> bool: return snapshot.identity_entity_id[first] < snapshot.identity_entity_id[second])
+	for dog in ordered:
+		var current: int = assignments[dog]
+		var valid := grid.has_region(current)
+		if valid and snapshot.dog_assignment_remaining[dog] > 0.0:
 			continue
 
-		var best := current
-		var own: Vector2 = context.motion_position[current] if current >= 0 else Vector2.INF
-		var current_score := _anchor_score(dog, current, coverage, own) if current >= 0 else INF
+		if valid:
+			region_coverage[current] -= 1
+		var best := current if valid else -1
+		var current_score := _region_score(dog, current) if valid else INF
 		var best_score := current_score
-		for sheep in context.sheep:
-			var score := _anchor_score(dog, sheep, coverage, own)
-			if score < best_score:
-				best = sheep
+		for region in grid.occupied_regions:
+			var score := _region_score(dog, region)
+			if score < best_score or (is_equal_approx(score, best_score) and (best < 0 or region < best)):
+				best = region
 				best_score = score
-		if current < 0 or best_score <= current_score * (1.0 - settings.reassignment_improvement):
-			anchors[dog] = best
+		assignments[dog] = best if not valid or best_score <= current_score * (1.0 - settings.reassignment_improvement) else current
+		if assignments[dog] >= 0:
+			region_coverage[assignments[dog]] += 1
 
 	# 2) Collect perception and shared local-group candidates.
 	var groups: Dictionary = {}
 	for index in range(rows.size()):
 		var dog := rows[index]
-		refresh_flags[index] = int(not context.memory_perception_ready[dog] or context.memory_perception_remaining[dog] <= 0.0)
-		separations[index] = AnimalSystem.snapshot_separation(dog, context, stats, bool(refresh_flags[index]))
-		target_rows[index] = context.memory_target[dog]
+		refresh_flags[index] = int(not snapshot.memory_perception_ready[dog] or snapshot.memory_perception_remaining[dog] <= 0.0)
+		separations[index] = AnimalSystem.snapshot_separation(dog, snapshot, grid, stats, bool(refresh_flags[index]))
+		target_rows[index] = snapshot.memory_target[dog]
 		var target_row := target_rows[index]
-		var visible := target_row >= 0 and AnimalSystem.snapshot_can_see(dog, context.motion_position[target_row], context)
+		var visible := target_row >= 0 and AnimalSystem.snapshot_can_see(dog, snapshot.motion_position[target_row], snapshot)
 		visible_flags[index] = int(visible)
-		last_positions[index] = context.motion_position[target_row] if visible else context.memory_last_seen_position[dog]
-		last_velocities[index] = context.motion_velocity[target_row] if visible else context.memory_last_seen_velocity[dog]
-		anchor_rows[index] = anchors[dog]
-		reassigned_flags[index] = int(context.dog_protected_sheep[dog] < 0 or context.dog_assignment_remaining[dog] <= 0.0)
-		centers[index] = context.dog_protection_center[dog]
-		returning_flags[index] = context.dog_returning[dog]
-		if anchor_rows[index] >= 0:
-			var cell: int = context.grid.row_cells[anchor_rows[index]]
-			if not groups.has(cell):
-				groups[cell] = _local_group(cell, stats)
-			var group: Dictionary = groups[cell]
-			centers[index] = group.center if group.count > 0 else context.motion_position[anchor_rows[index]]
-			if context.motion_position[dog].distance_to(centers[index]) > settings.leash_distance:
+		last_positions[index] = snapshot.motion_position[target_row] if visible else snapshot.memory_last_seen_position[dog]
+		last_velocities[index] = snapshot.motion_velocity[target_row] if visible else snapshot.memory_last_seen_velocity[dog]
+		region_ids[index] = assignments[dog]
+		reassigned_flags[index] = int(not grid.has_region(snapshot.dog_region[dog]) or snapshot.dog_assignment_remaining[dog] <= 0.0)
+		centers[index] = snapshot.dog_protection_center[dog]
+		returning_flags[index] = snapshot.dog_returning[dog]
+		if region_ids[index] >= 0:
+			var region := region_ids[index]
+			if not groups.has(region):
+				groups[region] = _local_group(region, stats)
+			var group: Group = groups[region]
+			region_threats[region] = group.wolves.size()
+			centers[index] = group.center
+			if snapshot.motion_position[dog].distance_to(centers[index]) > settings.leash_distance:
 				returning_flags[index] = 1
 			if not returning_flags[index]:
 				for wolf in group.wolves:
-					if AnimalSystem.snapshot_can_see(dog, context.motion_position[wolf], context):
+					if AnimalSystem.snapshot_can_see(dog, snapshot.motion_position[wolf], snapshot):
 						wolves.append(wolf)
-				var remembered: int = context.memory_target[dog]
-				if remembered >= 0 and not visible_flags[index] and context.memory_unseen_elapsed[dog] < settings.memory_duration and not wolves.slice(wolf_offsets[index], wolves.size()).has(remembered):
+				var remembered: int = snapshot.memory_target[dog]
+				if remembered >= 0 and not visible_flags[index] and snapshot.memory_unseen_elapsed[dog] < settings.memory_duration and not wolves.slice(wolf_offsets[index], wolves.size()).has(remembered):
 					wolves.append(remembered)
 				for sheep in group.sheep:
-					var point: Vector2 = context.motion_position[sheep]
-					var threshold: float = radius * settings.collect_complete_ratio if sheep == context.dog_collected_sheep[dog] else radius
-					if context.motion_position[anchor_rows[index]].distance_to(point) <= radius * 2.0 and centers[index].distance_to(point) > threshold:
+					var point: Vector2 = snapshot.motion_position[sheep]
+					var threshold: float = radius * settings.collect_complete_ratio if sheep == snapshot.dog_collected_sheep[dog] else radius
+					if grid.region_centers[region].distance_to(point) <= radius * 2.0 and centers[index].distance_to(point) > threshold:
 						strays.append(sheep)
 		wolf_offsets[index + 1] = wolves.size()
 		stray_offsets[index + 1] = strays.size()
@@ -132,20 +151,20 @@ func _calculate_decision() -> void:
 					if claimed.has(other):
 						continue
 
-					var score: float = context.motion_position[rows[index]].distance_squared_to(_task_point(index, other)) if kind == 0 else -centers[index].distance_squared_to(context.motion_position[other])
-					if score < best_score or (is_equal_approx(score, best_score) and best >= 0 and context.identity_entity_id[other] < context.identity_entity_id[best]):
+					var score: float = snapshot.motion_position[rows[index]].distance_squared_to(_task_point(index, other)) if kind == 0 else -centers[index].distance_squared_to(snapshot.motion_position[other])
+					if score < best_score or (is_equal_approx(score, best_score) and best >= 0 and snapshot.identity_entity_id[other] < snapshot.identity_entity_id[best]):
 						best = other
 						best_score = score
 				if best < 0:
 					continue
 
-				var distance: float = context.motion_position[rows[index]].distance_squared_to(_task_point(index, best))
+				var distance: float = snapshot.motion_position[rows[index]].distance_squared_to(_task_point(index, best))
 				if not proposals.has(best):
 					proposals[best] = index
 				else:
 					var previous: int = proposals[best]
-					var previous_distance: float = context.motion_position[rows[previous]].distance_squared_to(_task_point(previous, best))
-					if distance < previous_distance or (is_equal_approx(distance, previous_distance) and context.identity_entity_id[rows[index]] < context.identity_entity_id[rows[previous]]):
+					var previous_distance: float = snapshot.motion_position[rows[previous]].distance_squared_to(_task_point(previous, best))
+					if distance < previous_distance or (is_equal_approx(distance, previous_distance) and snapshot.identity_entity_id[rows[index]] < snapshot.identity_entity_id[rows[previous]]):
 						proposals[best] = index
 			if proposals.is_empty():
 				break
@@ -162,49 +181,38 @@ func _calculate_decision() -> void:
 	execute_ms = (Time.get_ticks_usec() - started) / 1000.0
 
 func _task_point(index: int, other: int) -> Vector2:
-	return last_positions[index] if other == target_rows[index] and not visible_flags[index] else context.motion_position[other]
+	return last_positions[index] if other == target_rows[index] and not visible_flags[index] else snapshot.motion_position[other]
 
-func _anchor_score(dog: int, sheep: int, coverage: PackedInt32Array, own: Vector2) -> float:
-	var count := coverage[sheep]
-	if own.distance_to(context.motion_position[sheep]) < context.settings.local_flock_radius:
-		count -= 1
-	return context.motion_position[dog].distance_to(context.motion_position[sheep]) / context.settings.local_flock_radius + count * context.settings.coverage_weight
+func _region_score(dog: int, region: int) -> float:
+	return snapshot.motion_position[dog].distance_to(grid.region_centers[region]) / snapshot.config.sheepdog.local_flock_radius + region_coverage[region] * snapshot.config.sheepdog.coverage_weight
 
-func _local_group(cell: int, stats: Dictionary) -> Dictionary:
-	var grid: Dictionary = context.grid
-	var size: float = grid.cell_size
-	var radius: float = context.settings.local_flock_radius
-	var center := Vector2(cell % grid.width + 0.5, floorf(float(cell) / grid.width) + 0.5) * size
+func _local_group(region: int, stats: Dictionary) -> Group:
+	var radius: float = snapshot.config.sheepdog.local_flock_radius
+	var center := grid.region_centers[region]
+	var flock := GridService.query_snapshot(center, radius, AnimalEntity.Kind.SHEEP, grid, stats)
 	var sum := Vector2.ZERO
 	var count := 0
-	var flock := PackedInt32Array()
-	var extent := ceili(radius / size)
-	var x := cell % int(grid.width)
-	var y := floori(float(cell) / grid.width)
-	for dy in range(-extent, extent + 1):
-		for dx in range(-extent, extent + 1):
-			if Vector2(dx, dy).length_squared() * size * size > radius * radius or x + dx < 0 or x + dx >= grid.width or y + dy < 0 or y + dy >= grid.height:
-				continue
-
-			var neighbor: int = (y + dy) * grid.width + x + dx
-			sum += context.sheep_position_sums[neighbor]
-			count += context.cell_counts[neighbor * 3 + AnimalEntity.Kind.SHEEP]
-			var bucket := neighbor * 3 + AnimalEntity.Kind.SHEEP
-			for member in range(grid.offsets[bucket], grid.offsets[bucket + 1]):
-				flock.append(grid.members[member])
+	for sheep in flock:
+		if center.distance_squared_to(snapshot.motion_position[sheep]) <= radius * radius:
+			sum += snapshot.motion_position[sheep]
+			count += 1
 	var group_wolves := PackedInt32Array()
-	var threat_squared: float = pow(radius + size * sqrt(0.5) + context.settings.threat_distance, 2)
-	for wolf in context.wolves:
-		var threatening: bool = context.wolf_hunting[wolf] != 0
-		if not threatening and center.distance_squared_to(context.motion_position[wolf]) <= threat_squared:
-			for sheep in flock:
-				if context.motion_position[wolf].distance_squared_to(context.motion_position[sheep]) < pow(context.settings.threat_distance, 2):
-					threatening = true
-					break
+	var threat_distance: float = snapshot.config.sheepdog.threat_distance
+	var wolves_nearby := GridService.query_snapshot(center, radius + threat_distance, AnimalEntity.Kind.WOLF, grid, stats)
+	for wolf in wolves_nearby:
+		var threatening := false
+		for sheep in flock:
+			if center.distance_squared_to(snapshot.motion_position[sheep]) <= radius * radius and snapshot.motion_position[wolf].distance_squared_to(snapshot.motion_position[sheep]) <= threat_distance * threat_distance:
+				threatening = true
+				break
 		if threatening:
 			group_wolves.append(wolf)
-	return {"center": sum / count if count > 0 else center, "count": count, "wolves": group_wolves,
-		"sheep": GridService.query_snapshot(center, radius * 2.0 + size * sqrt(0.5), AnimalEntity.Kind.SHEEP, grid, stats)}
+	var result := Group.new()
+	result.center = sum / count if count > 0 else center
+	result.count = count
+	result.wolves = group_wolves
+	result.sheep = GridService.query_snapshot(center, radius * 2.0, AnimalEntity.Kind.SHEEP, grid, stats)
+	return result
 
 func resize_output() -> void:
 	separations.resize(rows.size())
@@ -214,7 +222,10 @@ func resize_output() -> void:
 	visible_flags.resize(rows.size())
 	last_positions.resize(rows.size())
 	last_velocities.resize(rows.size())
+	region_ids.resize(rows.size())
+	region_ids.fill(-1)
 	anchor_rows.resize(rows.size())
+	anchor_rows.fill(-1)
 	centers.resize(rows.size())
 	reassigned_flags.resize(rows.size())
 	returning_flags.resize(rows.size())
@@ -231,3 +242,13 @@ func resize_output() -> void:
 	strays.clear()
 	wolf_rows.fill(-1)
 	stray_rows.fill(-1)
+
+func copy_input(source: Job) -> void:
+	super.copy_input(source)
+	groups = (source as DogPerceptionJob).groups
+
+func release_input() -> void:
+	super.release_input()
+	groups = []
+	region_coverage = PackedInt32Array()
+	region_threats = PackedInt32Array()

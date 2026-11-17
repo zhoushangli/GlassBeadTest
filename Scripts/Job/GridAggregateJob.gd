@@ -6,23 +6,22 @@ var flock_sums := PackedVector2Array()
 var alignment_counts := PackedInt32Array()
 var alignment_sums := PackedVector2Array()
 var nodes := PackedInt32Array()
-var grid: Dictionary = {}
+var flock_offsets := PackedInt32Array()
+var alignment_offsets := PackedInt32Array()
 
 func execute() -> void:
-	if context.has("version"):
+	if snapshot != null:
 		var started := Time.get_ticks_usec()
-		grid = GridService.build_snapshot(context, not context.get("gpu", false))
+		grid = GridService.build_snapshot(snapshot, not snapshot.gpu)
 		execute_ms = (Time.get_ticks_usec() - started) / 1000.0
 		return
 
 	var cells := rows
-	var counts: PackedInt32Array = context.counts
-	var position_sums: PackedVector2Array = context.position_sums
-	var velocity_sums: PackedVector2Array = context.velocity_sums
-	var flock_offsets: PackedInt32Array = context.flock_offsets
-	var alignment_offsets: PackedInt32Array = context.alignment_offsets
-	var columns: int = context.width
-	var height: int = context.height
+	var counts: PackedInt32Array = grid.counts
+	var position_sums: PackedVector2Array = grid.position_sums
+	var velocity_sums: PackedVector2Array = grid.velocity_sums
+	var columns: int = grid.width
+	var height: int = grid.height
 
 	flock_counts.resize(cells.size())
 	flock_sums.resize(cells.size())
@@ -34,7 +33,7 @@ func execute() -> void:
 		var cell := cells[index]
 		var x := cell % columns
 		var y := cell / columns
-		if counts[cell * 3 + AnimalEntity.Kind.SHEEP] >= context.shared_min_sheep:
+		if counts[cell * 3 + AnimalEntity.Kind.SHEEP] >= GridService.PRESSURE_SHARED_MIN_SHEEP:
 			var base := int(y) * (columns + 1) + x
 			for node in [base, base + 1, base + columns + 1, base + columns + 2]:
 				nodes.append(node)
@@ -64,9 +63,13 @@ func execute() -> void:
 		alignment_sums[index] = sum
 
 func apply_result() -> void:
-	if context.has("version"):
-		context.grid_ms = execute_ms
-		target.apply_grid(grid, context)
+	if snapshot != null:
+		target.apply_grid(grid, snapshot, null, execute_ms)
 		return
 
 	target.apply_cells(self)
+
+func release_input() -> void:
+	super.release_input()
+	flock_offsets = PackedInt32Array()
+	alignment_offsets = PackedInt32Array()

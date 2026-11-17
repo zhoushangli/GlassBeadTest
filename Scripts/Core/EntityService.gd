@@ -101,6 +101,7 @@ func spawn_initial() -> void:
 		spawn(kind, counts[kind])
 
 func _refresh_rows() -> void:
+	data.structure_version += 1
 	entities.clear()
 	sheep_rows.clear()
 	wolf_rows.clear()
@@ -131,6 +132,7 @@ func capture(prey: AnimalEntity) -> bool:
 	if data.identity_kind[row] != AnimalEntity.Kind.SHEEP:
 		return false
 
+	data.structure_version += 1
 	data.identity_alive[row] = int(false)
 	data.identity_death_remaining[row] = g_gameplayEngine.config.death_duration
 	if data.brain_agent[row] != null:
@@ -182,6 +184,12 @@ func clear() -> void:
 	capture_count = 0
 
 func update_movement(delta: float) -> void:
+	var result: int = g_gameplayEngine.compute_service.run_numeric(data, delta, NumericComputeJob.Pass.MOVEMENT)
+	if result != 0:
+		if result < 0:
+			g_gameplayEngine.fail_step("GPU movement failed")
+		return
+
 	var lower := Vector2(12.0, 94.0)
 	var upper: Vector2 = g_gameplayEngine.config.arena_size - Vector2(12.0, 58.0)
 

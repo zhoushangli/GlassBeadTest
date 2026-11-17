@@ -23,7 +23,7 @@ var nearby_offsets := PackedInt32Array()
 var nearby_members := PackedInt32Array()
 
 func execute() -> void:
-	if context.has("version"):
+	if snapshot != null:
 		var started := Time.get_ticks_usec()
 		SheepSystem.calculate_snapshot(self)
 		execute_ms = (Time.get_ticks_usec() - started) / 1000.0
@@ -32,7 +32,7 @@ func execute() -> void:
 	target.calculate_batch(self)
 
 func apply_result() -> void:
-	if context.has("version"):
+	if snapshot != null:
 		target.apply_decision(self)
 		return
 

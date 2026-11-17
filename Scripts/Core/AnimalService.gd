@@ -12,11 +12,8 @@ var applied: Dictionary = {}
 var waiting: Dictionary = {}
 var _last_decision: Dictionary = {}
 
-var compute_backend: String = "auto"
-var compute_fallback_reason: String = ""
-var compute: SheepCompute
-var preprocessing_samples: Array[Dictionary] = []
-var _compute_waiting: bool = false
+var preprocessing_samples: Array[ComputeShaderService.Metrics] = []
+var snapshot_config: SimulationConfig
 
 var actual_request_hz := Vector3.ZERO
 var actual_apply_hz := Vector3.ZERO
@@ -25,14 +22,6 @@ var _window_applied := Vector3i.ZERO
 var _window_started: int = 0
 
 func _startup() -> void:
-	for argument in OS.get_cmdline_user_args():
-		if argument.begins_with("--compute="):
-			compute_backend = argument.trim_prefix("--compute=")
-	compute = SheepCompute.new()
-	compute_fallback_reason = ""
-	if compute_backend == "auto" and not compute.available():
-		compute_fallback_reason = "RenderingDevice unavailable with %s / %s" % [DisplayServer.get_name(), RenderingServer.get_current_rendering_method()]
-		print("COMPUTE_BACKEND cpu reason=" + compute_fallback_reason)
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	animal_system = AnimalSystem.new(data)
 	sheep_system = SheepSystem.new(data)
@@ -41,8 +30,8 @@ func _startup() -> void:
 	_reset()
 
 func _reset() -> void:
+	refresh_config()
 	preprocessing_samples.clear()
-	_compute_waiting = false
 	update_elapsed = {0: 0.0, 1: 0.0, 2: 0.0}
 	requested = {0: 0, 1: 0, 2: 0}
 	applied = {0: 0, 1: 0, 2: 0}
@@ -54,10 +43,10 @@ func _reset() -> void:
 	_window_applied = Vector3i.ZERO
 	_window_started = Time.get_ticks_usec()
 
+func refresh_config() -> void:
+	snapshot_config = g_gameplayEngine.config.copy_config()
+
 func _shutdown() -> void:
-	if compute != null:
-		compute.close()
-		compute = null
 	_reset()
 	animal_system = null
 	sheep_system = null
@@ -72,14 +61,25 @@ func advance_decision(animal: AnimalEntity) -> void:
 
 func advance_time(delta: float) -> void:
 	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var profile: ProfileService = g_gameplayEngine.profile_service
+	var detail_started := Time.get_ticks_usec() if profile.detailed_stats_enabled else 0
+	var numeric: int = g_gameplayEngine.compute_service.run_numeric(data, delta, NumericComputeJob.Pass.TIMERS)
+	if numeric < 0:
+		g_gameplayEngine.fail_step("GPU timers failed")
+		return
+
+	var sheep_settings: SheepConfig = g_gameplayEngine.config.sheep
+	var duration: float = sheep_settings.panic_duration
+	var wander: bool = sheep_settings.wander_weight > 0.0
 	var active_uids: Dictionary = {}
 	for row in range(data.active_count):
-		data.motion_wander_remaining[row] -= delta
-		data.memory_perception_remaining[row] -= delta
+		if numeric == 0:
+			data.motion_wander_remaining[row] -= delta
+			data.memory_perception_remaining[row] -= delta
 		if data.identity_kind[row] == AnimalEntity.Kind.SHEEP:
-			var duration: float = g_gameplayEngine.config.sheep.panic_duration
-			data.sheep_panic_strength[row] = maxf(0.0, data.sheep_panic_strength[row] - delta / duration) if duration > 0.0 else 0.0
-			if g_gameplayEngine.config.sheep.wander_weight > 0.0:
+			if numeric == 0:
+				data.sheep_panic_strength[row] = maxf(0.0, data.sheep_panic_strength[row] - delta / duration) if duration > 0.0 else 0.0
+			if wander and (data.motion_wander_remaining[row] <= 0.0 or data.motion_position[row].distance_to(data.motion_wander_point[row]) < 15.0):
 				animal_system.get_wander_point(data.handles[row], 85.0)
 			continue
 
@@ -96,30 +96,30 @@ func advance_time(delta: float) -> void:
 			data.motion_desired_velocity[row] = Vector2.ZERO
 		if not _last_decision.has(uid) or (target == null and data.brain_current_behavior[row] in [AnimalEntity.Behavior.CHASE, AnimalEntity.Behavior.STALK, AnimalEntity.Behavior.DRIVE]):
 			advance_decision(data.handles[row])
+	if profile.detailed_stats_enabled:
+		profile.record_duration("AdvanceTime/ActiveLoop", (Time.get_ticks_usec() - detail_started) / 1000.0)
+		detail_started = Time.get_ticks_usec()
+
 	for uid in _last_decision.keys():
 		if not active_uids.has(uid):
 			_last_decision.erase(uid)
+	if profile.detailed_stats_enabled:
+		profile.record_duration("AdvanceTime/DecisionHistory", (Time.get_ticks_usec() - detail_started) / 1000.0)
+		detail_started = Time.get_ticks_usec()
+
 	wolf_system.advance_time(delta)
+	if profile.detailed_stats_enabled:
+		profile.record_duration("AdvanceTime/WolfTimers", (Time.get_ticks_usec() - detail_started) / 1000.0)
+		detail_started = Time.get_ticks_usec()
+
 	dog_system.advance_time(delta)
+	if profile.detailed_stats_enabled:
+		profile.record_duration("AdvanceTime/DogTimers", (Time.get_ticks_usec() - detail_started) / 1000.0)
 
 func apply_completed() -> void:
 	g_gameplayEngine.grid_service.reset_spatial_stats()
 	g_gameplayEngine.job_service.flush()
-	if compute != null:
-		var output := compute.take_result()
-		if not output.is_empty():
-			_compute_waiting = false
-			if output.snapshot.version == g_gameplayEngine.job_service.async_version:
-				output.snapshot.gpu_complete = true
-				output.snapshot.gpu_metrics = output.metrics
-				apply_grid(output.grid, output.snapshot, output.sheep)
-			else:
-				output.sheep.state = Job.State.DISCARDED
-				output.sheep.release_input()
-		if _compute_waiting and not compute.failure.is_empty():
-			compute_fallback_reason = compute.failure
-			_compute_waiting = false
-			waiting.clear()
+	g_gameplayEngine.compute_service.flush()
 	var now := Time.get_ticks_usec()
 	var elapsed := (now - _window_started) / 1000000.0
 	if elapsed >= 1.0:
@@ -131,10 +131,10 @@ func apply_completed() -> void:
 		_window_started = now
 
 func schedule_updates(delta: float) -> void:
-	if compute_backend == "gpu" and (compute == null or not compute.available()):
-		return
-
 	var engine := g_gameplayEngine
+	var compute: ComputeShaderService = engine.compute_service
+	if compute.backend == "gpu" and not compute.available():
+		return
 	var jobs: JobService = engine.job_service
 	var rates := [engine.config.sheep_update_hz, engine.config.wolf_update_hz, engine.config.sheepdog_update_hz]
 	var due := PackedInt32Array()
@@ -146,7 +146,7 @@ func schedule_updates(delta: float) -> void:
 			continue
 		if update_elapsed[kind] + 0.000000001 < interval:
 			continue
-		if jobs.async_jobs.has(&"Grid") or (compute != null and (compute.busy or _compute_waiting)):
+		if jobs.async_jobs.has(&"Grid") or compute.busy:
 			update_elapsed[kind] = minf(update_elapsed[kind], interval)
 			continue
 
@@ -164,44 +164,38 @@ func schedule_updates(delta: float) -> void:
 
 	# 1) Copy live inputs once; grid construction and species work use immutable snapshots.
 	var prepared_at := Time.get_ticks_usec()
-	var snapshot := animal_system.decision_snapshot(AnimalEntity.Kind.SHEEP)
-	snapshot.due = due
-	snapshot.config = {"cell_size": engine.config.grid_cell_size, "arena_size": engine.config.arena_size}
+	var gpu := compute.available()
+	var snapshot := animal_system.decision_snapshot(due, gpu)
 	snapshot.prepare_ms = (Time.get_ticks_usec() - prepared_at) / 1000.0
+	engine.profile_service.record_duration("Snapshot/Prepare", snapshot.prepare_ms)
 	snapshot.captured_usec = prepared_at
-	snapshot.gpu = compute_backend != "cpu" and compute != null and compute.available()
 	var job := GridAggregateJob.new()
 	job.stage = &"Grid"
-	job.context = snapshot
+	job.snapshot = snapshot
 	job.target = self
 	if not jobs.submit_async(job):
 		for kind in due:
 			waiting.erase(kind)
 
-func apply_grid(grid: Dictionary, snapshot: Dictionary, sheep_job: SheepPerceptionJob = null) -> void:
-	if snapshot.get("gpu", false) and not snapshot.get("gpu_complete", false):
-		_compute_waiting = true
-		compute.submit(grid, snapshot)
+func apply_grid(grid: GridSnapshot, snapshot: AnimalSnapshot, sheep_job: SheepComputeJob = null, grid_ms: float = 0.0) -> void:
+	var engine := g_gameplayEngine
+	if snapshot.gpu and sheep_job == null:
+		var job := SheepComputeJob.new()
+		job.stage = &"Compute"
+		job.snapshot = snapshot
+		job.grid = grid
+		job.grid_ms = grid_ms
+		job.target = self
+		if not engine.compute_service.submit(job):
+			for kind in snapshot.due:
+				waiting.erase(kind)
+			job.release_input()
 		return
 
-	var engine := g_gameplayEngine
 	engine.grid_service.install_snapshot(grid)
 	for kind in snapshot.due:
-		var context := snapshot.duplicate(false)
-		context.erase("config")
-		context.erase("due")
-		context.grid = grid
-		context.settings = snapshot.species_settings[kind]
-		context.kind = kind
-		context.rows = [snapshot.sheep, snapshot.wolves, snapshot.dogs][kind]
-		context.cell_counts = grid.counts
-		context.sheep_position_sums = grid.position_sums
-		context.prepare_ms = snapshot.prepare_ms
-		if kind == AnimalEntity.Kind.SHEEP and snapshot.get("gpu_complete", false):
-			sheep_job.context = context
+		if kind == AnimalEntity.Kind.SHEEP and sheep_job != null:
 			apply_decision(sheep_job)
-			sheep_job.state = Job.State.APPLIED
-			sheep_job.release_input()
 			waiting.erase(kind)
 			continue
 
@@ -214,16 +208,24 @@ func apply_grid(grid: Dictionary, snapshot: Dictionary, sheep_job: SheepPercepti
 			_:
 				job = DogPerceptionJob.new()
 		job.stage = stage_for(kind)
-		job.rows = context.rows
-		job.context = context
+		job.rows = snapshot.rows_for(kind)
+		job.snapshot = snapshot
+		job.grid = grid
+		job.grid_ms = grid_ms
 		job.target = self
 		engine.job_service.submit_async(job)
 		waiting.erase(kind)
 
+func compute_failed(message: String, snapshot: AnimalSnapshot) -> void:
+	g_gameplayEngine.compute_service.fallback_reason = message
+	for kind in snapshot.due:
+		waiting.erase(kind)
+	push_warning("ComputeShaderService: " + message)
+
 func apply_decision(job: Job) -> void:
-	var snapshot := job.context
+	var snapshot := job.snapshot
 	var started_at := Time.get_ticks_usec()
-	var kind: int = snapshot.kind
+	var kind: int = AnimalEntity.Kind.SHEEP if job is SheepPerceptionJob else (AnimalEntity.Kind.WOLF if job is WolfPerceptionJob else AnimalEntity.Kind.SHEEPDOG)
 	match kind:
 		AnimalEntity.Kind.SHEEP:
 			sheep_system.apply_decision(job as SheepPerceptionJob)
@@ -231,16 +233,24 @@ func apply_decision(job: Job) -> void:
 			wolf_system.apply_decision(job as WolfPerceptionJob)
 		AnimalEntity.Kind.SHEEPDOG:
 			dog_system.apply_decision(job as DogPerceptionJob)
+	var apply_ms := (Time.get_ticks_usec() - started_at) / 1000.0
+	var profile: ProfileService = g_gameplayEngine.profile_service
+	profile.record_duration("Species/" + String(stage_for(kind)) + "/Apply", apply_ms)
 	applied[kind] += 1
 	if kind == AnimalEntity.Kind.SHEEP:
-		var metrics: Dictionary = snapshot.get("gpu_metrics", {}).duplicate()
-		metrics.backend = "gpu" if snapshot.get("gpu_complete", false) else "cpu"
-		metrics.apply_ms = (Time.get_ticks_usec() - started_at) / 1000.0
-		metrics.grid_ms = snapshot.get("grid_ms", 0.0)
-		metrics.prepare_ms = snapshot.get("prepare_ms", 0.0)
+		var metrics := (job as SheepComputeJob).metrics if job is SheepComputeJob else ComputeShaderService.Metrics.new()
+		metrics.backend = "gpu" if job is SheepComputeJob else "cpu"
+		metrics.apply_ms = apply_ms
+		metrics.grid_ms = job.grid_ms
+		metrics.prepare_ms = snapshot.prepare_ms
 		metrics.execute_ms = job.execute_ms
-		metrics.latency_ms = (Time.get_ticks_usec() - snapshot.get("captured_usec", started_at)) / 1000.0
-		metrics.processing_ms = metrics.prepare_ms + metrics.grid_ms + metrics.execute_ms + metrics.apply_ms + metrics.get("pack_ms", 0.0) + metrics.get("upload_submit_ms", 0.0) + maxf(0.0, metrics.get("gpu_ms", 0.0)) + metrics.get("decode_ms", 0.0)
+		metrics.latency_ms = (Time.get_ticks_usec() - snapshot.captured_usec) / 1000.0
+		var cpu_ms := metrics.pack_ms + metrics.decode_ms if job is SheepComputeJob else job.execute_ms
+		metrics.processing_ms = metrics.prepare_ms + metrics.grid_ms + cpu_ms + metrics.apply_ms + metrics.upload_submit_ms + maxf(0.0, metrics.gpu_ms) + maxf(0.0, metrics.buffer_read_ms)
+		if job is SheepComputeJob:
+			for metric in ["pack_ms", "device_queue_ms", "upload_submit_ms", "gpu_wait_ms", "buffer_read_ms", "decode_ms"]:
+				profile.record_duration("Compute/" + metric, metrics.get(metric))
+			profile.record_duration("Compute/GPU", metrics.gpu_ms)
 		preprocessing_samples.append(metrics)
 		if preprocessing_samples.size() > 4096:
 			preprocessing_samples = preprocessing_samples.slice(2048)

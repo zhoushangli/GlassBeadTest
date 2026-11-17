@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dml81tknqyl8k"
+path="res://.godot/imported/TimerCompute.glsl-c957e8267d2a829c4a07fa07e2dca57d.res"
+
+[deps]
+
+source_file="res://Shaders/Simulation/TimerCompute.glsl"
+dest_files=["res://.godot/imported/TimerCompute.glsl-c957e8267d2a829c4a07fa07e2dca57d.res"]
+
+[params]
+

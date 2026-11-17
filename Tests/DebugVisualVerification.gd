@@ -165,6 +165,32 @@ func _run() -> void:
 	await _key(KEY_F1)
 	_check(not debug.show_details and debug.howl_events.is_empty(), "F1 input disables visuals and clears pulses")
 
+	engine.grid_service.rebuild()
+	var region_job := DogPerceptionJob.new()
+	region_job.snapshot = engine.animal_system.decision_snapshot(PackedInt32Array([2]))
+	region_job.grid = GridService.build_snapshot(region_job.snapshot)
+	region_job.rows = region_job.snapshot.dogs
+	region_job.execute()
+	engine.dog_system.apply_decision(region_job)
+	debug.show_details = true
+	debug.selected = null
+	debug.set_visual_option("fine_grid", true)
+	_check(not debug.visual_options["dog_regions"], "fine grid toggles independently")
+	await _capture("fine-grid-unselected")
+	debug.set_visual_option("fine_grid", false)
+	debug.set_visual_option("dog_regions", true)
+	_check(not debug.visual_options["fine_grid"], "regions toggle independently")
+	await _capture("dog-regions-unselected")
+	debug.set_visual_option("fine_grid", true)
+	debug.selected = dog
+	await _key(KEY_F3)
+	await _capture("dual-grids-selected-dog")
+	_check(panel.controls.has("fine_grid") and panel.controls.has("dog_regions") and not panel.grid_status.text.is_empty(), "grid options and snapshot age appear in debug panel")
+	await _key(KEY_ESCAPE)
+	debug.show_details = false
+	debug.set_visual_option("fine_grid", false)
+	debug.set_visual_option("dog_regions", false)
+
 	var retained: int = data.row_to_slot.size()
 	service.capture(sheep)
 	engine.request_single_step()

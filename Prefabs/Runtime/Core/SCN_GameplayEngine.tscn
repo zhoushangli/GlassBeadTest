@@ -16,6 +16,8 @@
 
 [ext_resource type="Script" path="res://Scripts/Core/AnimalService.gd" id="11"]
 
+[ext_resource type="Script" path="res://Scripts/Core/ComputeShaderService.gd" id="12"]
+
 [node name="GameplayEngine" type="Node"]
 script = ExtResource("1")
 config = ExtResource("7")
@@ -43,3 +45,6 @@ script = ExtResource("4")
 
 [node name="AnimalService" type="Node2D" parent="."]
 script = ExtResource("11")
+
+[node name="ComputeShaderService" type="Node2D" parent="."]
+script = ExtResource("12")

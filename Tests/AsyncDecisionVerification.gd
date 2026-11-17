@@ -7,16 +7,50 @@ class GateJob extends Job:
 	var applications: int = 0
 	var worker: bool = false
 	var value: int = 0
+	var input_value: int = 0
 
 	func execute() -> void:
 		worker = not Thread.is_main_thread()
 		entered.post()
 		if block:
 			gate.wait()
-		value = context.get("value", 0)
+		value = input_value
 
 	func apply_result() -> void:
 		applications += 1
+
+class HeldCompute extends ComputeShaderService:
+	var entered := Semaphore.new()
+	var gate := Semaphore.new()
+
+	func _supports_device() -> bool:
+		return true
+
+	func _initialize_device() -> void:
+		pass
+
+	func execute_gpu(_job: SheepComputeJob) -> PackedByteArray:
+		entered.post()
+		gate.wait()
+		return PackedByteArray()
+
+class FailedCompute extends ComputeShaderService:
+	func _supports_device() -> bool:
+		return true
+
+	func _initialize_device() -> void:
+		pass
+
+	func execute_gpu(job: SheepComputeJob) -> PackedByteArray:
+		job.error = "Injected readback failure"
+		return PackedByteArray()
+
+class FailedInitialization extends ComputeShaderService:
+	func _supports_device() -> bool:
+		return true
+
+	func _initialize_device() -> void:
+		_failure = "Injected device initialization failure"
 
 var checks: int = 0
 var failures: int = 0
@@ -50,11 +84,9 @@ func _job(kind: AnimalEntity.Kind) -> Job:
 	engine.grid_service.rebuild()
 	var job: Job = WolfPerceptionJob.new() if kind == AnimalEntity.Kind.WOLF else DogPerceptionJob.new()
 	job.stage = &"Wolf" if kind == AnimalEntity.Kind.WOLF else &"Dog"
-	job.context = engine.animal_system.decision_snapshot(kind)
-	job.context.grid = engine.grid_service.query_context().duplicate(true)
-	job.context.cell_counts = engine.grid_service.cell_counts.duplicate()
-	job.context.sheep_position_sums = engine.grid_service.sheep_position_sums.duplicate()
-	job.rows = job.context.rows
+	job.snapshot = engine.animal_system.decision_snapshot()
+	job.grid = GridService.build_snapshot(job.snapshot)
+	job.rows = job.snapshot.rows_for(kind)
 	job.target = engine.wolf_system if kind == AnimalEntity.Kind.WOLF else engine.dog_system
 	return job
 
@@ -65,7 +97,7 @@ func _queues() -> void:
 	service.max_workers = 1
 	var first := GateJob.new()
 	first.stage = &"Wolf"
-	first.context.value = 17
+	first.input_value = 17
 	_check(service.submit_async(first), "async request accepted")
 	first.entered.wait()
 	service.flush()
@@ -107,11 +139,11 @@ func _snapshots() -> void:
 	var wolf := entities.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(400, 300))[0]
 	data.motion_facing[wolf.row] = Vector2.RIGHT
 	var job := _job(AnimalEntity.Kind.WOLF)
-	var point: Vector2 = job.context.motion_position[sheep.row]
-	var grid_point: Vector2 = job.context.grid.positions[sheep.row]
+	var point: Vector2 = job.snapshot.motion_position[sheep.row]
+	var grid_point: Vector2 = job.grid.positions[sheep.row]
 	data.motion_position[sheep.row] = Vector2(50, 300)
 	engine.grid_service.rebuild()
-	_check(job.context.motion_position[sheep.row] == point and job.context.grid.positions[sheep.row] == grid_point, "job owns immutable entity and grid input")
+	_check(job.snapshot.motion_position[sheep.row] == point and job.grid.positions[sheep.row] == grid_point, "job owns immutable entity and grid input")
 	engine.job_service.submit_async(job)
 	_wait(job)
 	_check((job as WolfPerceptionJob).prey_rows[0] == sheep.row, "worker selects from submitted snapshot despite live motion")
@@ -133,7 +165,7 @@ func _snapshots() -> void:
 	entities.capture(sheep)
 	entities.remove_expired(10.0)
 	var replacement := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(550, 300))[0]
-	_check(engine.animal_system.snapshot_animal(job.context, 0) == null, "reused slot rejects previous uid")
+	_check(engine.animal_system.snapshot_animal(job.snapshot, 0) == null, "reused slot rejects previous uid")
 	engine.job_service.flush()
 	_check(not data.wolf_hunting[wolf.row] and data.memory_target[wolf.row] != replacement, "dead prey result cannot target replacement after row swaps")
 	var fresh := _job(AnimalEntity.Kind.WOLF)
@@ -147,6 +179,129 @@ func _snapshots() -> void:
 	engine.reset_simulation()
 	engine.job_service.flush()
 	_check(job.state == Job.State.DISCARDED and data.active_count == 0, "reset discards completed old-world result")
+
+func _shared_inputs() -> void:
+	_empty()
+	var entities: EntityService = engine.entity_service
+	entities.spawn(AnimalEntity.Kind.SHEEP, 3, Vector2(300, 300))
+	entities.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(450, 300))
+	entities.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(300, 350))
+	entities.capture(entities.data.handles[0])
+	entities.remove_expired(10.0)
+	var snapshot: AnimalSnapshot = engine.animal_system.decision_snapshot(PackedInt32Array([0]))
+	_check(snapshot.motion_position.size() == entities.data.active_count and snapshot.identity_uid.size() == entities.data.active_count, "capture excludes inactive retained rows")
+	_check(snapshot.memory_target.is_empty() and snapshot.dog_returning.is_empty() and snapshot.wolf_resting.is_empty(), "sheep-only capture omits wolf and dog decision columns")
+	var grid := GridService.build_snapshot(snapshot)
+	var point := snapshot.motion_position[0]
+	grid.positions[0] = point + Vector2.ONE
+	_check(snapshot.motion_position[0] == point + Vector2.ONE and entities.data.motion_position[0] == point, "grid aliases the isolated snapshot position column")
+	grid.positions[0] = point
+	var members := grid.members.duplicate()
+	engine.grid_service.install_snapshot(grid)
+	engine.grid_service.reset()
+	_check(grid.positions.size() == entities.data.active_count and grid.members == members and not grid.pressure_needed.is_empty(), "grid reset replaces service arrays without clearing published input")
+	var first := GateJob.new()
+	var second := GateJob.new()
+	first.stage = &"Wolf"
+	second.stage = &"Dog"
+	first.block = false
+	second.block = false
+	first.snapshot = snapshot
+	second.snapshot = snapshot
+	first.grid = grid
+	second.grid = grid
+	engine.job_service.submit_async(first)
+	engine.job_service.submit_async(second)
+	_wait(first)
+	_wait(second)
+	_check(first.snapshot == second.snapshot and first.grid == second.grid and first.sequence != second.sequence, "jobs share input objects and retain separate submission metadata")
+	engine.job_service.flush()
+	var weight := snapshot.config.sheep.wander_weight
+	engine.config.sheep.wander_weight = weight + 0.5
+	_check(snapshot.config.sheep.wander_weight == weight, "published configuration is isolated from live edits")
+	engine.animal_service.refresh_config()
+	var fresh: AnimalSnapshot = engine.animal_system.decision_snapshot()
+	_check(fresh.config != snapshot.config and fresh.config.sheep.wander_weight == weight + 0.5, "configuration refresh publishes a new version")
+
+func _compute_job() -> SheepComputeJob:
+	var job := SheepComputeJob.new()
+	job.snapshot = engine.animal_system.decision_snapshot()
+	job.grid = GridService.build_snapshot(job.snapshot, false)
+	return job
+
+func _compute_cancellation() -> void:
+	_empty()
+	engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 2, Vector2(300, 300))
+	var held := HeldCompute.new()
+	root.add_child(held)
+	held.backend = "gpu"
+	held.startup()
+	var job := _compute_job()
+	_check(held.submit(job), "device service accepts one request")
+	held.entered.wait()
+	_check(not held.submit(_compute_job()), "busy device rejects another request")
+	var worker_limit: int = engine.job_service.max_workers
+	engine.job_service.max_workers = 1
+	var cpu_job := GateJob.new()
+	cpu_job.stage = &"Wolf"
+	cpu_job.block = false
+	_check(engine.job_service.submit_async(cpu_job), "CPU work can be submitted while GPU is blocked")
+	_wait(cpu_job)
+	engine.job_service.flush()
+	_check(cpu_job.applications == 1 and held.busy, "blocked GPU occupies no shared worker slot")
+	engine.job_service.max_workers = worker_limit
+	held.reset()
+	_check(job.is_cancelled() and held.busy, "reset cancels without waiting for device work")
+	held.gate.post()
+	var deadline := Time.get_ticks_msec() + 5000
+	while held.busy and Time.get_ticks_msec() < deadline:
+		held._process(0.0)
+		OS.delay_msec(1)
+	_check(job.state == Job.State.DISCARDED and job.snapshot == null and job.metrics.decode_ms == 0.0, "paused service retires cancelled work without decoding")
+	job = _compute_job()
+	job.cancel()
+	_check(not held.submit(job), "cancelled request is rejected before execution")
+	held.shutdown()
+	held.startup()
+	_check(held.available() and not held.busy, "service restarts after shutdown")
+	job = _compute_job()
+	_check(held.submit(job), "restarted device accepts input")
+	held.entered.wait()
+	job.cancel()
+	var release_task := WorkerThreadPool.add_task(held.gate.post)
+	held.shutdown()
+	WorkerThreadPool.wait_for_task_completion(release_task)
+	_check(job.state == Job.State.DISCARDED and not held.busy, "shutdown joins device work without a main-thread completion callback")
+	held.shutdown()
+	held.queue_free()
+	var failed := FailedCompute.new()
+	root.add_child(failed)
+	failed.backend = "auto"
+	failed.startup()
+	var original: ComputeShaderService = engine.compute_service
+	engine.compute_service = failed
+	job = _compute_job()
+	job.target = engine.animal_service
+	engine.animal_service.waiting[0] = true
+	_check(failed.submit(job), "failure fixture accepts input")
+	deadline = Time.get_ticks_msec() + 5000
+	while failed.busy and Time.get_ticks_msec() < deadline:
+		failed.flush()
+		OS.delay_msec(1)
+	_check(not engine.animal_service.waiting.has(0) and engine.animal_service.applied[0] == 0 and not failed.failure.is_empty(), "device failure clears waiting without applying data")
+	_check(not failed.available(), "failed device refuses subsequent GPU submissions")
+	engine.animal_service.schedule_updates(1.0)
+	_check(engine.job_service.async_jobs.has(&"Grid") and not engine.job_service.async_jobs[&"Grid"].snapshot.gpu, "auto backend schedules CPU work after a device error")
+	engine.job_service.drain()
+	engine.compute_service = original
+	failed.shutdown()
+	failed.queue_free()
+	var unavailable := FailedInitialization.new()
+	root.add_child(unavailable)
+	unavailable.startup()
+	_check(not unavailable.available() and not unavailable.failure.is_empty(), "initialization failure is reported before requests are accepted")
+	unavailable.shutdown()
+	unavailable.queue_free()
 
 func _frequency_and_motion() -> void:
 	_empty()
@@ -283,6 +438,8 @@ func _run() -> void:
 	engine.set_process(false)
 	authored = engine.config.copy_config()
 	_snapshots()
+	_shared_inputs()
+	_compute_cancellation()
 	_frequency_and_motion()
 	_timers_and_invalidation()
 	_configuration()

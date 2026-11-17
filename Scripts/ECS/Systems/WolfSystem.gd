@@ -24,7 +24,7 @@ func advance_time(delta: float) -> void:
 				g_gameplayEngine.animal_system.decide(data.handles[row], 0.0)
 
 func apply_decision(job: WolfPerceptionJob) -> void:
-	var snapshot := job.context
+	var snapshot := job.snapshot
 	var common: AnimalSystem = g_gameplayEngine.animal_system
 	common.submit_stats(job.stats)
 	for index in range(job.rows.size()):
@@ -101,49 +101,46 @@ func perceive(animal: AnimalEntity, delta: float, job: WolfPerceptionJob = null,
 func perceive_batch(delta: float) -> void:
 	var started_at := Time.get_ticks_usec()
 	var common: AnimalSystem = g_gameplayEngine.animal_system
-	var context := common.perception_context(delta)
-	var settings: WolfConfig = g_gameplayEngine.config.wolf
-	context.merge({"common": common, "dogs": g_gameplayEngine.entity_service.dog_rows,
-		"threat_distance": settings.dog_threat_distance, "rest_duration": settings.rest_duration,
-		"radius": settings.perception_radius})
+	var input := WolfPerceptionJob.new()
+	common.prepare_job(input, delta)
+	input.dogs = g_gameplayEngine.entity_service.dog_rows
 
 	var jobs: JobService = g_gameplayEngine.job_service
 	var prepared_at := Time.get_ticks_usec()
-	jobs.run_batches(&"Wolf", g_gameplayEngine.entity_service.wolf_rows, WolfPerceptionJob, context, self)
+	jobs.run_batches(&"Wolf", g_gameplayEngine.entity_service.wolf_rows, WolfPerceptionJob, input, self)
 	jobs.record_stage(&"Wolf", started_at, prepared_at)
 
 func apply_batch(job: WolfPerceptionJob) -> void:
 	var common: AnimalSystem = g_gameplayEngine.animal_system
 	common.submit_stats(job.stats)
 	for index in range(job.rows.size()):
-		perceive(data.handles[job.rows[index]], job.context.delta, job, index)
+		perceive(data.handles[job.rows[index]], job.delta, job, index)
 
 func calculate_batch(job: WolfPerceptionJob) -> void:
 	job.resize_output()
 	var rows := job.rows
-	var context := job.context
-	var stats := AnimalSystem.batch_stats(context)
-	var common: AnimalSystem = context.common
+	var stats := AnimalSystem.batch_stats(job.spatial_stats, job.detailed)
+	var common: AnimalSystem = job.common
 	for result_index in range(rows.size()):
 		var row := rows[result_index]
-		common.calculate_perception(row, context, stats, result_index, job.remaining, job.refresh_flags, job.separations, job.nearby_offsets, job.nearby_members)
+		common.calculate_perception(row, job, stats, result_index, job.remaining, job.refresh_flags, job.separations, job.nearby_offsets, job.nearby_members)
 		var best: int = -1
-		var distance: float = context.threat_distance * (2.0 if data.wolf_retreating[row] else 1.0)
-		for dog_row in context.dogs:
+		var distance: float = job.config.wolf.dog_threat_distance * (2.0 if data.wolf_retreating[row] else 1.0)
+		for dog_row in job.dogs:
 			var next_distance := data.motion_position[row].distance_to(data.motion_position[dog_row])
 			if next_distance < distance or (is_equal_approx(next_distance, distance) and best >= 0 and data.identity_entity_id[dog_row] < data.identity_entity_id[best]):
 				best = dog_row
 				distance = next_distance
 
 		job.threat_rows[result_index] = best
-		common.calculate_observation(row, context.delta, job, result_index)
+		common.calculate_observation(row, job.delta, job, result_index)
 		job.prey_rows[result_index] = -1
-		var resting: bool = data.wolf_resting[row] and data.wolf_rest_elapsed[row] + context.delta < context.rest_duration
+		var resting: bool = data.wolf_resting[row] and data.wolf_rest_elapsed[row] + job.delta < job.config.wolf.rest_duration
 		if not data.wolf_hunting[row] and not resting and best < 0 and not data.wolf_retreating[row]:
 			var started_at := Time.get_ticks_usec() if stats.detailed else 0
 			distance = INF
-			for index in GridService.query_snapshot(data.motion_position[row], context.radius, AnimalEntity.Kind.SHEEP, context.grid, stats):
-				var point: Vector2 = context.grid.positions[index]
+			for index in GridService.query_snapshot(data.motion_position[row], job.config.wolf.perception_radius, AnimalEntity.Kind.SHEEP, job.grid, stats):
+				var point: Vector2 = job.grid.positions[index]
 				if not common.can_see(data.handles[row], point):
 					continue
 
@@ -256,7 +253,12 @@ func prepare_motion_goals() -> void:
 		if data.motion_intent[row] != AnimalData.MotionIntent.POINT:
 			continue
 
+		if data.brain_current_behavior[row] in [AnimalEntity.Behavior.CHASE, AnimalEntity.Behavior.STALK] and data.live(data.memory_target[row]) != null:
+			common.observe_target(data.handles[row], 0.0)
+
 		match data.brain_current_behavior[row]:
+			AnimalEntity.Behavior.CHASE:
+				data.motion_movement_goal[row] = data.memory_last_seen_position[row]
 			AnimalEntity.Behavior.STALK:
 				var point := data.memory_last_seen_position[row]
 				var direction := data.memory_last_seen_velocity[row].normalized()

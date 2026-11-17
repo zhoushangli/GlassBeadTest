@@ -9,10 +9,12 @@
 script = ExtResource("1")
 preset_version = 7
 simulation_hz = 30.0
-max_steps_per_frame = 2
-sheep_update_hz = 12
-arena_size = Vector2(10240, 5960)
-initial_total = 2500
+max_steps_per_frame = 1
+sheep_update_hz = 4
+wolf_update_hz = 4
+sheepdog_update_hz = 4
+arena_size = Vector2(5120, 2880)
+initial_total = 5000
 sheep = ExtResource("2")
 wolf = ExtResource("3")
 sheepdog = ExtResource("4")

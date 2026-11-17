@@ -6,46 +6,88 @@ var data: AnimalData
 func _init(storage: AnimalData) -> void:
 	data = storage
 
-func decision_snapshot(kind: AnimalEntity.Kind) -> Dictionary:
+func decision_snapshot(due: PackedInt32Array = PackedInt32Array([0, 1, 2]), gpu: bool = false) -> AnimalSnapshot:
 	var engine := g_gameplayEngine
-	var snapshot := {"time": engine.simulation_time, "kind": kind,
-		"stats": engine.grid_service.spatial_stats_enabled, "detailed": engine.profile_service.detailed_stats_enabled,
-		"distance": engine.config.separation_distance, "interval": engine.config.perception_interval,
-		"rows": [engine.entity_service.sheep_rows, engine.entity_service.wolf_rows, engine.entity_service.dog_rows][kind].duplicate(),
-		"sheep": engine.entity_service.sheep_rows.duplicate(), "wolves": engine.entity_service.wolf_rows.duplicate(),
-		"dogs": engine.entity_service.dog_rows.duplicate(), "species_settings": []}
-	for name in ["identity_uid", "identity_entity_id", "identity_kind", "row_to_slot", "motion_position", "motion_velocity", "motion_facing",
-		"memory_vision_radius_squared", "memory_vision_cos", "memory_target_visible", "memory_unseen_elapsed",
-		"memory_last_seen_position", "memory_last_seen_velocity", "motion_separation", "memory_perception_ready",
-		"memory_perception_remaining", "wolf_hunting", "wolf_resting", "wolf_retreating", "dog_returning",
-		"dog_assignment_remaining", "dog_protection_center", "sheep_panic_strength", "sheep_panic_source", "sheep_panic_revision", "motion_wander_point"]:
-		snapshot[name] = data.get(name).duplicate()
-	for name in ["memory_target", "dog_protected_sheep", "dog_collected_sheep"]:
-		var references := PackedInt32Array()
-		references.resize(data.active_count)
-		for row in range(data.active_count):
-			var handle := data.live(data.get(name)[row])
-			references[row] = handle.row if handle != null else -1
-		snapshot[name] = references
-	for resource in [engine.config.sheep, engine.config.wolf, engine.config.sheepdog]:
-		var settings := {}
-		for property in resource.get_property_list():
-			if (property.usage & PROPERTY_USAGE_EDITOR) != 0 and property.type in [TYPE_FLOAT, TYPE_INT]:
-				settings[property.name] = resource.get(property.name)
-		snapshot.species_settings.append(settings)
-	snapshot.settings = snapshot.species_settings[kind]
+	var snapshot := AnimalSnapshot.new()
+	snapshot.captured_usec = Time.get_ticks_usec()
+	snapshot.time = engine.simulation_time
+	snapshot.stats = engine.grid_service.spatial_stats_enabled
+	snapshot.detailed = engine.profile_service.detailed_stats_enabled
+	snapshot.config = engine.animal_service.snapshot_config
+	snapshot.distance = snapshot.config.separation_distance
+	snapshot.interval = snapshot.config.perception_interval
+	snapshot.due = due
+	snapshot.gpu = gpu
+	snapshot.sheep = engine.entity_service.sheep_rows.duplicate()
+	snapshot.wolves = engine.entity_service.wolf_rows.duplicate()
+	snapshot.dogs = engine.entity_service.dog_rows.duplicate()
+
+	snapshot.identity_uid = data.identity_uid.slice(0, data.active_count)
+	snapshot.identity_entity_id = data.identity_entity_id.slice(0, data.active_count)
+	snapshot.identity_kind = PackedInt32Array(Array(data.identity_kind.slice(0, data.active_count)))
+	snapshot.row_to_slot = data.row_to_slot.slice(0, data.active_count)
+	snapshot.motion_position = data.motion_position.slice(0, data.active_count)
+	snapshot.motion_velocity = data.motion_velocity.slice(0, data.active_count)
+	snapshot.motion_separation = data.motion_separation.slice(0, data.active_count)
+	snapshot.memory_perception_ready = data.memory_perception_ready.slice(0, data.active_count)
+	snapshot.memory_perception_remaining = data.memory_perception_remaining.slice(0, data.active_count)
+	snapshot.wolf_hunting = data.wolf_hunting.slice(0, data.active_count)
+
+	if due.has(0) or gpu:
+		snapshot.sheep_panic_strength = data.sheep_panic_strength.slice(0, data.active_count)
+		snapshot.sheep_panic_source = data.sheep_panic_source.slice(0, data.active_count)
+		snapshot.sheep_panic_revision = data.sheep_panic_revision.slice(0, data.active_count)
+		snapshot.motion_wander_point = data.motion_wander_point.slice(0, data.active_count)
+
+	if due.has(1) or due.has(2):
+		snapshot.motion_facing = data.motion_facing.slice(0, data.active_count)
+		snapshot.memory_vision_radius_squared = data.memory_vision_radius_squared.slice(0, data.active_count)
+		snapshot.memory_vision_cos = data.memory_vision_cos.slice(0, data.active_count)
+		snapshot.memory_target_visible = data.memory_target_visible.slice(0, data.active_count)
+		snapshot.memory_unseen_elapsed = data.memory_unseen_elapsed.slice(0, data.active_count)
+		snapshot.memory_last_seen_position = data.memory_last_seen_position.slice(0, data.active_count)
+		snapshot.memory_last_seen_velocity = data.memory_last_seen_velocity.slice(0, data.active_count)
+
+	if due.has(1):
+		snapshot.wolf_resting = data.wolf_resting.slice(0, data.active_count)
+		snapshot.wolf_retreating = data.wolf_retreating.slice(0, data.active_count)
+
+	if due.has(2):
+		snapshot.dog_region = data.dog_region.slice(0, data.active_count)
+		snapshot.dog_returning = data.dog_returning.slice(0, data.active_count)
+		snapshot.dog_assignment_remaining = data.dog_assignment_remaining.slice(0, data.active_count)
+		snapshot.dog_protection_center = data.dog_protection_center.slice(0, data.active_count)
+
+	if due.has(1) or due.has(2):
+		snapshot.memory_target.resize(data.active_count)
+		snapshot.memory_target.fill(-1)
+		var observers := PackedInt32Array()
+		if due.has(1):
+			observers.append_array(snapshot.wolves)
+		if due.has(2):
+			observers.append_array(snapshot.dogs)
+		for row in observers:
+			var handle := data.live(data.memory_target[row])
+			snapshot.memory_target[row] = handle.row if handle != null else -1
+	if due.has(2):
+		snapshot.dog_collected_sheep.resize(data.active_count)
+		snapshot.dog_collected_sheep.fill(-1)
+		for row in snapshot.dogs:
+			var collected := data.live(data.dog_collected_sheep[row])
+			snapshot.dog_collected_sheep[row] = collected.row if collected != null else -1
+	snapshot.prepare_ms = (Time.get_ticks_usec() - snapshot.captured_usec) / 1000.0
 	return snapshot
 
-static func snapshot_can_see(row: int, point: Vector2, snapshot: Dictionary) -> bool:
+static func snapshot_can_see(row: int, point: Vector2, snapshot: AnimalSnapshot) -> bool:
 	var offset: Vector2 = point - snapshot.motion_position[row]
 	return offset.length_squared() <= snapshot.memory_vision_radius_squared[row] and (offset.is_zero_approx() or snapshot.motion_facing[row].dot(offset.normalized()) + 0.000001 >= snapshot.memory_vision_cos[row])
 
-static func snapshot_separation(row: int, snapshot: Dictionary, stats: Dictionary, refresh: bool) -> Vector2:
+static func snapshot_separation(row: int, snapshot: AnimalSnapshot, grid: GridSnapshot, stats: Dictionary, refresh: bool) -> Vector2:
 	var separation: Vector2 = snapshot.motion_separation[row]
 	if refresh:
 		separation = Vector2.ZERO
 		var distance: float = snapshot.distance
-		var nearby := GridService.query_snapshot(snapshot.motion_position[row], distance, snapshot.grid.kinds[row], snapshot.grid, stats)
+		var nearby := GridService.query_snapshot(snapshot.motion_position[row], distance, grid.kinds[row], grid, stats)
 		for other in nearby:
 			if other == row:
 				continue
@@ -59,7 +101,7 @@ static func snapshot_separation(row: int, snapshot: Dictionary, stats: Dictionar
 			separation += direction * (1.0 - length / distance)
 	return separation
 
-func snapshot_animal(snapshot: Dictionary, index: int) -> AnimalEntity:
+func snapshot_animal(snapshot: AnimalSnapshot, index: int) -> AnimalEntity:
 	if index < 0:
 		return null
 
@@ -70,7 +112,7 @@ func snapshot_animal(snapshot: Dictionary, index: int) -> AnimalEntity:
 	var row := data.slot_to_row[slot]
 	return data.handles[row] if row < data.active_count and data.identity_alive[row] and data.identity_uid[row] == snapshot.identity_uid[index] else null
 
-func apply_snapshot_perception(row: int, snapshot_row: int, snapshot: Dictionary, separation: Vector2, refresh: bool, target: int, visible: bool, last_position: Vector2, last_velocity: Vector2) -> void:
+func apply_snapshot_perception(row: int, snapshot_row: int, snapshot: AnimalSnapshot, separation: Vector2, refresh: bool, target: int, visible: bool, last_position: Vector2, last_velocity: Vector2) -> void:
 	if refresh:
 		data.motion_separation[row] = separation
 		data.memory_perception_ready[row] = 1
@@ -88,28 +130,33 @@ func apply_snapshot_perception(row: int, snapshot_row: int, snapshot: Dictionary
 		data.memory_last_seen_velocity[row] = last_velocity
 		data.memory_unseen_elapsed[row] = g_gameplayEngine.simulation_time - snapshot.time
 
-func perception_context(delta: float) -> Dictionary:
-	return {"delta": delta, "grid": g_gameplayEngine.grid_service.query_context(),
-		"distance": g_gameplayEngine.config.separation_distance, "interval": g_gameplayEngine.config.perception_interval,
-		"stats": g_gameplayEngine.grid_service.spatial_stats_enabled, "detailed": g_gameplayEngine.profile_service.detailed_stats_enabled}
+func prepare_job(job: Job, delta: float) -> void:
+	job.delta = delta
+	job.grid = g_gameplayEngine.grid_service.query_context()
+	job.config = g_gameplayEngine.config
+	job.common = self
+	job.distance = job.config.separation_distance
+	job.interval = job.config.perception_interval
+	job.spatial_stats = g_gameplayEngine.grid_service.spatial_stats_enabled
+	job.detailed = g_gameplayEngine.profile_service.detailed_stats_enabled
 
-static func batch_stats(context: Dictionary) -> Dictionary:
-	return {"enabled": context.stats, "detailed": context.detailed, "queries": 0, "candidates": 0, "max_candidates": 0,
+static func batch_stats(enabled: bool, detailed: bool) -> Dictionary:
+	return {"enabled": enabled, "detailed": detailed, "queries": 0, "candidates": 0, "max_candidates": 0,
 		"hotspots": {"NearbyQuery": 0.0, "Separation": 0.0, "NeighborScan": 0.0, "WolfTarget": 0.0, "DogAnchor": 0.0},
 		"calls": {"NearbyQuery": 0, "Separation": 0, "NeighborScan": 0, "WolfTarget": 0, "DogAnchor": 0}}
 
-func calculate_perception(row: int, context: Dictionary, stats: Dictionary, index: int, remaining_values: PackedFloat64Array, refresh_flags: PackedByteArray, separations: PackedVector2Array, nearby_offsets: PackedInt32Array, nearby_members: PackedInt32Array) -> void:
-	var remaining: float = data.memory_perception_remaining[row] - context.delta
+func calculate_perception(row: int, job: Job, stats: Dictionary, index: int, remaining_values: PackedFloat64Array, refresh_flags: PackedByteArray, separations: PackedVector2Array, nearby_offsets: PackedInt32Array, nearby_members: PackedInt32Array) -> void:
+	var remaining: float = data.memory_perception_remaining[row] - job.delta
 	var refresh := not data.memory_perception_ready[row] or remaining <= 0.0
 	var nearby := data.memory_nearby[row]
 	var separation := data.motion_separation[row]
 	if refresh:
-		nearby = GridService.query_snapshot(data.motion_position[row], context.distance, data.identity_kind[row], context.grid, stats)
+		nearby = GridService.query_snapshot(data.motion_position[row], job.distance, data.identity_kind[row], job.grid, stats)
 		var started_at := Time.get_ticks_usec() if stats.detailed else 0
 		separation = Vector2.ZERO
-		var distance_limit: float = context.distance
-		var positions: PackedVector2Array = context.grid.positions
-		var kinds: PackedInt32Array = context.grid.kinds
+		var distance_limit: float = job.distance
+		var positions: PackedVector2Array = job.grid.positions
+		var kinds: PackedInt32Array = job.grid.kinds
 		if distance_limit > 0.0:
 			for other in nearby:
 				if other == row or kinds[other] != data.identity_kind[row]:
@@ -128,7 +175,7 @@ func calculate_perception(row: int, context: Dictionary, stats: Dictionary, inde
 		if stats.detailed:
 			stats.hotspots.Separation += (Time.get_ticks_usec() - started_at) / 1000.0
 			stats.calls.Separation += 1
-		remaining = context.interval
+		remaining = job.interval
 		if not data.memory_perception_ready[row]:
 			remaining *= fmod(data.identity_entity_id[row] * 0.618034, 1.0)
 

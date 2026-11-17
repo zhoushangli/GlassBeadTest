@@ -36,6 +36,7 @@ func _animal(kind: AnimalEntity.Kind, point: Vector2) -> AnimalEntity:
 	return engine.entity_service.spawn(kind, 1, point)[0]
 
 func _step(count: int) -> void:
+	engine.animal_service.refresh_config()
 	for index in range(count):
 		engine.job_service.invalidate_async()
 		engine.animal_service.waiting.clear()
@@ -431,7 +432,8 @@ func _verify_dogs() -> void:
 	var anchor := _animal(AnimalEntity.Kind.SHEEP, Vector2(500, 300)) as AnimalEntity
 	var stray := _animal(AnimalEntity.Kind.SHEEP, Vector2(680, 300)) as AnimalEntity
 	var dog := _animal(AnimalEntity.Kind.SHEEPDOG, Vector2(600, 300)) as AnimalEntity
-	data.dog_protected_sheep[dog.row] = anchor
+	engine.grid_service.rebuild()
+	data.dog_region[dog.row] = engine.grid_service.debug_snapshot.region_at(data.motion_position[anchor.row])
 	data.dog_assignment_remaining[dog.row] = 100.0
 	data.motion_facing[dog.row] = Vector2.RIGHT
 	_step(1)
@@ -983,6 +985,31 @@ func _verify_batch_steering() -> void:
 	_check(data.motion_movement_goal[wolf.row].is_equal_approx(Vector2(600, 400 - engine.config.wolf.strategy_offset)), "batch wolf side strategy offsets last seen position")
 	_check(data.motion_movement_goal[dog.row].is_equal_approx(Vector2(700 + engine.config.sheepdog.collect_distance, 400)), "batch dog collect point stays outside sheep relative to flock")
 	_check(engine.rng.state == state, "steering does not consume RNG")
+
+	data.memory_target[wolf.row] = sheep
+	data.motion_facing[wolf.row] = Vector2.RIGHT
+	data.motion_position[sheep.row] = Vector2(800, 400)
+	data.motion_velocity[sheep.row] = Vector2.DOWN * 30.0
+	engine.animal_service.prepare_motion(1.0 / 30.0)
+	_check(data.motion_movement_goal[wolf.row].is_equal_approx(Vector2(800 + engine.config.wolf.strategy_offset, 400)), "stalk follows live prey position and velocity between decisions")
+
+	data.brain_current_behavior[wolf.row] = AnimalEntity.Behavior.CHASE
+	data.motion_position[sheep.row] = Vector2(820, 410)
+	engine.animal_service.prepare_motion(1.0 / 30.0)
+	_check(data.motion_movement_goal[wolf.row] == data.motion_position[sheep.row] and data.memory_last_seen_position[wolf.row] == data.motion_position[sheep.row], "chase follows live prey and refreshes memory between decisions")
+	_check(data.live(data.memory_target[wolf.row]) == sheep and engine.rng.state == state, "live pursuit preserves target and RNG without a decision")
+
+	var remembered := data.memory_last_seen_position[wolf.row]
+	var remembered_velocity := data.memory_last_seen_velocity[wolf.row]
+	data.motion_position[sheep.row] = Vector2(600, 400)
+	data.motion_velocity[sheep.row] = Vector2.LEFT * 30.0
+	engine.animal_service.prepare_motion(1.0 / 30.0)
+	_check(not data.memory_target_visible[wolf.row] and data.motion_movement_goal[wolf.row] == remembered and data.memory_last_seen_velocity[wolf.row] == remembered_velocity, "hidden prey cannot update chase goal or remembered velocity")
+
+	data.brain_current_behavior[wolf.row] = AnimalEntity.Behavior.SEARCH
+	data.motion_position[sheep.row] = Vector2(840, 400)
+	engine.animal_service.prepare_motion(1.0 / 30.0)
+	_check(data.motion_movement_goal[wolf.row] == remembered, "search retains last seen goal until the next decision")
 
 	data.brain_current_behavior[wolf.row] = AnimalEntity.Behavior.RETREAT
 	data.wolf_nearest_threat[wolf.row] = dog

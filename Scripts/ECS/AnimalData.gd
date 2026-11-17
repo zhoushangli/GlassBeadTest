@@ -57,6 +57,7 @@ var wolf_howled: PackedByteArray = []
 var wolf_howl_pending: PackedByteArray = []
 var wolf_nearest_threat: Array[AnimalEntity] = []
 
+var dog_region := PackedInt32Array()
 var dog_protection_center: PackedVector2Array = []
 var dog_guard_point: PackedVector2Array = []
 var dog_wolf_candidates: Array[Array] = []
@@ -73,6 +74,7 @@ var identity_uid := PackedInt64Array()
 var row_to_slot := PackedInt32Array()
 var slot_to_row := PackedInt32Array()
 var handles: Array[AnimalEntity] = []
+var structure_version: int = 0
 var active_count: int = 0
 var retained_count: int = 0
 
@@ -135,6 +137,7 @@ func append_slot() -> int:
 	wolf_howl_pending.append(false)
 	wolf_nearest_threat.append(null)
 
+	dog_region.append(-1)
 	dog_protection_center.append(Vector2.ZERO)
 	dog_guard_point.append(Vector2.ZERO)
 	dog_wolf_candidates.append([])
@@ -202,6 +205,7 @@ func reset_row(row: int) -> void:
 	wolf_howl_pending[row] = false
 	wolf_nearest_threat[row] = null
 
+	dog_region[row] = -1
 	dog_protection_center[row] = Vector2.ZERO
 	dog_guard_point[row] = Vector2.ZERO
 	dog_wolf_candidates[row] = []
@@ -218,6 +222,7 @@ func swap_rows(first: int, second: int) -> void:
 	if first == second:
 		return
 
+	structure_version += 1
 	var intent := motion_intent[first]
 	motion_intent[first] = motion_intent[second]
 	motion_intent[second] = intent
@@ -368,6 +373,9 @@ func swap_rows(first: int, second: int) -> void:
 	wolf_nearest_threat[first] = wolf_nearest_threat[second]
 	wolf_nearest_threat[second] = value_49
 
+	var region := dog_region[first]
+	dog_region[first] = dog_region[second]
+	dog_region[second] = region
 	var value_50 = dog_protection_center[first]
 	dog_protection_center[first] = dog_protection_center[second]
 	dog_protection_center[second] = value_50
@@ -427,6 +435,7 @@ func live(handle: AnimalEntity) -> AnimalEntity:
 	return handle if row >= 0 and row < active_count and identity_alive[row] else null
 
 func clear() -> void:
+	structure_version += 1
 	for handle in handles:
 		if handle != null:
 			handle.row = -1
@@ -484,6 +493,7 @@ func clear() -> void:
 	wolf_howl_pending.clear()
 	wolf_nearest_threat.clear()
 
+	dog_region.clear()
 	dog_protection_center.clear()
 	dog_guard_point.clear()
 	dog_wolf_candidates.clear()

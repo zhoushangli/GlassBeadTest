@@ -8,6 +8,7 @@ const PRESET_PATH := "user://CFG_Runtime.tres"
 
 @export var config: SimulationConfig
 
+@onready var compute_service: ComputeShaderService = $ComputeShaderService
 @onready var animal_service: AnimalService = $AnimalService
 @onready var job_service: JobService = $JobService
 @onready var grid_service: GridService = $GridService
@@ -29,6 +30,7 @@ var paused: bool = false:
 
 var simulation_time: float = 0.0
 var step_count: int = 0
+var step_failed: bool = false
 
 var _pending_spawns: Array[Vector2i] = []
 var _pending_config: SimulationConfig
@@ -67,6 +69,14 @@ func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationCo
 	render_service.container = entity_service.container
 	debug_service.hud = debug_hud
 	running = true
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--compute="):
+			compute_service.backend = argument.trim_prefix("--compute=")
+		elif argument.begins_with("--movement-compute="):
+			compute_service.movement_backend = argument.trim_prefix("--movement-compute=")
+		elif argument.begins_with("--timers-compute="):
+			compute_service.timers_backend = argument.trim_prefix("--timers-compute=")
+	compute_service.startup()
 	animal_service.startup()
 	job_service.startup()
 	grid_service.startup()
@@ -78,6 +88,7 @@ func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationCo
 
 func stop_simulation() -> void:
 	running = false
+	compute_service.shutdown()
 	job_service.shutdown()
 	animal_service.shutdown()
 	debug_service.shutdown()
@@ -92,6 +103,7 @@ func stop_simulation() -> void:
 	_accumulator = 0.0
 
 func reset_simulation() -> void:
+	compute_service.reset()
 	job_service.reset()
 	debug_service.reset()
 	entity_service.reset()
@@ -105,6 +117,7 @@ func reset_simulation() -> void:
 	rng.seed = config.random_seed
 	simulation_time = 0.0
 	step_count = 0
+	step_failed = false
 	animal_service.reset()
 	reset_frequency_window()
 	paused = false
@@ -123,6 +136,7 @@ func _apply_pending_config() -> void:
 	var was_paused := paused
 	config = _pending_config
 	_pending_config = null
+	compute_service.reset()
 	job_service.invalidate_async()
 	animal_service.reset()
 	_accumulator = 0.0
@@ -206,32 +220,45 @@ func _process(delta: float) -> void:
 		simulate_step(interval)
 	if render_service.dirty:
 		render_service.sync()
-	simulation_frame_completed.emit((Time.get_ticks_usec() - frame_started) / 1000.0)
+	var frame_ms := (Time.get_ticks_usec() - frame_started) / 1000.0
+	profile_service.record_duration("Frames/SimulationAndSync", frame_ms)
+	simulation_frame_completed.emit(frame_ms)
+
+func fail_step(message: String) -> void:
+	step_failed = true
+	paused = true
+	push_error(message + ": " + compute_service.fallback_reason + " " + compute_service.failure)
 
 func simulate_step(delta: float) -> void:
+	if step_failed:
+		return
+
 	profile_service.begin_step()
 	entity_service.remove_expired()
+	profile_service.end_stage("ExpiredCleanup")
 
 	# 1) Commit completed logic without waiting, then advance animal time.
 	animal_service.apply_completed()
+	profile_service.end_stage("ApplyCompleted")
 	animal_service.advance_time(delta)
-	profile_service.end_stage("Decision")
+	if step_failed:
+		return
+	profile_service.end_stage("AdvanceTime")
 	animal_service.schedule_updates(delta)
-	profile_service.end_stage("SpatialBuild")
-	profile_service.end_stage("Perception")
-	profile_service.end_stage("TaskAssignment")
+	profile_service.end_stage("ScheduleUpdates")
 
 	# 2) Move using the latest valid intent, independently of background work.
 	animal_service.prepare_motion(delta)
 	profile_service.end_stage("Steering")
 	entity_service.update_movement(delta)
+	if step_failed:
+		return
 	profile_service.end_stage("Movement")
 	animal_service.resolve_interactions(delta)
 	profile_service.end_stage("Interaction")
 	entity_service.remove_expired(delta)
 	profile_service.end_stage("Cleanup")
 	render_service.mark_dirty()
-	profile_service.end_stage("RenderSync")
 	debug_service.advance_visuals(delta)
 	simulation_time += delta
 	step_count += 1

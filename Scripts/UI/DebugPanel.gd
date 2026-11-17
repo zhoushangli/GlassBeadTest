@@ -6,11 +6,13 @@ const OPTIONS := {
 	"tracking": "Target tracking", "memory": "Last seen position",
 	"movement": "Movement goals", "protection": "Dog protection / collection",
 	"howl": "Howl range and pulse",
+	"fine_grid": "Fine grid (30 px)", "dog_regions": "Dog regions (4 x 4 cells)",
 }
 
 var service: DebugService
 
 var enabled_toggle: CheckBox
+var grid_status: Label
 var scope: OptionButton
 var controls: Dictionary[String, CheckBox] = {}
 
@@ -56,8 +58,11 @@ func _ready() -> void:
 		controls[key] = checkbox
 		column.add_child(checkbox)
 
+	grid_status = Label.new()
+	grid_status.add_theme_font_size_override("font_size", 12)
+	column.add_child(grid_status)
 	var hint := Label.new()
-	hint.text = "Visuals only; changes apply immediately.\nSelect an animal by clicking in the arena."
+	hint.text = "Visuals only; changes apply immediately.\nSelect an animal by clicking in the arena.\nRegion labels: sheep / assigned dogs; red = threat."
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(hint)
@@ -81,6 +86,8 @@ func refresh() -> void:
 	if service == null:
 		return
 
+	grid_status.text = service.grid_status_text() if service.visual_options["fine_grid"] or service.visual_options["dog_regions"] else ""
+	grid_status.visible = not grid_status.text.is_empty()
 	enabled_toggle.set_pressed_no_signal(service.show_details)
 	scope.select(0 if service.selected_only else 1)
 	for key: String in controls:

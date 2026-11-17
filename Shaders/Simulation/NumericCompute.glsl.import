@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://deq3khmygsaf4"
+path="res://.godot/imported/NumericCompute.glsl-b8808316f92749b60b574ba9b5057a09.res"
+
+[deps]
+
+source_file="res://Shaders/Simulation/NumericCompute.glsl"
+dest_files=["res://.godot/imported/NumericCompute.glsl-b8808316f92749b60b574ba9b5057a09.res"]
+
+[params]
+

@@ -95,6 +95,7 @@ func sync() -> void:
 	if not started:
 		return
 
+	var sync_started := Time.get_ticks_usec()
 	var data: AnimalData = g_gameplayEngine.entity_service.data
 	var counts := Vector3i.ZERO
 	for row in range(data.retained_count):
@@ -147,3 +148,7 @@ func sync() -> void:
 		buffers[kind] = buffer
 		last_submit_ms += (Time.get_ticks_usec() - started_at) / 1000.0
 	dirty = false
+	var profile: ProfileService = g_gameplayEngine.profile_service
+	profile.record_duration("Render/Sync", (Time.get_ticks_usec() - sync_started) / 1000.0)
+	profile.record_duration("Render/Fill", last_fill_ms)
+	profile.record_duration("Render/Submit", last_submit_ms)

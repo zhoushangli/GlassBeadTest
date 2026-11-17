@@ -32,9 +32,9 @@ def summarize(directory: Path, output: Path | None = None) -> None:
             metrics = {"run_count": len(samples)}
             for field in ("average_fps", "frame_p95_ms", "actual_simulation_hz", "step_mean_ms", "simulation_per_frame_mean_ms"):
                 metrics[field] = statistics.mean(data[field] for data in samples)
-            for field in ("latency_ms", "processing_ms", "grid_ms", "prepare_ms", "execute_ms", "pack_ms", "upload_submit_ms", "gpu_ms", "readback_ms", "decode_ms", "apply_ms", "upload_bytes", "download_bytes"):
+            for field in ("latency_ms", "processing_ms", "grid_ms", "prepare_ms", "execute_ms", "pack_ms", "upload_submit_ms", "gpu_ms", "readback_ms", "device_queue_ms", "gpu_wait_ms", "buffer_read_ms", "decode_ms", "apply_ms", "upload_bytes", "download_bytes"):
                 for statistic in ("mean", "p95"):
-                    values = [data["compute"]["metrics"][field][statistic] for data in samples if data["compute"]["metrics"][field]["count"]]
+                    values = [data["compute"]["metrics"][field][statistic] for data in samples if data["compute"]["metrics"].get(field, {}).get("count", 0)]
                     metrics[f"{field}_{statistic}"] = statistics.mean(values) if values else None
             metrics["applied_hz"] = [statistics.mean(data["compute"]["applied_hz"][kind] for data in samples) for kind in range(3)]
             metrics["requested_hz"] = [statistics.mean(data["compute"]["requests_hz"][kind] for data in samples) for kind in range(3)]

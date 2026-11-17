@@ -23,6 +23,7 @@ var visual_options: Dictionary[String, bool] = {
 	"wolf_vision": true, "dog_vision": true,
 	"tracking": true, "memory": true, "movement": true,
 	"protection": true, "howl": true,
+	"fine_grid": false, "dog_regions": false,
 }
 
 var howl_events: Array[Dictionary] = []
@@ -166,6 +167,7 @@ func _draw() -> void:
 	if selected != null:
 		draw_arc(data.motion_position[selected.row], 17.0, 0.0, TAU, 40, Color("#f4f7ed"), 2.0, true)
 	if show_details:
+		_draw_grids()
 		if selected_only:
 			if selected != null:
 				_draw_animal(selected)
@@ -228,3 +230,69 @@ func _draw_animal(animal: AnimalEntity) -> void:
 		draw_circle(data.dog_guard_point[row], 4.0, Color("#93c5fd"), false, width, true)
 		if data.live(data.dog_collected_sheep[row]) != null:
 			draw_dashed_line(point, data.motion_position[data.live(data.dog_collected_sheep[row]).row], Color("#4de6b3"), width, 6.0)
+
+func grid_status_text() -> String:
+	var service: GridService = g_gameplayEngine.grid_service
+	var lines := PackedStringArray()
+	for entry in [["Fine", service.debug_snapshot], ["Regions", service.dog_debug_snapshot]]:
+		var grid: GridSnapshot = entry[1]
+		if grid != null:
+			lines.append("%s t=%.2f | age %.0f ms" % [entry[0], grid.time, (Time.get_ticks_usec() - grid.captured_usec) / 1000.0])
+	return "\n".join(lines)
+
+func _draw_grid_lines(bounds: Rect2, size: float, color: Color, width: float) -> void:
+	for x in range(ceili(bounds.position.x / size), floori(bounds.end.x / size) + 1):
+		draw_line(Vector2(x * size, bounds.position.y), Vector2(x * size, bounds.end.y), color, width, true)
+	for y in range(ceili(bounds.position.y / size), floori(bounds.end.y / size) + 1):
+		draw_line(Vector2(bounds.position.x, y * size), Vector2(bounds.end.x, y * size), color, width, true)
+
+func _draw_grids() -> void:
+	if not visual_options["fine_grid"] and not visual_options["dog_regions"]:
+		return
+
+	var started_at := Time.get_ticks_usec()
+	var service: GridService = g_gameplayEngine.grid_service
+	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var transform := get_global_transform_with_canvas()
+	var zoom := maxf(0.001, transform.get_scale().x)
+	var bounds := (transform.affine_inverse() * get_viewport_rect()).intersection(Rect2(Vector2.ZERO, g_gameplayEngine.config.arena_size))
+	var grid := service.debug_snapshot
+	if visual_options["fine_grid"] and grid != null:
+		var size := grid.cell_size
+		for cell in grid.populated:
+			var rectangle := Rect2(Vector2(cell % grid.width, floori(float(cell) / grid.width)) * size, Vector2.ONE * size)
+			if bounds.intersects(rectangle):
+				draw_rect(rectangle.intersection(bounds), Color(0.5, 0.8, 0.8, 0.10))
+		_draw_grid_lines(bounds, size, Color(0.6, 0.85, 0.85, 0.28), 1.0 / zoom)
+		if selected != null:
+			var snapshot_row := grid.slots.find(selected.slot)
+			if snapshot_row >= 0 and grid.uids[snapshot_row] == selected.uid:
+				var cell := grid.row_cells[snapshot_row]
+				draw_rect(Rect2(Vector2(cell % grid.width, floori(float(cell) / grid.width)) * size, Vector2.ONE * size), Color("#f4f7ed"), false, 1.5 / zoom)
+
+	grid = service.dog_debug_snapshot if service.dog_debug_snapshot != null else service.debug_snapshot
+	if visual_options["dog_regions"] and grid != null:
+		var size := grid.cell_size * 4.0
+		var font := ThemeDB.fallback_font
+		var font_size := ceili(9.0 / zoom)
+		_draw_grid_lines(bounds, size, Color(0.35, 0.6, 1.0, 0.65), 1.2 / zoom)
+		for region in grid.occupied_regions:
+			var origin := Vector2(region % grid.region_width, floori(float(region) / grid.region_width)) * size
+			var rectangle := Rect2(origin, Vector2.ONE * size).intersection(bounds)
+			if not rectangle.has_area():
+				continue
+
+			var dogs := service.dog_region_coverage[region] if region < service.dog_region_coverage.size() else 0
+			var threats := service.dog_region_threats[region] if region < service.dog_region_threats.size() else 0
+			draw_rect(rectangle, Color(1.0, 0.3, 0.2, 0.18) if threats > 0 else Color(0.2, 0.5, 1.0, 0.06))
+			draw_circle(grid.region_centers[region], 2.0 / zoom, Color("#93c5fd"))
+			draw_string(font, origin + Vector2(2.0 / zoom, 11.0 / zoom), "%d/%d" % [grid.region_counts[region], dogs], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color("#dbeafe"))
+		if selected != null and data.identity_kind[selected.row] == AnimalEntity.Kind.SHEEPDOG:
+			var region := data.dog_region[selected.row]
+			if region >= 0 and region < grid.region_counts.size():
+				var rectangle := Rect2(Vector2(region % grid.region_width, floori(float(region) / grid.region_width)) * size, Vector2.ONE * size)
+				draw_rect(rectangle, Color("#facc15"), false, 2.0 / zoom)
+				draw_line(data.motion_position[selected.row], grid.region_centers[region], Color("#facc15"), 1.5 / zoom)
+				draw_line(grid.region_centers[region], data.dog_protection_center[selected.row], Color("#93c5fd"), 1.0 / zoom)
+	if g_gameplayEngine.profile_service.performance_stats_enabled:
+		g_gameplayEngine.profile_service.record_duration("Debug/GridDrawCPU", (Time.get_ticks_usec() - started_at) / 1000.0)

@@ -321,12 +321,12 @@ func _async_contracts() -> void:
 	engine.config.arena_size = Vector2(1280, 720)
 	sheep = entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(300, 300))[0]
 	var survivor := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(310, 300))[0]
-	var snapshot: Dictionary = engine.animal_system.decision_snapshot(AnimalEntity.Kind.SHEEP)
-	snapshot.config = {"cell_size": engine.config.grid_cell_size, "arena_size": engine.config.arena_size}
-	snapshot.grid = GridService.build_snapshot(snapshot)
+	var snapshot: AnimalSnapshot = engine.animal_system.decision_snapshot()
+	var captured_grid := GridService.build_snapshot(snapshot)
 	var output := SheepPerceptionJob.new()
-	output.rows = snapshot.rows
-	output.context = snapshot
+	output.rows = snapshot.sheep
+	output.snapshot = snapshot
+	output.grid = captured_grid
 	SheepSystem.calculate_snapshot(output)
 	entities.capture(sheep)
 	entities.remove_expired(1.0)
@@ -365,15 +365,8 @@ func _packed_batches() -> void:
 		data.dog_protection_center[dog.row] = Vector2(300, 300)
 	engine.grid_service.rebuild()
 	var common: AnimalSystem = engine.animal_system
-	var context := common.perception_context(1.0 / 60.0)
-	context.common = common
-	context.panic_duration = engine.config.sheep.panic_duration
-	context.dogs = entities.dog_rows
-	context.threat_distance = engine.config.wolf.dog_threat_distance
-	context.rest_duration = engine.config.wolf.rest_duration
-	context.radius = engine.config.wolf.perception_radius
 	var sheep_job := SheepPerceptionJob.new()
-	sheep_job.context = context
+	common.prepare_job(sheep_job, 1.0 / 60.0)
 	sheep_job.rows = PackedInt32Array([sheep[2].row, sheep[0].row])
 	engine.sheep_system.calculate_batch(sheep_job)
 	engine.sheep_system.apply_batch(sheep_job)
@@ -389,7 +382,8 @@ func _packed_batches() -> void:
 	_check(sheep_job.centers.is_empty() and sheep_job.nearby_offsets == PackedInt32Array([0]) and sheep_job.nearby_members.is_empty(), "empty reused sheep batch clears member ranges")
 
 	var wolf_job := WolfPerceptionJob.new()
-	wolf_job.context = context
+	common.prepare_job(wolf_job, 1.0 / 60.0)
+	wolf_job.dogs = entities.dog_rows
 	wolf_job.rows = entities.wolf_rows.duplicate()
 	data.memory_target[wolves[1].row] = sheep[0]
 	data.motion_facing[wolves[1].row] = Vector2.LEFT
@@ -403,37 +397,36 @@ func _packed_batches() -> void:
 	engine.wolf_system.calculate_batch(wolf_job)
 	_check(wolf_job.prey_rows.is_empty() and wolf_job.nearby_offsets == PackedInt32Array([0]) and wolf_job.nearby_members.is_empty(), "empty reused wolf batch clears member ranges")
 
-	context.radius = 80.0
-	context.complete_ratio = engine.config.sheepdog.collect_complete_ratio
-	context.memory_duration = engine.config.sheepdog.memory_duration
-	context.groups = {}
-	for dog in dogs:
-		context.groups[dog.row] = {"wolves": entities.wolf_rows, "sheep": entities.sheep_rows}
 	var dog_job := DogPerceptionJob.new()
-	dog_job.context = context
+	common.prepare_job(dog_job, 1.0 / 60.0)
+	dog_job.config = engine.config.copy_config()
+	dog_job.config.sheepdog.local_flock_radius = 80.0
+	dog_job.groups.resize(data.active_count)
+	for dog in dogs:
+		var group := DogPerceptionJob.Group.new()
+		group.wolves = entities.wolf_rows
+		group.sheep = entities.sheep_rows
+		dog_job.groups[dog.row] = group
 	dog_job.rows = PackedInt32Array([dogs[2].row, dogs[0].row])
 	engine.dog_system.calculate_batch(dog_job)
 	engine.dog_system.apply_batch(dog_job)
 	_check(dog_job.wolf_offsets == PackedInt32Array([0, 2, 4]) and dog_job.stray_offsets == PackedInt32Array([0, 1, 2]), "packed dog candidates preserve per-result ranges")
 	_check(data.dog_wolf_candidates[dogs[2].row] == [wolves[0], wolves[1]] and data.dog_stray_candidates[dogs[0].row] == [sheep[2]], "packed dog submission maps candidates back to input animals")
 	dog_job.rows = PackedInt32Array([dogs[1].row])
-	context.groups = {}
+	dog_job.groups.clear()
 	engine.dog_system.calculate_batch(dog_job)
 	_check(dog_job.wolf_offsets == PackedInt32Array([0, 0]) and dog_job.stray_offsets == PackedInt32Array([0, 0]) and dog_job.wolves.is_empty() and dog_job.strays.is_empty(), "reused dog batch drops previous candidates")
 	dog_job.rows.clear()
 	engine.dog_system.calculate_batch(dog_job)
 	_check(dog_job.separations.is_empty() and dog_job.wolf_offsets == PackedInt32Array([0]) and dog_job.stray_offsets == PackedInt32Array([0]), "empty reused dog batch retains terminal offsets")
 
-	context.sheep = entities.sheep_rows
-	context.anchors = PackedInt32Array()
-	context.anchors.resize(data.active_count)
-	context.anchors.fill(-1)
-	context.coverage = PackedInt32Array()
-	context.coverage.resize(data.active_count)
-	context.coverage_weight = engine.config.sheepdog.coverage_weight
-	context.improvement = engine.config.sheepdog.reassignment_improvement
 	var anchor_job := DogAnchorJob.new()
-	anchor_job.context = context
+	common.prepare_job(anchor_job, 1.0 / 60.0)
+	anchor_job.config = dog_job.config
+	anchor_job.sheep = entities.sheep_rows
+	anchor_job.anchors.resize(data.active_count)
+	anchor_job.anchors.fill(-1)
+	anchor_job.coverage.resize(data.active_count)
 	anchor_job.rows = entities.dog_rows.duplicate()
 	engine.dog_system.calculate_anchors(anchor_job)
 	anchor_job.rows = PackedInt32Array([dogs[1].row])
@@ -444,11 +437,14 @@ func _packed_batches() -> void:
 	_check(anchor_job.anchor_rows.is_empty(), "empty reused anchor batch clears output")
 
 	var grid_job := GridAggregateJob.new()
-	grid_job.context = {"width": 2, "height": 2, "shared_min_sheep": 4,
-		"counts": PackedInt32Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0]),
-		"position_sums": PackedVector2Array([Vector2.ONE, Vector2.ZERO, Vector2.ZERO, Vector2(5, 5)]),
-		"velocity_sums": PackedVector2Array([Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]),
-		"flock_offsets": PackedInt32Array([0, 0]), "alignment_offsets": PackedInt32Array([0, 0])}
+	grid_job.grid = GridSnapshot.new()
+	grid_job.grid.width = 2
+	grid_job.grid.height = 2
+	grid_job.grid.counts = PackedInt32Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0])
+	grid_job.grid.position_sums = PackedVector2Array([Vector2.ONE, Vector2.ZERO, Vector2.ZERO, Vector2(5, 5)])
+	grid_job.grid.velocity_sums = PackedVector2Array([Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO])
+	grid_job.flock_offsets = PackedInt32Array([0, 0])
+	grid_job.alignment_offsets = PackedInt32Array([0, 0])
 	grid_job.rows = PackedInt32Array([3, 0])
 	grid_job.execute()
 	_check(grid_job.flock_counts == PackedInt32Array([5, 1]) and not grid_job.nodes.is_empty(), "packed grid aggregates follow input cell order")

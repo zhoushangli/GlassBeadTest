@@ -27,7 +27,7 @@ foreach ($population in @(2000, 5000)) {
 			}
 			$label = "compute_${population}_${backend}_${repeat}_$stamp"
 			$logPath = Join-Path $evidencePath "$label.log"
-			& (Join-Path $PSScriptRoot 'RunBenchmark.ps1') -GodotPath $GodotPath -Compute $backend -Entities $population -Scenario scaled -Population 1000 -ArenaSize 5120x2880 -SimulationHz 30 -SheepHz 12 -Warmup 5 -Duration 30 -MaxFps 0 -Sampling stages -Hud on -Overlay on -Animals on -Label $label -TimeoutSeconds 120 *> $logPath
+			& (Join-Path $PSScriptRoot 'RunBenchmark.ps1') -GodotPath $GodotPath -Compute $backend -Entities $population -Scenario scaled -Population 1000 -ArenaSize 5120x2880 -SimulationHz 30 -SheepHz 4 -WolfHz 4 -DogHz 4 -MovementCompute cpu -TimersCompute cpu -Warmup 5 -Duration 30 -MaxFps 0 -Sampling stages -Hud on -Overlay on -Animals on -Label $label -TimeoutSeconds 120 *> $logPath
 			if ($LASTEXITCODE -ne 0) {
 				throw "Benchmark failed: $logPath"
 			}

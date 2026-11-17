@@ -22,7 +22,16 @@ func advance_time(delta: float) -> void:
 		data.dog_assignment_remaining[row] -= delta
 		data.dog_patrol_angle[row] += settings.patrol_angular_speed * delta * (1.0 if data.identity_entity_id[row] % 2 == 0 else -1.0)
 		data.dog_guard_point[row] = common.clamp_to_arena(data.handles[row], data.dog_protection_center[row] + Vector2.from_angle(data.dog_patrol_angle[row]) * settings.guard_distance)
-		if data.live(data.dog_protected_sheep[row]) == null:
+		if data.dog_region[row] >= 0:
+			if g_gameplayEngine.entity_service.sheep_rows.is_empty():
+				data.dog_region[row] = -1
+				data.memory_target[row] = null
+				data.dog_collected_sheep[row] = null
+				data.dog_returning[row] = 0
+				g_gameplayEngine.advance_decision(data.handles[row])
+			elif data.motion_position[row].distance_to(data.dog_protection_center[row]) > settings.leash_distance:
+				data.dog_returning[row] = 1
+		elif data.live(data.dog_protected_sheep[row]) == null:
 			var lost_anchor := data.dog_protected_sheep[row] != null
 			data.dog_protected_sheep[row] = null
 			data.memory_target[row] = null
@@ -36,9 +45,11 @@ func advance_time(delta: float) -> void:
 			data.dog_returning[row] = 0
 
 func apply_decision(job: DogPerceptionJob) -> void:
-	var snapshot := job.context
+	var snapshot := job.snapshot
 	var common: AnimalSystem = g_gameplayEngine.animal_system
 	common.submit_stats(job.stats)
+	var coverage := PackedInt32Array()
+	coverage.resize(job.grid.region_counts.size())
 	for index in range(job.rows.size()):
 		var snapshot_row := job.rows[index]
 		var animal := common.snapshot_animal(snapshot, snapshot_row)
@@ -46,26 +57,33 @@ func apply_decision(job: DogPerceptionJob) -> void:
 			continue
 
 		var row := animal.row
-		if data.dog_returning[row] != snapshot.dog_returning[snapshot_row] or data.live(data.dog_protected_sheep[row]) != common.snapshot_animal(snapshot, snapshot.dog_protected_sheep[snapshot_row]) or data.live(data.memory_target[row]) != common.snapshot_animal(snapshot, job.target_rows[index]) or data.live(data.dog_collected_sheep[row]) != common.snapshot_animal(snapshot, snapshot.dog_collected_sheep[snapshot_row]):
+		if data.dog_region[row] != snapshot.dog_region[snapshot_row] or data.dog_returning[row] != snapshot.dog_returning[snapshot_row] or data.live(data.memory_target[row]) != common.snapshot_animal(snapshot, job.target_rows[index]) or data.live(data.dog_collected_sheep[row]) != common.snapshot_animal(snapshot, snapshot.dog_collected_sheep[snapshot_row]):
 			continue
 
-		var anchor := common.snapshot_animal(snapshot, job.anchor_rows[index])
 		var wolf := common.snapshot_animal(snapshot, job.wolf_rows[index])
 		var stray := common.snapshot_animal(snapshot, job.stray_rows[index])
-		if (job.anchor_rows[index] >= 0 and anchor == null) or (job.wolf_rows[index] >= 0 and wolf == null) or (job.stray_rows[index] >= 0 and stray == null) or (job.target_rows[index] >= 0 and common.snapshot_animal(snapshot, job.target_rows[index]) == null):
-			continue
-		if snapshot.dog_protected_sheep[snapshot_row] >= 0 and common.snapshot_animal(snapshot, snapshot.dog_protected_sheep[snapshot_row]) == null:
+		if (job.wolf_rows[index] >= 0 and wolf == null) or (job.stray_rows[index] >= 0 and stray == null) or (job.target_rows[index] >= 0 and common.snapshot_animal(snapshot, job.target_rows[index]) == null):
 			continue
 
 		common.apply_snapshot_perception(row, snapshot_row, snapshot, job.separations[index], bool(job.refresh_flags[index]), job.target_rows[index], bool(job.visible_flags[index]), job.last_positions[index], job.last_velocities[index])
-		data.dog_protected_sheep[row] = anchor
+		data.dog_region[row] = job.region_ids[index]
+		data.dog_protected_sheep[row] = null
 		if job.reassigned_flags[index]:
 			data.dog_assignment_remaining[row] = maxf(0.0, g_gameplayEngine.config.sheepdog.reassignment_interval - (g_gameplayEngine.simulation_time - snapshot.time))
-		if anchor != null:
+		if data.dog_region[row] >= 0:
 			data.dog_protection_center[row] = job.centers[index]
-		data.dog_returning[row] = int(job.returning_flags[index])
+		data.dog_returning[row] = int(job.returning_flags[index]) if data.dog_region[row] >= 0 else 0
 		apply_assignment(animal, wolf, stray)
 		g_gameplayEngine.advance_decision(animal)
+
+	for row in g_gameplayEngine.entity_service.dog_rows:
+		var region := data.dog_region[row]
+		if region >= 0 and region < coverage.size():
+			coverage[region] += 1
+	var service: GridService = g_gameplayEngine.grid_service
+	service.dog_debug_snapshot = job.grid
+	service.dog_region_coverage = coverage
+	service.dog_region_threats = job.region_threats
 
 func accumulate_sheep_pressure() -> void:
 	g_gameplayEngine.grid_service.accumulate_pressure(AnimalEntity.Kind.SHEEPDOG)
@@ -127,7 +145,8 @@ func perceive_batch(delta: float) -> void:
 	var jobs: JobService = g_gameplayEngine.job_service
 	var rows: PackedInt32Array = g_gameplayEngine.entity_service.dog_rows
 	var settings: SheepdogConfig = g_gameplayEngine.config.sheepdog
-	var context := common.perception_context(delta)
+	var input := DogAnchorJob.new()
+	common.prepare_job(input, delta)
 	var anchors := PackedInt32Array()
 	anchors.resize(data.active_count)
 	anchors.fill(-1)
@@ -140,36 +159,41 @@ func perceive_batch(delta: float) -> void:
 		if anchor == null or data.dog_assignment_remaining[row] <= 0.0:
 			choosing.append(row)
 
-	context.merge({"common": common, "dogs": rows, "sheep": g_gameplayEngine.entity_service.sheep_rows,
-		"anchors": anchors, "radius": settings.local_flock_radius, "coverage_weight": settings.coverage_weight,
-		"improvement": settings.reassignment_improvement, "complete_ratio": settings.collect_complete_ratio,
-		"memory_duration": settings.memory_duration})
+	input.sheep = g_gameplayEngine.entity_service.sheep_rows
+	input.anchors = anchors
 	var coverage := PackedInt32Array()
 	coverage.resize(data.active_count)
 	if not choosing.is_empty():
-		for sheep_row in context.sheep:
+		for sheep_row in input.sheep:
 			var count := 0
 			for dog_row in rows:
 				if anchors[dog_row] >= 0 and data.motion_position[anchors[dog_row]].distance_to(data.motion_position[sheep_row]) < settings.local_flock_radius:
 					count += 1
 			coverage[sheep_row] = count
-	context.coverage = coverage
+	input.coverage = coverage
 	var prepared_at := Time.get_ticks_usec()
-	jobs.run_batches(&"DogAnchor", choosing, DogAnchorJob, context, self)
+	jobs.run_batches(&"DogAnchor", choosing, DogAnchorJob, input, self)
 	jobs.record_stage(&"DogAnchor", started_at, prepared_at)
 
 	started_at = Time.get_ticks_usec()
-	var groups: Dictionary = {}
+	var groups: Array[DogPerceptionJob.Group] = []
+	groups.resize(data.active_count)
 	for row in rows:
 		data.motion_wander_remaining[row] -= delta
 		_prepare_perception(data.handles[row], delta)
 		var anchor := data.live(data.dog_protected_sheep[row])
 		if anchor != null and not data.dog_returning[row]:
-			groups[row] = _local_group(anchor, true)
+			var source := _local_group(anchor, true)
+			var group := DogPerceptionJob.Group.new()
+			group.wolves = source.wolves
+			group.sheep = source.sheep
+			groups[row] = group
 
-	context.groups = groups
+	var perception := DogPerceptionJob.new()
+	common.prepare_job(perception, delta)
+	perception.groups = groups
 	prepared_at = Time.get_ticks_usec()
-	jobs.run_batches(&"Dog", rows, DogPerceptionJob, context, self)
+	jobs.run_batches(&"Dog", rows, DogPerceptionJob, perception, self)
 	jobs.record_stage(&"Dog", started_at, prepared_at)
 
 func apply_anchors(job: DogAnchorJob) -> void:
@@ -184,7 +208,7 @@ func apply_batch(job: DogPerceptionJob) -> void:
 	common.submit_stats(job.stats)
 	for index in range(job.rows.size()):
 		var row := job.rows[index]
-		common.submit_perception(row, job.remaining[index], bool(job.refresh_flags[index]), job.nearby_members.slice(job.nearby_offsets[index], job.nearby_offsets[index + 1]), job.separations[index], job.context.delta, false)
+		common.submit_perception(row, job.remaining[index], bool(job.refresh_flags[index]), job.nearby_members.slice(job.nearby_offsets[index], job.nearby_offsets[index + 1]), job.separations[index], job.delta, false)
 		data.dog_wolf_candidates[row].clear()
 		data.dog_stray_candidates[row].clear()
 		for member in range(job.wolf_offsets[index], job.wolf_offsets[index + 1]):
@@ -194,28 +218,27 @@ func apply_batch(job: DogPerceptionJob) -> void:
 
 func calculate_anchors(job: DogAnchorJob) -> void:
 	var rows := job.rows
-	var context := job.context
 	job.anchor_rows.resize(rows.size())
-	var stats := AnimalSystem.batch_stats(context)
-	var positions: PackedVector2Array = context.grid.positions
-	var coverage: PackedInt32Array = context.coverage
-	var radius: float = context.radius
-	var weight: float = context.coverage_weight
+	var stats := AnimalSystem.batch_stats(job.spatial_stats, job.detailed)
+	var positions: PackedVector2Array = job.grid.positions
+	var coverage: PackedInt32Array = job.coverage
+	var radius: float = job.config.sheepdog.local_flock_radius
+	var weight: float = job.config.sheepdog.coverage_weight
 	for index in range(rows.size()):
 		var row := rows[index]
-		var current: int = context.anchors[row]
+		var current: int = job.anchors[row]
 		var started_at := Time.get_ticks_usec() if stats.detailed else 0
 		var own_anchor := positions[current] if current >= 0 else Vector2.INF
 		var point := positions[row]
 		var best := current
 		var current_score := _snapshot_anchor_score(point, positions[current], coverage[current], own_anchor, radius, weight) if current >= 0 else INF
 		var best_score := current_score
-		for sheep_row in context.sheep:
+		for sheep_row in job.sheep:
 			var score := _snapshot_anchor_score(point, positions[sheep_row], coverage[sheep_row], own_anchor, radius, weight)
 			if score < best_score:
 				best = sheep_row
 				best_score = score
-		job.anchor_rows[index] = best if current < 0 or best_score <= current_score * (1.0 - context.improvement) else current
+		job.anchor_rows[index] = best if current < 0 or best_score <= current_score * (1.0 - job.config.sheepdog.reassignment_improvement) else current
 		if stats.detailed:
 			stats.hotspots.DogAnchor += (Time.get_ticks_usec() - started_at) / 1000.0
 			stats.calls.DogAnchor += 1
@@ -229,20 +252,19 @@ static func _snapshot_anchor_score(point: Vector2, sheep_point: Vector2, coverag
 func calculate_batch(job: DogPerceptionJob) -> void:
 	job.resize_output()
 	var rows := job.rows
-	var context := job.context
-	var stats := AnimalSystem.batch_stats(context)
-	var common: AnimalSystem = context.common
+	var stats := AnimalSystem.batch_stats(job.spatial_stats, job.detailed)
+	var common: AnimalSystem = job.common
 	for index in range(rows.size()):
 		var row := rows[index]
-		common.calculate_perception(row, context, stats, index, job.remaining, job.refresh_flags, job.separations, job.nearby_offsets, job.nearby_members)
-		if context.groups.has(row):
-			var group: Dictionary = context.groups[row]
+		common.calculate_perception(row, job, stats, index, job.remaining, job.refresh_flags, job.separations, job.nearby_offsets, job.nearby_members)
+		if row < job.groups.size() and job.groups[row] != null:
+			var group: DogPerceptionJob.Group = job.groups[row]
 			for wolf_row in group.wolves:
 				if common.can_see(data.handles[row], data.motion_position[wolf_row]):
 					job.wolves.append(wolf_row)
 
 			var remembered := data.live(data.memory_target[row])
-			if remembered != null and not data.memory_target_visible[row] and data.memory_unseen_elapsed[row] < context.memory_duration:
+			if remembered != null and not data.memory_target_visible[row] and data.memory_unseen_elapsed[row] < job.config.sheepdog.memory_duration:
 				job.wolves.append(remembered.row)
 
 			var anchor := data.live(data.dog_protected_sheep[row])
@@ -250,8 +272,8 @@ func calculate_batch(job: DogPerceptionJob) -> void:
 			for sheep_row in group.sheep:
 				var point := data.motion_position[sheep_row]
 				var distance := data.dog_protection_center[row].distance_to(point)
-				var threshold: float = context.radius * context.complete_ratio if collected != null and sheep_row == collected.row else context.radius
-				if data.motion_position[anchor.row].distance_to(point) <= context.radius * 2.0 and distance > threshold:
+				var threshold: float = job.config.sheepdog.local_flock_radius * job.config.sheepdog.collect_complete_ratio if collected != null and sheep_row == collected.row else job.config.sheepdog.local_flock_radius
+				if data.motion_position[anchor.row].distance_to(point) <= job.config.sheepdog.local_flock_radius * 2.0 and distance > threshold:
 					job.strays.append(sheep_row)
 
 		job.wolf_offsets[index + 1] = job.wolves.size()
@@ -493,10 +515,10 @@ func prepare_motion_goals() -> void:
 			AnimalEntity.Behavior.RETURN:
 				data.motion_movement_goal[row] = data.dog_guard_point[row]
 			AnimalEntity.Behavior.PATROL:
-				if data.live(data.dog_protected_sheep[row]) != null:
+				if data.dog_region[row] >= 0 or data.live(data.dog_protected_sheep[row]) != null:
 					data.motion_movement_goal[row] = data.dog_guard_point[row]
 
 func get_debug_details(animal: AnimalEntity) -> String:
 	var row := animal.row
-	var common: AnimalSystem = g_gameplayEngine.animal_system
-	return "Anchor #%d | Stray #%d | Unseen %.1f s" % [data.identity_entity_id[data.live(data.dog_protected_sheep[row]).row] if common.is_live(animal, data.live(data.dog_protected_sheep[row])) else 0, data.identity_entity_id[data.live(data.dog_collected_sheep[row]).row] if common.is_live(animal, data.live(data.dog_collected_sheep[row])) else 0, data.memory_unseen_elapsed[row]]
+	var stray := data.live(data.dog_collected_sheep[row])
+	return "Region %d | Stray #%d | Unseen %.1f s" % [data.dog_region[row], data.identity_entity_id[stray.row] if stray != null else 0, data.memory_unseen_elapsed[row]]

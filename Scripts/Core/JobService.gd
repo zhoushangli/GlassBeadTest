@@ -29,9 +29,9 @@ func submit_async(job: Job) -> bool:
 		return false
 
 	async_sequence += 1
-	job.context.version = async_version
-	job.context.sequence = async_sequence
-	job.context.submitted_usec = Time.get_ticks_usec()
+	job.version = async_version
+	job.sequence = async_sequence
+	job.submitted_usec = Time.get_ticks_usec()
 	job.state = Job.State.PENDING
 	async_jobs[job.stage] = job
 	_dispatch_async()
@@ -46,9 +46,9 @@ func _dispatch_async() -> void:
 	for job: Job in async_jobs.values():
 		if count >= maxi(1, max_workers):
 			break
-		if job.state == Job.State.PENDING:
+		if job.state == Job.State.PENDING and job.can_start():
 			job.state = Job.State.WORKING
-			job.task_id = WorkerThreadPool.add_task(job.execute, false, String(job.stage))
+			job.task_id = WorkerThreadPool.add_task(job.run_profiled, false, String(job.stage))
 			count += 1
 
 func flush() -> void:
@@ -62,16 +62,26 @@ func flush() -> void:
 		job.task_id = -1
 		job.state = Job.State.COMPLETED
 		async_jobs.erase(stage)
-		if job.context.version == async_version:
+		if job.version == async_version and not job.is_cancelled():
 			var apply_started := Time.get_ticks_usec()
+			var profile: ProfileService = g_gameplayEngine.profile_service
 			job.apply_result()
+			var applied_at := Time.get_ticks_usec()
 			job.state = Job.State.APPLIED
-			async_timings[stage] = {"latency_ms": (Time.get_ticks_usec() - job.context.submitted_usec) / 1000.0,
-				"snapshot_latency_ms": (Time.get_ticks_usec() - job.context.get("captured_usec", job.context.submitted_usec)) / 1000.0,
-				"execute_ms": job.execute_ms, "sequence": job.context.sequence,
-				"prepare_ms": job.context.get("prepare_ms", 0.0), "submit_ms": (Time.get_ticks_usec() - apply_started) / 1000.0}
+			profile.record_duration("Async/" + String(stage) + "/Queue", (job.execution_started_usec - job.submitted_usec) / 1000.0)
+			profile.record_duration("Async/" + String(stage) + "/AwaitApply", (apply_started - job.execution_finished_usec) / 1000.0)
+			var work_metric := "Execute"
+			profile.record_duration("Async/" + String(stage) + "/" + work_metric, (job.execution_finished_usec - job.execution_started_usec) / 1000.0)
+			profile.record_duration("Async/" + String(stage) + "/Apply", (applied_at - apply_started) / 1000.0)
+			profile.record_duration("Async/" + String(stage) + "/Latency", (applied_at - (job.snapshot.captured_usec if job.snapshot != null else job.submitted_usec)) / 1000.0)
+			profile.count_event("Applied/" + String(stage))
+			async_timings[stage] = {"latency_ms": (applied_at - job.submitted_usec) / 1000.0,
+				"snapshot_latency_ms": (applied_at - (job.snapshot.captured_usec if job.snapshot != null else job.submitted_usec)) / 1000.0,
+				"execute_ms": job.execute_ms, "sequence": job.sequence,
+				"prepare_ms": (job.snapshot.prepare_ms if job.snapshot != null else 0.0), "submit_ms": (applied_at - apply_started) / 1000.0}
 		else:
 			job.state = Job.State.DISCARDED
+			g_gameplayEngine.profile_service.count_event("Discarded/" + String(stage))
 		job.release_input()
 
 	_dispatch_async()
@@ -79,10 +89,12 @@ func flush() -> void:
 func invalidate_async() -> void:
 	async_version += 1
 	for job: Job in async_jobs.values():
+		job.cancel()
 		if job.state == Job.State.WORKING:
 			retired_jobs.append(job)
 		else:
 			job.state = Job.State.DISCARDED
+			g_gameplayEngine.profile_service.count_event("Discarded/" + String(job.stage))
 			job.release_input()
 
 	async_jobs.clear()
@@ -98,6 +110,7 @@ func _reap_retired() -> void:
 		WorkerThreadPool.wait_for_task_completion(job.task_id)
 		job.task_id = -1
 		job.state = Job.State.DISCARDED
+		g_gameplayEngine.profile_service.count_event("Discarded/" + String(job.stage))
 		job.release_input()
 		retired_jobs.remove_at(index)
 
@@ -165,7 +178,7 @@ func finish_stage() -> void:
 	completed.clear()
 	_stage = &""
 
-func run_batches(stage: StringName, rows: PackedInt32Array, job_script: Script, context: Dictionary, target: Object, batch_size: int = 100) -> void:
+func run_batches(stage: StringName, rows: PackedInt32Array, job_script: Script, input: Job, target: Object, batch_size: int = 100) -> void:
 	assert(started and stage != &"" and _stage == &"" and pending.is_empty() and working.is_empty() and completed.is_empty())
 	var started_at := Time.get_ticks_usec()
 	var size := mini(maxi(1, batch_size), maxi(1, ceili(rows.size() / float(maxi(1, max_workers)))))
@@ -179,7 +192,7 @@ func run_batches(stage: StringName, rows: PackedInt32Array, job_script: Script, 
 		job.stage = stage
 		job.batch = batch
 		job.rows = rows.slice(first, mini(first + size, rows.size()))
-		job.context = context
+		job.copy_input(input)
 		job.target = target
 		var accepted := add_job(job)
 		assert(accepted)
@@ -221,6 +234,7 @@ func record_stage(stage: StringName, started_at: int, prepared_at: int) -> void:
 func drain() -> void:
 	invalidate_async()
 	for job in retired_jobs:
+		job.cancel()
 		WorkerThreadPool.wait_for_task_completion(job.task_id)
 		job.task_id = -1
 		job.state = Job.State.DISCARDED

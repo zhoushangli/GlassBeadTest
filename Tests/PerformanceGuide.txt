@@ -22,10 +22,17 @@ g_gameplayEngine.profile_service.set_performance_stats_enabled(false) 关闭；(
 时间指标通过 MONITOR_TYPE_TIME 注册，回调返回秒，编辑器直接显示 ms；内部和 JSON 仍用毫秒浮点数。
 不再使用旧的 Simulation/StepMeanMs 与 StepMaxMs 名称，改为 StepMean、StepP95、StepMax。
 Simulation：存活动物数，以及每模拟步耗时的平均、P95 和最大值。
-SimStages：SpatialBuild、TaskAssignment、Perception、Decision、Movement、Interaction、Cleanup。
+SimStages：ExpiredCleanup、ApplyCompleted、AdvanceTime、ScheduleUpdates、Steering、Movement、Interaction、Cleanup、Finalize，均为主线程每步阶段。
 阶段互不重叠，采样与 Monitor 注册、发布、注销由 ProfileService 负责。
-旧 JSON perception_mean_ms 包含空间索引与感知；movement_interaction_mean_ms 仍包含移动、交互与清理。
-新增 stages_mean_ms 明确区分上述阶段，movement_mean_ms、interaction_mean_ms、cleanup_mean_ms 单独导出。
+result_version=6 移除旧的 perception_mean_ms、decision_mean_ms、movement_interaction_mean_ms 和伪 RenderSync 阶段。
+stages_mean_ms 明确区分主线程阶段；真实同步记录在 Profile/Render/SyncMean，Fill、Submit 为它的内部子项。
+Profile/Async 按完成任务记录 Queue、Execute（Compute 使用 WorkerOccupied）、AwaitApply、Apply 和快照到应用的 Latency。
+Profile/Compute 分开记录 pack_ms、render_queue_ms、upload_submit_ms、GPU、readback_ms 和 decode_ms。
+WorkerOccupied 包含 GPU 等待；readback_ms 包含 GPU 调度、执行和帧队列等待，都不能作为纯 CPU 计算或传输成本。
+Profile/Frames/SimulationAndSyncMean 为每帧模拟及同步总耗时；Profile/Frames/WallMean 在基准中记录实际帧间隔。
+begin_capture() 开始保存原始事件；reset() 停止并清空。普通运行仅保留每秒聚合，不累计完整样本。
+JSON profile 输出 summary_ms（count、total_ms、mean_ms、p95_ms、max_ms）、samples_ms、sample_times_usec 和事件计数。
+缺失样本表示未执行或未采集，实际执行的零耗时仍计入样本；各层父子与并行耗时不能直接相加。
 Spatial：QueriesPerStep、CandidatesPerQuery、MaxCandidates、NonemptyCells、MaxCellOccupancy。
 候选尚未做圆形距离和物种筛选，不代表有效邻居数；候选均值按查询次数加权。
 Hotspots（仅详细档）：NearbyQuery、NeighborScan、Separation、WolfTarget、DogAnchor。
@@ -42,7 +49,7 @@ OverlayDrawCPUTime 仅测提交调试绘制命令的 CPU 时间，不能代表�
 关闭 HUD 会同时停止 HUD 刷新，关闭 Overlay 会同时停止调试刷新和绘制；隐藏动物只改变表现。
 例如：
 & ./Tests/RunBenchmark.ps1 -Entities 1000 -Scenario fixed -Sampling detailed -Warmup 5 -Duration 60 -Label fixed-detailed
-启动器默认超时改为 120 秒；result_version=4，JSON 每秒含阶段、热点、Debug 和渲染统计。
+启动器默认超时 120 秒；result_version=6，JSON 每秒含阶段、热点、Debug、任务积压和渲染统计。
 采样关闭时阶段、热点和空间零值表示未采集。无窗口结果只代表循环频率，不称为桌面 FPS。
 1000 是初始动物总数（870 羊、87 狼、43 狗），测量前预热和测量中捕获均可能降低存活数。
 
@@ -195,7 +202,7 @@ result.json ? job_timings_mean_ms ?????????????????????????
 MultiMesh random-motion comparison:
   Tests/RunBenchmark.ps1 -Entities 1000 -Scenario fixed -Motion random -Warmup 5 -Duration 30 -MaxFps 0 -Sampling stages -Hud on -Overlay off -Animals on -Label random_multimesh
   Random mode skips AI/grid/interaction, turns every 0.8-1.2 simulation seconds, retains 60 Hz movement and presentation.
-  RenderSync is CPU presentation synchronization, not GPU rendering time; render_fill_mean_ms and render_submit_mean_ms split MultiMesh buffer work.
+  Render/Sync is CPU presentation synchronization, not GPU rendering time; render_fill_mean_per_sync_ms and render_submit_mean_per_sync_ms split MultiMesh buffer work per actual sync.
   Use paired isolated before/after copies and alternate three runs each; preserve viewport, seed, HUD, visibility and clock configuration.
 
 Service update frequencies:
@@ -204,7 +211,7 @@ Service update frequencies:
   EntityService integrates movement; AnimalService schedules immutable grid and species snapshots through JobService.
   Workers never write live AnimalData or run the behavior tree. The main thread validates identity/state before applying results.
   Species Hz values cap requests per simulation second. Actual completion rates can be lower under load.
-  The normal simulation path does not wait for background jobs. Synchronous reference helpers remain for focused tests.
+  Background decisions apply without waiting at step start. GPU movement/timers use a device-thread completion fence inside the current step. Synchronous reference helpers remain for focused tests.
   RenderService synchronizes once per display frame after fixed steps. Per-step RenderSync is now bookkeeping only.
   simulation_per_frame_* includes all fixed steps plus presentation sync; step_* excludes that frame sync.
   async_decisions now includes Grid and Sheep; snapshot_latency_ms includes both pipeline stages.
@@ -227,3 +234,50 @@ Compute shader 对照（Forward+）
 - readback_ms 包含 GPU 工作和帧队列等待，不是纯下载时间；GPU 时间戳单独记录。
 - GPU 正确性：Godot --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/ComputeVerification.gd --compute=cpu（图形窗口运行，测试单独创建 GPU 计算器）。
 - headless 的同一入口只验证 CPU 回退，不代表 GPU 正确性。
+
+ComputeShaderService?
+  GameplayEngine ????????????????????????? local RenderingDevice?
+  submit ??????? SheepComputeJob?busy ??????????????flush ?????????????
+  ??????????? GPU????????????????????????????
+  --compute=cpu ????????auto ???? CPU?gpu ????????
+
+
+GPU movement, numeric timers and dog regions (2026-11-16):
+  Authored baseline stays at 30 Hz simulation and 4/4/4 Hz species requests, 5,000 animals in 5120x2880.
+  Application defaults: movement-compute=auto, timers-compute=cpu. ComputeShaderService still owns one local RD thread.
+  --compute=cpu disables the device; --movement-compute=cpu|auto|gpu and --timers-compute=cpu|auto|gpu independently select numeric passes.
+  Auto falls back before committing any partial output. Forced numeric GPU failure pauses and latches the unfinished step until reset.
+  Movement completes before capture/howl/dog-threat interactions; it does not apply a waiting background sheep decision.
+  Timers complete before wander RNG and decision capture. TimerCompute uses float64 to preserve timer crossings and RNG order.
+  Float64 timer support depends on the rendering backend/device; its failure is isolated from movement and sheep kernels.
+  CPU retains lifecycle, targets, behavior trees, wolf/dog event timers and all RNG generation.
+  New GPU results are committed as Packed columns with inactive/corpse suffixes preserved and version/step/structure checks.
+  Movement keeps the existing float32 vector representation; tolerances apply to numerical comparisons, not long-run trajectory equality.
+
+  Tests/RunBenchmark.ps1 -MainScene -Compute gpu -MovementCompute gpu -TimersCompute cpu -SimulationHz 30 -SheepHz 4 -WolfHz 4 -DogHz 4 -Warmup 5 -Duration 30 -MaxFps 60 -Sampling stages -Hud on -Overlay on -Animals on -Label motion_gpu
+  Add -TimersCompute gpu for the float64 timer comparison; add -DebugGrids to draw both grid layers.
+  Add -WolfHz 10 -DogHz 10 to test response-frequency tradeoffs without changing resource defaults.
+  Tests/RunMotionBenchmark.ps1 runs alternating CPU/GPU movement (three each), timers64 (three), wolf/dog 10 Hz (three), and dual-grid overhead (one).
+  The matrix hashes runtime/test sources and refuses to continue if they change. Do not run another benchmark alongside it.
+  RunComputeBenchmark.ps1 isolates sheep compute with CPU movement/timers and explicit 30/4/4/4 Hz settings.
+
+  result_version=7 adds compute.numeric.samples for Movement/Timers, requested numeric backends, debug_grids visibility, and Numeric profile units.
+  Numeric samples split prepare, pack, device queue, submit/upload, GPU timestamps, device sync, buffer read, decode, apply and main wait.
+  main_wait_ms includes device queue, GPU and worker decoding; do not add it to those components.
+  processing_ms omits overlapping GPU wait and queue time; latency_ms is the main-thread end-to-end request latency.
+  Species rates remain completed job applications per wall second, not a guarantee that every entity accepted a stale result.
+
+  Dog responsibility uses 4x4 fine cells (120 px at the authored 30 px cell size), reassigning occupied regions with coverage penalties.
+  Existing assignment interval, improvement threshold, local protection, leash, view and memory settings remain effective.
+  Regions select responsibility; local target queries cross region boundaries. Runtime responsibilities no longer depend on a sheep anchor.
+  Legacy synchronous anchor helpers remain solely for existing focused reference checks.
+  Debug [F3] offers independent Fine grid and Dog regions checkboxes under the F1 overlay master switch, both off by default.
+  Fine grid shows occupied cells and the selected animal's snapshot cell; regions show sheep/assigned-dog labels, centers and selected dog links.
+  Red region fill marks threats found in the assigned regions' shared local queries; unassigned regions do not run extra threat queries for drawing.
+  Snapshot time and wall age appear in DebugPanel. Display uses immutable decision snapshots, not a rebuilt current-position grid.
+
+  CPU checks: Godot --headless --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/DogRegionVerification.gd
+  GPU checks: Godot --path . --script res://Tests/RunWithAutoload.gd -- --entry=res://Tests/NumericComputeVerification.gd
+  Use the same windowed entry for ComputeVerification.gd and DebugVisualVerification.gd.
+  NumericComputeVerification intentionally injects one forced GPU failure and expects its error message, then verifies reset recovery.
+  Headless validates CPU/fallback behavior only. Rendered captures and automated UI checks do not replace human behavioral acceptance.

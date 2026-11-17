@@ -9,17 +9,16 @@ func _init(storage: AnimalData) -> void:
 func perceive_batch(delta: float) -> void:
 	var started_at := Time.get_ticks_usec()
 	var common: AnimalSystem = g_gameplayEngine.animal_system
-	var context := common.perception_context(delta)
-	context.panic_duration = g_gameplayEngine.config.sheep.panic_duration
-	context.common = common
+	var input := SheepPerceptionJob.new()
+	common.prepare_job(input, delta)
 
 	var jobs: JobService = g_gameplayEngine.job_service
 	var prepared_at := Time.get_ticks_usec()
-	jobs.run_batches(&"Sheep", g_gameplayEngine.entity_service.sheep_rows, SheepPerceptionJob, context, self)
+	jobs.run_batches(&"Sheep", g_gameplayEngine.entity_service.sheep_rows, SheepPerceptionJob, input, self)
 	jobs.record_stage(&"Sheep", started_at, prepared_at)
 
 func apply_batch(job: SheepPerceptionJob) -> void:
-	var delta: float = job.context.delta
+	var delta: float = job.delta
 	var common: AnimalSystem = g_gameplayEngine.animal_system
 	common.submit_stats(job.stats)
 	var rows := job.rows
@@ -59,9 +58,8 @@ func apply_batch(job: SheepPerceptionJob) -> void:
 func calculate_batch(job: SheepPerceptionJob) -> void:
 	job.resize_output()
 	var rows := job.rows
-	var context := job.context
-	var stats := AnimalSystem.batch_stats(context)
-	var grid: Dictionary = context.grid
+	var stats := AnimalSystem.batch_stats(job.spatial_stats, job.detailed)
+	var grid: GridSnapshot = job.grid
 	var positions: PackedVector2Array = grid.positions
 	var velocities: PackedVector2Array = grid.velocities
 	var kinds: PackedInt32Array = grid.kinds
@@ -75,10 +73,10 @@ func calculate_batch(job: SheepPerceptionJob) -> void:
 	var ids := data.identity_entity_id
 	var separations := data.motion_separation
 	var panic_strengths := data.sheep_panic_strength
-	var delta: float = context.delta
-	var interval: float = context.interval
-	var distance_limit: float = context.distance
-	var panic_duration: float = context.panic_duration
+	var delta: float = job.delta
+	var interval: float = job.interval
+	var distance_limit: float = job.distance
+	var panic_duration: float = job.config.sheep.panic_duration
 	var remaining := job.remaining
 	var refresh := job.refresh_flags
 	var separation := job.separations
@@ -192,12 +190,12 @@ func get_debug_details(animal: AnimalEntity) -> String:
 
 static func calculate_snapshot(job: SheepPerceptionJob) -> void:
 	job.resize_output()
-	var snapshot := job.context
-	job.stats = AnimalSystem.batch_stats(snapshot)
-	var wolves := GridService.snapshot_pressure(AnimalEntity.Kind.WOLF, snapshot, snapshot.grid)
-	var dogs := GridService.snapshot_pressure(AnimalEntity.Kind.SHEEPDOG, snapshot, snapshot.grid)
-	var grid: Dictionary = snapshot.grid
-	var settings: Dictionary = snapshot.settings
+	var snapshot := job.snapshot
+	job.stats = AnimalSystem.batch_stats(snapshot.stats, snapshot.detailed)
+	var wolves := GridService.snapshot_pressure(AnimalEntity.Kind.WOLF, snapshot, job.grid)
+	var dogs := GridService.snapshot_pressure(AnimalEntity.Kind.SHEEPDOG, snapshot, job.grid)
+	var grid: GridSnapshot = job.grid
+	var settings: SheepConfig = snapshot.config.sheep
 	var positions: PackedVector2Array = snapshot.motion_position
 	var velocities: PackedVector2Array = snapshot.motion_velocity
 	var panic_strengths: PackedFloat64Array = snapshot.sheep_panic_strength
@@ -207,7 +205,7 @@ static func calculate_snapshot(job: SheepPerceptionJob) -> void:
 	for index in range(job.rows.size()):
 		var row := job.rows[index]
 		job.refresh_flags[index] = int(not snapshot.memory_perception_ready[row] or snapshot.memory_perception_remaining[row] <= 0.0)
-		job.separations[index] = AnimalSystem.snapshot_separation(row, snapshot, job.stats, bool(job.refresh_flags[index]))
+		job.separations[index] = AnimalSystem.snapshot_separation(row, snapshot, job.grid, job.stats, bool(job.refresh_flags[index]))
 		var cell: int = grid.row_cells[row]
 		job.neighbor_counts[index] = grid.flock_counts[cell] - 1
 		var aligned: int = grid.alignment_counts[cell] - 1
@@ -235,7 +233,7 @@ static func calculate_snapshot(job: SheepPerceptionJob) -> void:
 	job.pressure_source_pairs = wolves.pairs + dogs.pairs
 
 func apply_decision(job: SheepPerceptionJob) -> void:
-	var snapshot := job.context
+	var snapshot := job.snapshot
 	g_gameplayEngine.animal_system.submit_stats(job.stats)
 	var slots: PackedInt32Array = snapshot.row_to_slot
 	var uids: PackedInt64Array = snapshot.identity_uid
