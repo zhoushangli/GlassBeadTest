@@ -17,10 +17,10 @@ func _check(condition: bool, label: String) -> void:
 		push_error("FAIL: " + label)
 
 func _job() -> DogPerceptionJob:
-	var job := DogPerceptionJob.new()
-	job.snapshot = engine.animal_system.decision_snapshot(PackedInt32Array([2]))
+	var job: DogPerceptionJob = DogPerceptionJob.new()
+	job.snapshot = GridAggregateJob.capture_snapshot(PackedInt32Array([2]))
 	job.grid = ReferenceSimulation.build_snapshot(job.snapshot)
-	job.rows = job.snapshot.dogs
+	job.rows = job.snapshot.index.dog_rows
 	job.execute()
 	return job
 
@@ -31,21 +31,21 @@ func _empty() -> void:
 func _aggregates() -> void:
 	_empty()
 	var entities: EntityService = engine.entity_service
-	var data := entities.data
+	var data: AnimalData = engine.data_service.animals
 	var points := [Vector2(119, 200), Vector2(120, 200), Vector2(239, 210), Vector2(240, 200), Vector2(1290, 660)]
 	for point in points:
 		var sheep := entities.spawn(AnimalEntity.Kind.SHEEP, 1, point)[0]
-		data.motion_velocity[sheep.row] = Vector2(sheep.row, sheep.row * 2)
+		data.motion.velocity[sheep.row] = Vector2(sheep.row, sheep.row * 2)
 	entities.spawn(AnimalEntity.Kind.WOLF, 1, points[0])
-	var grid := ReferenceSimulation.build_snapshot(engine.animal_system.decision_snapshot())
-	_check(grid.region_width == 11 and grid.region_height == 6, "partial edge regions use ceiling dimensions")
+	var grid := ReferenceSimulation.build_snapshot(GridAggregateJob.capture_snapshot())
+	_check(grid.regions.width == 11 and grid.regions.height == 6, "partial edge regions use ceiling dimensions")
 	_check(grid.region_at(points[0]) != grid.region_at(points[1]) and grid.region_at(points[1]) == grid.region_at(points[2]), "120 px boundaries group four fine cells")
 	var region := grid.region_at(points[1])
-	_check(grid.region_counts[region] == 2, "region counts only sheep")
-	_check(grid.region_centers[region].is_equal_approx(Vector2(179.5, 205)), "region center is sheep-weighted")
-	_check(grid.region_velocities[region].is_equal_approx(Vector2(1.5, 3)), "region velocity averages sheep")
+	_check(grid.regions.counts[region] == 2, "region counts only sheep")
+	_check(grid.regions.centers[region].is_equal_approx(Vector2(179.5, 205)), "region center is sheep-weighted")
+	_check(grid.regions.velocities[region].is_equal_approx(Vector2(1.5, 3)), "region velocity averages sheep")
 	var count := 0
-	for value in grid.region_counts:
+	for value in grid.regions.counts:
 		count += value
 	_check(count == points.size(), "every sheep belongs to exactly one region")
 	_check(grid.has_region(grid.region_at(points[4])) and not grid.has_region(-1), "edge and invalid region validation")
@@ -53,7 +53,7 @@ func _aggregates() -> void:
 func _assignments() -> void:
 	_empty()
 	var entities: EntityService = engine.entity_service
-	var data := entities.data
+	var data: AnimalData = engine.data_service.animals
 	var sheep := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(500, 300))[0]
 	var stray := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(680, 300))[0]
 	var dogs := entities.spawn(AnimalEntity.Kind.SHEEPDOG, 2, Vector2(590, 300))
@@ -65,52 +65,52 @@ func _assignments() -> void:
 	reversed.rows = PackedInt32Array([dogs[1].row, dogs[0].row])
 	reversed.execute()
 	_check(reversed.region_ids[0] == expected[1] and reversed.region_ids[1] == expected[0], "entity IDs stabilize assignments despite row iteration order")
-	engine.dog_system.apply_decision(first)
+	first.apply_result()
 	var dog := dogs[0]
-	var region := data.dog_region[dog.row]
-	_check(region >= 0 and data.dog_protected_sheep[dog.row] == null, "region replaces live sheep anchor")
-	data.dog_assignment_remaining[dog.row] = 100.0
-	data.motion_position[dog.row] = Vector2(1000, 300)
+	var region := data.dog.region[dog.row]
+	_check(region >= 0 and data.dog.protected_sheep[dog.row] == null, "region replaces live sheep anchor")
+	data.dog.assignment_remaining[dog.row] = 100.0
+	data.motion.position[dog.row] = Vector2(1000, 300)
 	var held := _job()
 	_check(held.region_ids[0] == region and held.returning_flags[0] == 1, "assignment interval holds region and leash requires return")
 	var old := _job()
-	data.dog_region[dog.row] = -1
-	engine.dog_system.apply_decision(old)
-	_check(data.dog_region[dog.row] == -1, "stale result cannot replace newer region state")
-	data.dog_region[dog.row] = region
-	data.motion_position[sheep.row] = Vector2(850, 500)
-	data.motion_position[stray.row] = Vector2(850, 500)
+	data.dog.region[dog.row] = -1
+	old.apply_result()
+	_check(data.dog.region[dog.row] == -1, "stale result cannot replace newer region state")
+	data.dog.region[dog.row] = region
+	data.motion.position[sheep.row] = Vector2(850, 500)
+	data.motion.position[stray.row] = Vector2(850, 500)
 	var moved := _job()
 	_check(moved.region_ids[0] != region, "empty region reassigns before interval expires")
-	var assigned_region := data.dog_region[dogs[1].row]
+	var assigned_region := data.dog.region[dogs[1].row]
 	entities.capture(sheep)
 	entities.remove_expired()
-	_check(data.dog_region[dogs[1].row] == assigned_region, "row compaction moves region with its dog")
+	_check(data.dog.region[dogs[1].row] == assigned_region, "row compaction moves region with its dog")
 	entities.capture(stray)
 	entities.remove_expired()
 	var empty := _job()
 	_check(empty.region_ids == PackedInt32Array([-1, -1]), "no sheep yields no responsibilities")
-	engine.dog_system.apply_decision(empty)
+	empty.apply_result()
 	engine.dog_system.advance_time(0.1)
-	_check(data.dog_region[dog.row] == -1 and data.memory_target[dog.row] == null and data.dog_collected_sheep[dog.row] == null, "empty world clears dog tasks")
+	_check(data.dog.region[dog.row] == -1 and data.memory.target[dog.row] == null and data.dog.collected_sheep[dog.row] == null, "empty world clears dog tasks")
 
 func _cross_region() -> void:
 	_empty()
 	var entities: EntityService = engine.entity_service
-	var data := entities.data
+	var data: AnimalData = engine.data_service.animals
 	var sheep := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(500, 300))[0]
 	var stray := entities.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(680, 300))[0]
 	var dog := entities.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(600, 300))[0]
 	var wolf := entities.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(650, 300))[0]
-	data.motion_facing[dog.row] = Vector2.RIGHT
+	data.motion.facing[dog.row] = Vector2.RIGHT
 	var job := _job()
-	data.dog_region[dog.row] = job.grid.region_at(data.motion_position[sheep.row])
-	data.dog_assignment_remaining[dog.row] = 100.0
+	data.dog.region[dog.row] = job.grid.region_at(data.motion.position[sheep.row])
+	data.dog.assignment_remaining[dog.row] = 100.0
 	job = _job()
-	_check(job.region_ids[0] != job.grid.region_at(data.motion_position[stray.row]) and job.strays.has(stray.row), "stray lookup crosses responsibility boundary")
+	_check(job.region_ids[0] != job.grid.region_at(data.motion.position[stray.row]) and job.strays.has(stray.row), "stray lookup crosses responsibility boundary")
 	_check(job.wolf_rows[0] == wolf.row, "visible wolf across region boundary takes priority")
-	engine.dog_system.apply_decision(job)
-	_check(data.memory_target[dog.row] == wolf and data.dog_collected_sheep[dog.row] == null, "exclusive drive task suppresses collection")
+	job.apply_result()
+	_check(data.memory.target[dog.row] == wolf and data.dog.collected_sheep[dog.row] == null, "exclusive drive task suppresses collection")
 
 func _run() -> void:
 	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()

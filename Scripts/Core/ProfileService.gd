@@ -1,6 +1,36 @@
 class_name ProfileService
 extends Service
 
+class Metrics extends RefCounted:
+	var main_wait_ms: float = 0.0
+	var pack_ms: float = 0.0
+	var upload_submit_ms: float = 0.0
+	var gpu_ms: float = -1.0
+	var device_queue_ms: float = -1.0
+	var gpu_wait_ms: float = -1.0
+	var buffer_read_ms: float = -1.0
+	var decode_ms: float = 0.0
+	var apply_ms: float = 0.0
+	var grid_ms: float = 0.0
+	var prepare_ms: float = 0.0
+	var execute_ms: float = 0.0
+	var latency_ms: float = 0.0
+	var processing_ms: float = 0.0
+	var upload_bytes: int = 0
+	var download_bytes: int = 0
+	var gpu_sequence: int = -1
+	var backend: String = "gpu"
+
+	func to_dictionary() -> Dictionary:
+		return {"main_wait_ms": main_wait_ms, "pack_ms": pack_ms, "upload_submit_ms": upload_submit_ms, "gpu_ms": gpu_ms,
+			"device_queue_ms": device_queue_ms, "gpu_wait_ms": gpu_wait_ms, "buffer_read_ms": buffer_read_ms,
+			"decode_ms": decode_ms, "apply_ms": apply_ms, "grid_ms": grid_ms, "prepare_ms": prepare_ms,
+			"execute_ms": execute_ms, "latency_ms": latency_ms, "processing_ms": processing_ms,
+			"upload_bytes": upload_bytes, "download_bytes": download_bytes, "gpu_sequence": gpu_sequence, "backend": backend}
+
+var numeric_samples: Dictionary = {"Movement": []}
+var preprocessing_samples: Array[Metrics] = []
+
 const STAGE_NAMES := ["ExpiredCleanup", "ApplyCompleted", "AdvanceTime", "ScheduleUpdates", "Steering", "Movement", "Interaction", "Cleanup", "Finalize"]
 const HOTSPOT_NAMES := ["NearbyQuery", "NeighborScan", "Separation", "WolfTarget", "DogAnchor"]
 
@@ -178,6 +208,10 @@ func record_debug_time(metric: String, started: int) -> void:
 	record_duration("Debug/" + metric, elapsed)
 
 func _reset() -> void:
+	preprocessing_samples.clear()
+	for samples: Array in numeric_samples.values():
+		samples.clear()
+
 	last_step_ms = 0.0
 	capture_enabled = false
 	capture_samples_ms.clear()

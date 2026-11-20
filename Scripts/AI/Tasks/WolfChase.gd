@@ -8,5 +8,5 @@ func _execute(delta: float) -> void:
 	var wolf := animal
 	var settings: WolfConfig = data.settings[wolf.row]
 	var common: AnimalSystem = g_gameplayEngine.animal_system
-	data.wolf_charging[wolf.row] = 1
-	common.move_towards(wolf, data.memory_last_seen_position[wolf.row], settings.chase_speed, delta)
+	data.wolf.charging[wolf.row] = 1
+	common.move_towards(wolf, data.memory.last_seen_position[wolf.row], settings.chase_speed, delta)

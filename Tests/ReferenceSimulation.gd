@@ -8,12 +8,13 @@ func _init(storage: AnimalData) -> void:
 func perceive_batch(delta: float) -> void:
 	var started_at := Time.get_ticks_usec()
 	var common: AnimalSystem = g_gameplayEngine.animal_system
-	var input := SheepJob.new()
-	common.prepare_job(input, delta)
+	var input: SheepJob = SheepJob.new()
+	input.capture_batch(delta)
 
 	var jobs: JobService = g_gameplayEngine.job_service
 	var prepared_at := Time.get_ticks_usec()
-	jobs.run_batches(&"Sheep", g_gameplayEngine.entity_service.sheep_rows, SheepJob, input, self)
+	input.reference = self
+	jobs.run_batches(&"Sheep", g_gameplayEngine.data_service.animals.index.sheep_rows, SheepJob, input)
 	jobs.record_stage(&"Sheep", started_at, prepared_at)
 
 func apply_batch(job: SheepPerceptionJob) -> void:
@@ -28,15 +29,15 @@ func apply_batch(job: SheepPerceptionJob) -> void:
 	var counts := job.neighbor_counts
 	var alignment := job.alignments
 	var panic := job.panic_strengths
-	var perception_remaining := data.memory_perception_remaining
-	var perception_ready := data.memory_perception_ready
-	var wander_remaining := data.motion_wander_remaining
-	var local_centers := data.sheep_local_flock_center
-	var neighbor_counts := data.sheep_neighbor_count
-	var alignments := data.sheep_alignment
-	var panic_strengths := data.sheep_panic_strength
-	var intents := data.motion_intent
-	var separations := data.motion_separation
+	var perception_remaining := data.memory.perception_remaining
+	var perception_ready := data.memory.perception_ready
+	var wander_remaining := data.motion.wander_remaining
+	var local_centers := data.sheep.local_flock_center
+	var neighbor_counts := data.sheep.neighbor_count
+	var alignments := data.sheep.alignment
+	var panic_strengths := data.sheep.panic_strength
+	var intents := data.motion.intent
+	var separations := data.motion.separation
 	var wander: bool = g_gameplayEngine.config.sheep.wander_weight > 0.0
 	for index in range(rows.size()):
 		var row := rows[index]
@@ -44,7 +45,7 @@ func apply_batch(job: SheepPerceptionJob) -> void:
 		perception_ready[row] = 1
 		wander_remaining[row] -= delta
 		if refresh[index]:
-			data.memory_nearby[row] = job.nearby_members.slice(job.nearby_offsets[index], job.nearby_offsets[index + 1])
+			data.memory.nearby[row] = job.nearby_members.slice(job.nearby_offsets[index], job.nearby_offsets[index + 1])
 			separations[row] = separation[index]
 		local_centers[row] = centers[index]
 		neighbor_counts[row] = counts[index]
@@ -52,26 +53,26 @@ func apply_batch(job: SheepPerceptionJob) -> void:
 		panic_strengths[row] = panic[index]
 		intents[row] = AnimalData.MotionIntent.SHEEP
 		if wander:
-			common.get_wander_point(data.handles[row], 85.0)
+			common.get_wander_point(data.index.handles[row], 85.0)
 
 func calculate_batch(job: SheepPerceptionJob) -> void:
 	job.resize_output()
 	var rows := job.rows
-	var stats := AnimalSystem.batch_stats(job.spatial_stats, job.detailed)
+	var stats := Job.batch_stats(job.spatial_stats, job.detailed)
 	var grid: GridSnapshot = job.grid
-	var positions: PackedVector2Array = grid.positions
-	var velocities: PackedVector2Array = grid.velocities
-	var kinds: PackedInt32Array = grid.kinds
-	var cells: PackedInt32Array = grid.row_cells
-	var flock_counts: PackedInt32Array = grid.flock_counts
-	var flock_sums: PackedVector2Array = grid.flock_sums
-	var alignment_counts: PackedInt32Array = grid.alignment_counts
-	var alignment_sums: PackedVector2Array = grid.alignment_sums
-	var perception_remaining := data.memory_perception_remaining
-	var perception_ready := data.memory_perception_ready
-	var ids := data.identity_entity_id
-	var separations := data.motion_separation
-	var panic_strengths := data.sheep_panic_strength
+	var positions: PackedVector2Array = grid.cells.positions
+	var velocities: PackedVector2Array = grid.cells.velocities
+	var kinds: PackedInt32Array = grid.cells.kinds
+	var cells: PackedInt32Array = grid.cells.row_cells
+	var flock_counts: PackedInt32Array = grid.flock.counts
+	var flock_sums: PackedVector2Array = grid.flock.sums
+	var alignment_counts: PackedInt32Array = grid.flock.alignment_counts
+	var alignment_sums: PackedVector2Array = grid.flock.alignment_sums
+	var perception_remaining := data.memory.perception_remaining
+	var perception_ready := data.memory.perception_ready
+	var ids := data.identity.entity_id
+	var separations := data.motion.separation
+	var panic_strengths := data.sheep.panic_strength
 	var delta: float = job.delta
 	var interval: float = job.interval
 	var distance_limit: float = job.distance
@@ -87,10 +88,10 @@ func calculate_batch(job: SheepPerceptionJob) -> void:
 		var row := rows[index]
 		remaining[index] = perception_remaining[row] - delta
 		refresh[index] = int(not perception_ready[row] or remaining[index] <= 0.0)
-		var nearby := data.memory_nearby[row]
+		var nearby := data.memory.nearby[row]
 		separation[index] = separations[row]
 		if refresh[index]:
-			nearby = GridService.query_snapshot(positions[row], distance_limit, AnimalEntity.Kind.SHEEP, grid, stats)
+			nearby = GridSnapshot.query_snapshot(positions[row], distance_limit, AnimalEntity.Kind.SHEEP, grid, stats)
 			var started_at := Time.get_ticks_usec() if stats.detailed else 0
 			var force := Vector2.ZERO
 			if distance_limit > 0.0:
@@ -133,21 +134,22 @@ func calculate_batch(job: SheepPerceptionJob) -> void:
 	job.stats = stats
 
 func _scan_neighbors(animal: AnimalEntity, grid: GridService) -> void:
+	var spatial: DataService.Spatial = g_gameplayEngine.data_service.spatial
 	var row := animal.row
-	var cell := grid.row_cells[row]
-	var count := grid.flock_counts[cell] - 1
-	var aligned := grid.alignment_counts[cell] - 1
-	data.sheep_local_flock_center[row] = (grid.flock_position_sums[cell] - grid.perception_positions[row]) / count if count > 0 else grid.perception_positions[row]
-	data.sheep_neighbor_count[row] = count
-	data.sheep_alignment[row] = (grid.alignment_velocity_sums[cell] - grid.perception_velocities[row]) / aligned if aligned > 0 else Vector2.ZERO
+	var cell := spatial.current.cells.row_cells[row]
+	var count := spatial.current.flock.counts[cell] - 1
+	var aligned := spatial.current.flock.alignment_counts[cell] - 1
+	data.sheep.local_flock_center[row] = (spatial.current.flock.sums[cell] - spatial.current.cells.positions[row]) / count if count > 0 else spatial.current.cells.positions[row]
+	data.sheep.neighbor_count[row] = count
+	data.sheep.alignment[row] = (spatial.current.flock.alignment_sums[cell] - spatial.current.cells.velocities[row]) / aligned if aligned > 0 else Vector2.ZERO
 
 func perceive(animal: AnimalEntity, delta: float) -> void:
 	var row := animal.row
 	var settings: SheepConfig = data.settings[row]
 	g_gameplayEngine.animal_system.perceive(animal, delta)
 	_scan_neighbors(animal, g_gameplayEngine.grid_service)
-	data.sheep_panic_strength[row] = maxf(0.0, data.sheep_panic_strength[row] - delta / settings.panic_duration) if settings.panic_duration > 0.0 else 0.0
-	data.motion_intent[row] = AnimalData.MotionIntent.SHEEP
+	data.sheep.panic_strength[row] = maxf(0.0, data.sheep.panic_strength[row] - delta / settings.panic_duration) if settings.panic_duration > 0.0 else 0.0
+	data.motion.intent[row] = AnimalData.MotionIntent.SHEEP
 	if settings.wander_weight > 0.0:
 		g_gameplayEngine.animal_system.get_wander_point(animal, 85.0)
 
@@ -157,69 +159,68 @@ func update_steering(delta: float) -> void:
 	var lower := Vector2(12.0, 94.0) + Vector2.ONE * margin
 	var upper: Vector2 = g_gameplayEngine.config.arena_size - Vector2(12.0, 58.0) - Vector2.ONE * margin
 
-	for row in g_gameplayEngine.entity_service.sheep_rows:
-		var cohesion := (data.sheep_local_flock_center[row] - data.motion_position[row]).normalized() if data.sheep_neighbor_count[row] > 0 else Vector2.ZERO
-		var flock := data.sheep_alignment[row] * settings.alignment_weight + cohesion * settings.move_speed * settings.cohesion_weight
-		var panic := data.sheep_panic_strength[row]
-		var danger := maxf(data.sheep_threat_strength[row], panic)
-		var escape := (data.sheep_threat_direction[row] + (data.motion_position[row] - data.sheep_panic_source[row]).normalized() * panic).limit_length(1.0)
+	for row in g_gameplayEngine.data_service.animals.index.sheep_rows:
+		var cohesion := (data.sheep.local_flock_center[row] - data.motion.position[row]).normalized() if data.sheep.neighbor_count[row] > 0 else Vector2.ZERO
+		var flock := data.sheep.alignment[row] * settings.alignment_weight + cohesion * settings.move_speed * settings.cohesion_weight
+		var panic := data.sheep.panic_strength[row]
+		var danger := maxf(data.sheep.threat_strength[row], panic)
+		var escape := (data.sheep.threat_direction[row] + (data.motion.position[row] - data.sheep.panic_source[row]).normalized() * panic).limit_length(1.0)
 		if danger > 0.0 and escape.is_zero_approx():
-			escape = Vector2.from_angle(data.identity_entity_id[row] * 2.399963) * danger
+			escape = Vector2.from_angle(data.identity.entity_id[row] * 2.399963) * danger
 
-		var dog := data.sheep_dog_pressure[row]
+		var dog := data.sheep.dog_pressure[row]
 		var speed := lerpf(lerpf(settings.move_speed * settings.idle_speed_scale, settings.move_speed, minf(1.0, dog.length())), settings.flee_speed, danger)
 		var steering := escape * speed * settings.wolf_pressure_weight
 		steering += dog * speed * settings.dog_pressure_weight * (1.0 - danger)
 		steering += flock * lerpf(1.0, 0.25, danger)
-		steering += (data.motion_wander_point[row] - data.motion_position[row]).normalized() * speed * settings.wander_weight * (1.0 - danger)
-		steering += data.motion_separation[row] * settings.move_speed * settings.separation_weight
+		steering += (data.motion.wander_point[row] - data.motion.position[row]).normalized() * speed * settings.wander_weight * (1.0 - danger)
+		steering += data.motion.separation[row] * settings.move_speed * settings.separation_weight
 
-		var boundary := (lower - data.motion_position[row]).max(Vector2.ZERO) - (data.motion_position[row] - upper).max(Vector2.ZERO)
+		var boundary := (lower - data.motion.position[row]).max(Vector2.ZERO) - (data.motion.position[row] - upper).max(Vector2.ZERO)
 		steering += boundary / margin * speed * 2.0
 
-		data.motion_desired_velocity[row] = data.motion_velocity[row].lerp(steering.limit_length(speed), minf(1.0, settings.steering_rate * delta))
-		data.motion_speed_limit[row] = speed
-		data.motion_movement_goal[row] = data.motion_position[row] + data.motion_desired_velocity[row]
+		data.motion.desired_velocity[row] = data.motion.velocity[row].lerp(steering.limit_length(speed), minf(1.0, settings.steering_rate * delta))
+		data.motion.speed_limit[row] = speed
+		data.motion.movement_goal[row] = data.motion.position[row] + data.motion.desired_velocity[row]
 
 func update_all_steering(delta: float) -> void:
 	update_steering(delta)
 	g_gameplayEngine.wolf_system.prepare_motion_goals()
 	g_gameplayEngine.dog_system.prepare_motion_goals()
 
-	for row in range(data.active_count):
-		if data.motion_intent[row] != AnimalData.MotionIntent.POINT:
+	for row in range(data.index.active_count):
+		if data.motion.intent[row] != AnimalData.MotionIntent.POINT:
 			continue
 
-		var difference := data.motion_movement_goal[row] - data.motion_position[row]
-		data.motion_desired_velocity[row] = difference.normalized() * minf(data.motion_speed_limit[row], difference.length() / maxf(delta, 0.00001))
-
+		var difference := data.motion.movement_goal[row] - data.motion.position[row]
+		data.motion.desired_velocity[row] = difference.normalized() * minf(data.motion.speed_limit[row], difference.length() / maxf(delta, 0.00001))
 
 static func calculate_snapshot(job: SheepPerceptionJob) -> void:
 	# 1) Build shared wolf and dog pressure from the same immutable snapshot.
 	job.resize_output()
 	var snapshot := job.snapshot
-	job.stats = AnimalSystem.batch_stats(snapshot.stats, snapshot.detailed)
+	job.stats = Job.batch_stats(snapshot.stats, snapshot.detailed)
 	var wolves := snapshot_pressure(AnimalEntity.Kind.WOLF, snapshot, job.grid)
 	var dogs := snapshot_pressure(AnimalEntity.Kind.SHEEPDOG, snapshot, job.grid)
 	var grid: GridSnapshot = job.grid
 	var settings: SheepConfig = snapshot.config.sheep
-	var positions: PackedVector2Array = snapshot.motion_position
-	var velocities: PackedVector2Array = snapshot.motion_velocity
-	var panic_strengths: PackedFloat64Array = snapshot.sheep_panic_strength
-	var panic_sources: PackedVector2Array = snapshot.sheep_panic_source
-	var wander_points: PackedVector2Array = snapshot.motion_wander_point
-	var ids: PackedInt64Array = snapshot.identity_entity_id
+	var positions: PackedVector2Array = snapshot.motion.position
+	var velocities: PackedVector2Array = snapshot.motion.velocity
+	var panic_strengths: PackedFloat64Array = snapshot.sheep.panic_strength
+	var panic_sources: PackedVector2Array = snapshot.sheep.panic_source
+	var wander_points: PackedVector2Array = snapshot.motion.wander_point
+	var ids: PackedInt64Array = snapshot.identity.entity_id
 
 	# 2) Combine local flock motion with separation, danger and wandering forces.
 	for index in range(job.rows.size()):
 		var row := job.rows[index]
-		job.refresh_flags[index] = int(not snapshot.memory_perception_ready[row] or snapshot.memory_perception_remaining[row] <= 0.0)
-		job.separations[index] = AnimalSystem.snapshot_separation(row, snapshot, job.grid, job.stats, bool(job.refresh_flags[index]))
-		var cell: int = grid.row_cells[row]
-		job.neighbor_counts[index] = grid.flock_counts[cell] - 1
-		var aligned: int = grid.alignment_counts[cell] - 1
-		job.centers[index] = (grid.flock_sums[cell] - positions[row]) / job.neighbor_counts[index] if job.neighbor_counts[index] > 0 else positions[row]
-		job.alignments[index] = (grid.alignment_sums[cell] - velocities[row]) / aligned if aligned > 0 else Vector2.ZERO
+		job.refresh_flags[index] = int(not snapshot.memory.perception_ready[row] or snapshot.memory.perception_remaining[row] <= 0.0)
+		job.separations[index] = Job.snapshot_separation(row, snapshot, job.grid, job.stats, bool(job.refresh_flags[index]))
+		var cell: int = grid.cells.row_cells[row]
+		job.neighbor_counts[index] = grid.flock.counts[cell] - 1
+		var aligned: int = grid.flock.alignment_counts[cell] - 1
+		job.centers[index] = (grid.flock.sums[cell] - positions[row]) / job.neighbor_counts[index] if job.neighbor_counts[index] > 0 else positions[row]
+		job.alignments[index] = (grid.flock.alignment_sums[cell] - velocities[row]) / aligned if aligned > 0 else Vector2.ZERO
 		job.threat_directions[index] = wolves.sheep_threat_direction[row]
 		job.threat_strengths[index] = wolves.sheep_threat_strength[row]
 		job.dog_pressures[index] = dogs.sheep_dog_pressure[row]
@@ -249,63 +250,63 @@ static func update_movement(storage: AnimalData, delta: float) -> void:
 	var lower := Vector2(12.0, 94.0)
 	var upper: Vector2 = g_gameplayEngine.config.arena_size - Vector2(12.0, 58.0)
 
-	for row in range(data.active_count):
-		if data.motion_intent[row] == AnimalData.MotionIntent.POINT:
-			var difference := data.motion_movement_goal[row] - data.motion_position[row]
-			data.motion_desired_velocity[row] = difference.normalized() * minf(data.motion_speed_limit[row], difference.length() / maxf(delta, 0.00001))
-		elif data.motion_intent[row] == AnimalData.MotionIntent.SHEEP:
+	for row in range(data.index.active_count):
+		if data.motion.intent[row] == AnimalData.MotionIntent.POINT:
+			var difference := data.motion.movement_goal[row] - data.motion.position[row]
+			data.motion.desired_velocity[row] = difference.normalized() * minf(data.motion.speed_limit[row], difference.length() / maxf(delta, 0.00001))
+		elif data.motion.intent[row] == AnimalData.MotionIntent.SHEEP:
 			var response: float = minf(1.0, g_gameplayEngine.config.sheep.steering_rate * delta)
-			var boundary := (lower + Vector2.ONE * 40.0 - data.motion_position[row]).max(Vector2.ZERO) - (data.motion_position[row] - upper + Vector2.ONE * 40.0).max(Vector2.ZERO)
-			var steering := data.motion_desired_velocity[row] + boundary / 40.0 * data.motion_speed_limit[row] * 2.0
-			data.motion_velocity[row] = data.motion_velocity[row].lerp(steering.limit_length(data.motion_speed_limit[row]), response)
+			var boundary := (lower + Vector2.ONE * 40.0 - data.motion.position[row]).max(Vector2.ZERO) - (data.motion.position[row] - upper + Vector2.ONE * 40.0).max(Vector2.ZERO)
+			var steering := data.motion.desired_velocity[row] + boundary / 40.0 * data.motion.speed_limit[row] * 2.0
+			data.motion.velocity[row] = data.motion.velocity[row].lerp(steering.limit_length(data.motion.speed_limit[row]), response)
 
-		var previous := data.motion_position[row]
+		var previous := data.motion.position[row]
 		var separation := Vector2.ZERO
-		if data.identity_kind[row] != AnimalEntity.Kind.SHEEP:
-			separation = data.motion_separation[row] * data.settings[row].move_speed
-		var desired := data.motion_velocity[row] if data.motion_intent[row] == AnimalData.MotionIntent.SHEEP else data.motion_desired_velocity[row]
-		var velocity := (desired + separation).limit_length(data.motion_speed_limit[row])
+		if data.identity.kind[row] != AnimalEntity.Kind.SHEEP:
+			separation = data.motion.separation[row] * data.settings[row].move_speed
+		var desired := data.motion.velocity[row] if data.motion.intent[row] == AnimalData.MotionIntent.SHEEP else data.motion.desired_velocity[row]
+		var velocity := (desired + separation).limit_length(data.motion.speed_limit[row])
 		var position := (previous + velocity * delta).clamp(lower, upper)
 		velocity = (position - previous) / maxf(delta, 0.00001)
 
-		data.motion_position[row] = position
-		data.motion_velocity[row] = velocity
+		data.motion.position[row] = position
+		data.motion.velocity[row] = velocity
 		if not velocity.is_zero_approx():
-			data.motion_facing[row] = velocity.normalized()
+			data.motion.facing[row] = velocity.normalized()
 
 static func build_snapshot(snapshot: AnimalSnapshot) -> GridSnapshot:
-	var grid := GridService.build_snapshot(snapshot)
-	var job := GridJob.new()
-	job.rows = grid.occupied
+	var grid := GridAggregateJob.build_snapshot(snapshot)
+	var job: GridJob = GridJob.new()
+	job.rows = grid.cells.occupied
 	job.grid = grid
-	job.flock_offsets = GridService.snapshot_offsets(snapshot.config.sheep.flock_radius, grid.cell_size)
-	job.alignment_offsets = GridService.snapshot_offsets(snapshot.config.sheep.alignment_radius, grid.cell_size)
+	job.flock_offsets = GridSnapshot.snapshot_offsets(snapshot.config.sheep.flock_radius, grid.cell_size)
+	job.alignment_offsets = GridSnapshot.snapshot_offsets(snapshot.config.sheep.alignment_radius, grid.cell_size)
 	job.execute()
 	for index in range(job.rows.size()):
 		var cell := job.rows[index]
-		grid.flock_counts[cell] = job.flock_counts[index]
-		grid.flock_sums[cell] = job.flock_sums[index]
-		grid.alignment_counts[cell] = job.alignment_counts[index]
-		grid.alignment_sums[cell] = job.alignment_sums[index]
+		grid.flock.counts[cell] = job.flock_counts[index]
+		grid.flock.sums[cell] = job.flock_sums[index]
+		grid.flock.alignment_counts[cell] = job.alignment_counts[index]
+		grid.flock.alignment_sums[cell] = job.alignment_sums[index]
 	return grid
 
 static func rebuild(grid: GridService) -> void:
 	g_gameplayEngine.animal_service.refresh_config()
-	grid.install_snapshot(build_snapshot(g_gameplayEngine.animal_system.decision_snapshot()))
+	GridAggregateJob.publish_grid(build_snapshot(GridAggregateJob.capture_snapshot()))
 
-static func snapshot_pressure(kind: AnimalEntity.Kind, snapshot: AnimalSnapshot, source_grid: GridSnapshot) -> GridSnapshot.Pressure:
+static func snapshot_pressure(kind: AnimalEntity.Kind, snapshot: AnimalSnapshot, source_grid: GridSnapshot) -> GridSnapshot.PressureResult:
 	var grid := source_grid
-	var positions: PackedVector2Array = grid.positions
-	var counts: PackedInt32Array = grid.counts
-	var offsets: PackedInt32Array = grid.offsets
-	var packed_members: PackedInt32Array = grid.members
-	var needed: PackedByteArray = grid.pressure_needed
+	var positions: PackedVector2Array = grid.cells.positions
+	var counts: PackedInt32Array = grid.cells.counts
+	var offsets: PackedInt32Array = grid.cells.offsets
+	var packed_members: PackedInt32Array = grid.cells.members
+	var needed: PackedByteArray = grid.pressure.needed
 	var columns: int = grid.width
 	var height: int = grid.height
 	var size: float = grid.cell_size
-	var sample_count: int = grid.pressure_sample_count
-	var data := GridSnapshot.Pressure.new()
-	var count := snapshot.sheep.size() + snapshot.wolves.size() + snapshot.dogs.size()
+	var sample_count: int = grid.pressure.sample_count
+	var data: GridSnapshot.PressureResult = GridSnapshot.PressureResult.new()
+	var count := snapshot.index.sheep_rows.size() + snapshot.index.wolf_rows.size() + snapshot.index.dog_rows.size()
 	data.sheep_threat_direction.resize(count)
 	data.sheep_threat_strength.resize(count)
 	data.sheep_dog_pressure.resize(count)
@@ -318,7 +319,7 @@ static func snapshot_pressure(kind: AnimalEntity.Kind, snapshot: AnimalSnapshot,
 	var radius_squared := radius * radius
 	var field := PackedVector2Array()
 	field.resize((columns + 1) * (height + 1))
-	var sources: PackedInt32Array = snapshot.wolves if is_wolf else snapshot.dogs
+	var sources: PackedInt32Array = snapshot.index.wolf_rows if is_wolf else snapshot.index.dog_rows
 	if is_wolf:
 		directions.fill(Vector2.ZERO)
 		strengths.fill(0.0)
@@ -332,7 +333,7 @@ static func snapshot_pressure(kind: AnimalEntity.Kind, snapshot: AnimalSnapshot,
 	# 1) Accumulate only sample points needed by sheep this step.
 	for source_row in sources if radius > 0.0 else PackedInt32Array():
 		var source: Vector2 = positions[source_row]
-		var multiplier: float = snapshot.config.sheep.hunting_pressure_multiplier if is_wolf and snapshot.wolf_hunting[source_row] else 1.0
+		var multiplier: float = snapshot.config.sheep.hunting_pressure_multiplier if is_wolf and snapshot.wolf.hunting[source_row] else 1.0
 		if sample_count > 0:
 			var first := Vector2i(((source - Vector2.ONE * radius) / size).ceil()).max(Vector2i.ZERO)
 			var last := Vector2i(((source + Vector2.ONE * radius) / size).floor()).min(Vector2i(columns, height))
@@ -361,7 +362,7 @@ static func snapshot_pressure(kind: AnimalEntity.Kind, snapshot: AnimalSnapshot,
 				var bucket: int = (y * columns + x) * 3 + AnimalEntity.Kind.SHEEP
 				for member in range(offsets[bucket], offsets[bucket + 1]):
 					var row: int = packed_members[member]
-					if counts[bucket] < GridService.PRESSURE_SHARED_MIN_SHEEP:
+					if counts[bucket] < GridSnapshot.PRESSURE_SHARED_MIN_SHEEP:
 						var offset: Vector2 = positions[row] - source
 						var distance_squared: float = offset.length_squared()
 						if distance_squared > radius_squared:
@@ -407,49 +408,67 @@ static func sample_snapshot_pressure(point: Vector2, field: PackedVector2Array, 
 	return field[node].lerp(field[node + 1], fraction.x).lerp(field[node + grid.width + 1].lerp(field[node + grid.width + 2], fraction.x), fraction.y)
 
 static func accumulate_pressure(grid_service: GridService, kind: AnimalEntity.Kind) -> void:
+	var spatial: DataService.Spatial = g_gameplayEngine.data_service.spatial
 	g_gameplayEngine.animal_service.refresh_config()
-	var snapshot: AnimalSnapshot = g_gameplayEngine.animal_system.decision_snapshot()
+	var snapshot: AnimalSnapshot = GridAggregateJob.capture_snapshot()
 	var grid := grid_service.query_context()
-	grid.counts = grid_service.cell_counts
-	grid.pressure_needed = grid_service._pressure_needed
-	grid.pressure_sample_count = grid_service.pressure_sample_count
+	grid.cells.counts = spatial.current.cells.counts
+	grid.pressure.needed = spatial.current.pressure.needed
+	grid.pressure.sample_count = spatial.current.pressure.sample_count
 	var output := snapshot_pressure(kind, snapshot, grid)
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	if kind == AnimalEntity.Kind.WOLF:
-		grid_service.wolf_pressure = output.field
-		data.sheep_threat_direction.fill(Vector2.ZERO)
-		data.sheep_threat_strength.fill(0.0)
-		for row in g_gameplayEngine.entity_service.sheep_rows:
-			data.sheep_threat_direction[row] = output.sheep_threat_direction[row]
-			data.sheep_threat_strength[row] = output.sheep_threat_strength[row]
+		spatial.pressure.wolf = output.field
+		data.sheep.threat_direction.fill(Vector2.ZERO)
+		data.sheep.threat_strength.fill(0.0)
+		for row in g_gameplayEngine.data_service.animals.index.sheep_rows:
+			data.sheep.threat_direction[row] = output.sheep_threat_direction[row]
+			data.sheep.threat_strength[row] = output.sheep_threat_strength[row]
 	else:
-		grid_service.dog_pressure = output.field
-		data.sheep_dog_pressure.fill(Vector2.ZERO)
-		for row in g_gameplayEngine.entity_service.sheep_rows:
-			data.sheep_dog_pressure[row] = output.sheep_dog_pressure[row]
-	grid_service.pressure_source_pairs += output.pairs
+		spatial.pressure.dog = output.field
+		data.sheep.dog_pressure.fill(Vector2.ZERO)
+		for row in g_gameplayEngine.data_service.animals.index.sheep_rows:
+			data.sheep.dog_pressure[row] = output.sheep_dog_pressure[row]
+	spatial.pressure.source_pairs += output.pairs
 
 static func apply_cells(grid_service: GridService, result: GridJob) -> void:
+	var spatial: DataService.Spatial = g_gameplayEngine.data_service.spatial
 	for index in range(result.rows.size()):
 		var cell: int = result.rows[index]
-		grid_service.flock_counts[cell] = result.flock_counts[index]
-		grid_service.flock_position_sums[cell] = result.flock_sums[index]
-		grid_service.alignment_counts[cell] = result.alignment_counts[index]
-		grid_service.alignment_velocity_sums[cell] = result.alignment_sums[index]
+		spatial.current.flock.counts[cell] = result.flock_counts[index]
+		spatial.current.flock.sums[cell] = result.flock_sums[index]
+		spatial.current.flock.alignment_counts[cell] = result.alignment_counts[index]
+		spatial.current.flock.alignment_sums[cell] = result.alignment_sums[index]
 
 	for node in result.nodes:
-		if not grid_service._pressure_needed[node]:
-			grid_service._pressure_needed[node] = 1
-			grid_service.pressure_nodes.append(node)
+		if not spatial.current.pressure.needed[node]:
+			spatial.current.pressure.needed[node] = 1
+			spatial.current.pressure.nodes.append(node)
 
 class SheepJob extends SheepPerceptionJob:
+	var reference: RefCounted
+
+	func apply_result() -> void:
+		if snapshot != null:
+			super.apply_result()
+		else:
+			reference.apply_batch(self)
+
+	func copy_input(source: Job) -> void:
+		super.copy_input(source)
+		reference = (source as SheepJob).reference
+
+	func release_input() -> void:
+		super.release_input()
+		reference = null
 	func execute() -> void:
 		if snapshot != null:
 			load("res://Tests/ReferenceSimulation.gd").calculate_snapshot(self)
 		else:
-			target.calculate_batch(self)
+			reference.calculate_batch(self)
 
 class GridJob extends Job:
+	var reference: RefCounted
 	var flock_counts := PackedInt32Array()
 	var flock_sums := PackedVector2Array()
 	var alignment_counts := PackedInt32Array()
@@ -466,9 +485,9 @@ class GridJob extends Job:
 			return
 
 		var cells := rows
-		var counts: PackedInt32Array = grid.counts
-		var position_sums: PackedVector2Array = grid.position_sums
-		var velocity_sums: PackedVector2Array = grid.velocity_sums
+		var counts: PackedInt32Array = grid.cells.counts
+		var position_sums: PackedVector2Array = grid.flock.position_sums
+		var velocity_sums: PackedVector2Array = grid.flock.velocity_sums
 		var columns: int = grid.width
 		var height: int = grid.height
 
@@ -482,7 +501,7 @@ class GridJob extends Job:
 			var cell := cells[index]
 			var x := cell % columns
 			var y := cell / columns
-			if counts[cell * 3 + AnimalEntity.Kind.SHEEP] >= GridService.PRESSURE_SHARED_MIN_SHEEP:
+			if counts[cell * 3 + AnimalEntity.Kind.SHEEP] >= GridSnapshot.PRESSURE_SHARED_MIN_SHEEP:
 				var base := int(y) * (columns + 1) + x
 				for node in [base, base + 1, base + columns + 1, base + columns + 2]:
 					nodes.append(node)
@@ -513,10 +532,10 @@ class GridJob extends Job:
 
 	func apply_result() -> void:
 		if snapshot != null:
-			target.apply_grid(grid, snapshot, null, execute_ms)
+			assert(false, "Reference grid jobs only produce comparison output")
 			return
 
-		load("res://Tests/ReferenceSimulation.gd").apply_cells(target, self)
+		load("res://Tests/ReferenceSimulation.gd").apply_cells(g_gameplayEngine.grid_service, self)
 
 	func release_input() -> void:
 		super.release_input()

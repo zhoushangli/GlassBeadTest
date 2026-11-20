@@ -27,9 +27,9 @@ func _vector(actual: Vector2, expected: Vector2, label: String) -> void:
 	_near(actual.y, expected.y, label + ".y")
 
 func _receive(snapshot: AnimalSnapshot) -> SheepComputeJob:
-	var job := SheepComputeJob.new()
+	var job: SheepComputeJob = SheepComputeJob.new()
 	job.snapshot = snapshot
-	job.grid = GridService.build_snapshot(snapshot)
+	job.grid = GridAggregateJob.build_snapshot(snapshot)
 	_check(compute.submit(job), "GPU service accepts immutable input")
 	var deadline := Time.get_ticks_msec() + 10000
 	var result: SheepComputeJob
@@ -43,7 +43,7 @@ func _receive(snapshot: AnimalSnapshot) -> SheepComputeJob:
 	return job
 
 func _snapshot() -> AnimalSnapshot:
-	var snapshot: AnimalSnapshot = engine.animal_system.decision_snapshot()
+	var snapshot: AnimalSnapshot = GridAggregateJob.capture_snapshot()
 	snapshot.config = engine.config.copy_config()
 	snapshot.due = PackedInt32Array([0])
 	snapshot.captured_usec = Time.get_ticks_usec()
@@ -51,8 +51,8 @@ func _snapshot() -> AnimalSnapshot:
 
 func _compare(snapshot: AnimalSnapshot, label: String) -> void:
 	var grid := ReferenceSimulation.build_snapshot(snapshot)
-	var expected := ReferenceSimulation.SheepJob.new()
-	expected.rows = snapshot.sheep if snapshot.due.has(0) else PackedInt32Array()
+	var expected: ReferenceSimulation.SheepJob = ReferenceSimulation.SheepJob.new()
+	expected.rows = snapshot.index.sheep_rows if snapshot.due.has(0) else PackedInt32Array()
 	expected.snapshot = snapshot
 	expected.grid = grid
 	ReferenceSimulation.calculate_snapshot(expected)
@@ -61,11 +61,11 @@ func _compare(snapshot: AnimalSnapshot, label: String) -> void:
 		_check(false, label + " returns a result")
 		return
 
-	for cell in grid.occupied:
-		_check(result.grid.flock_counts[cell] == grid.flock_counts[cell], label + " flock count")
-		_check(result.grid.alignment_counts[cell] == grid.alignment_counts[cell], label + " alignment count")
-		_vector(result.grid.flock_sums[cell], grid.flock_sums[cell], label + " flock sum")
-		_vector(result.grid.alignment_sums[cell], grid.alignment_sums[cell], label + " alignment sum")
+	for cell in grid.cells.occupied:
+		_check(result.grid.flock.counts[cell] == grid.flock.counts[cell], label + " flock count")
+		_check(result.grid.flock.alignment_counts[cell] == grid.flock.alignment_counts[cell], label + " alignment count")
+		_vector(result.grid.flock.sums[cell], grid.flock.sums[cell], label + " flock sum")
+		_vector(result.grid.flock.alignment_sums[cell], grid.flock.alignment_sums[cell], label + " alignment sum")
 	_check(result.rows == expected.rows, label + " entry count")
 	_check(result.pressure_source_pairs == expected.pressure_source_pairs, label + " source pairs")
 	var actual: SheepPerceptionJob = result
@@ -75,7 +75,7 @@ func _compare(snapshot: AnimalSnapshot, label: String) -> void:
 			_vector(actual.get(field)[index], expected.get(field)[index], label + " " + field)
 		for field in ["threat_strengths", "speed_limits"]:
 			_near(actual.get(field)[index], expected.get(field)[index], label + " " + field)
-	for node in grid.pressure_nodes:
+	for node in grid.pressure.nodes:
 		_vector(result.wolf_pressure[node], expected.wolf_pressure[node], label + " wolf field")
 		_vector(result.dog_pressure[node], expected.dog_pressure[node], label + " dog field")
 
@@ -117,18 +117,18 @@ func _run() -> void:
 	var sheep: Array[AnimalEntity] = engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 96)
 	engine.entity_service.spawn(AnimalEntity.Kind.WOLF, 12)
 	engine.entity_service.spawn(AnimalEntity.Kind.SHEEPDOG, 6)
-	var data: AnimalData = engine.entity_service.data
+	var data: AnimalData = engine.data_service.animals
 	for animal in sheep:
 		var row: int = animal.row
-		data.motion_velocity[row] = Vector2(row * 0.5, -row * 0.2)
-		data.sheep_panic_strength[row] = 0.4 if row % 3 == 0 else 0.0
-		data.sheep_panic_source[row] = Vector2(400, 400)
-		data.memory_perception_ready[row] = int(row % 2 == 0)
-		data.memory_perception_remaining[row] = 0.1 if row % 2 == 0 else 0.0
-	for row in engine.entity_service.wolf_rows:
-		data.wolf_hunting[row] = int(row % 2 == 0)
+		data.motion.velocity[row] = Vector2(row * 0.5, -row * 0.2)
+		data.sheep.panic_strength[row] = 0.4 if row % 3 == 0 else 0.0
+		data.sheep.panic_source[row] = Vector2(400, 400)
+		data.memory.perception_ready[row] = int(row % 2 == 0)
+		data.memory.perception_remaining[row] = 0.1 if row % 2 == 0 else 0.0
+	for row in engine.data_service.animals.index.wolf_rows:
+		data.wolf.hunting[row] = int(row % 2 == 0)
 	await _compare(_snapshot(), "mixed velocities panic and cached perception")
-	await _compare(engine.animal_system.decision_snapshot(PackedInt32Array([1])), "pressure without sheep decisions")
+	await _compare(GridAggregateJob.capture_snapshot(PackedInt32Array([1])), "pressure without sheep decisions")
 	_reset()
 	for point in [Vector2(12, 94), Vector2(1268, 662), Vector2(100, 200), Vector2(230, 200), Vector2(230.01, 200), Vector2(229.99, 200)]:
 		engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, point)
@@ -148,22 +148,22 @@ func _lifecycle() -> void:
 	engine.job_service.max_workers = 1
 	var snapshot := _snapshot()
 	var output := await _receive(snapshot)
-	var data: AnimalData = engine.entity_service.data
-	var sheep: AnimalEntity = data.handles[engine.entity_service.sheep_rows[0]]
+	var data: AnimalData = engine.data_service.animals
+	var sheep: AnimalEntity = data.index.handles[engine.data_service.animals.index.sheep_rows[0]]
 	engine.entity_service.capture(sheep)
 	engine.entity_service.remove_expired(10.0)
 	var replacement: AnimalEntity = engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(600, 400))[0]
-	data.motion_desired_velocity[replacement.row] = Vector2(7, 9)
+	data.motion.desired_velocity[replacement.row] = Vector2(7, 9)
 	output.snapshot = snapshot
-	engine.sheep_system.apply_decision(output)
-	_check(data.motion_desired_velocity[replacement.row] == Vector2(7, 9), "old GPU result cannot change reused slot")
+	output.apply_result()
+	_check(data.motion.desired_velocity[replacement.row] == Vector2(7, 9), "old GPU result cannot change reused slot")
 	var panic_snapshot := _snapshot()
 	var panic_output := await _receive(panic_snapshot)
 	engine.sheep_system.receive_howl(replacement, Vector2(20, 20))
-	data.motion_desired_velocity[replacement.row] = Vector2(11, 13)
+	data.motion.desired_velocity[replacement.row] = Vector2(11, 13)
 	panic_output.snapshot = panic_snapshot
-	engine.sheep_system.apply_decision(panic_output)
-	_check(data.motion_desired_velocity[replacement.row] == Vector2(11, 13), "new panic rejects old GPU steering")
+	panic_output.apply_result()
+	_check(data.motion.desired_velocity[replacement.row] == Vector2(11, 13), "new panic rejects old GPU steering")
 	engine.compute_service.shutdown()
 	engine.compute_service.startup()
 	engine.animal_service.schedule_updates(1.0)
@@ -177,7 +177,7 @@ func _lifecycle() -> void:
 	for index in range(12):
 		await process_frame
 	engine.animal_service.apply_completed()
-	_check(engine.animal_service.applied[0] == 0, "reset discards GPU result by request version")
+	_check(engine.data_service.decisions.applied[0] == 0, "reset discards GPU result by request version")
 	deadline = Time.get_ticks_msec() + 10000
 	while engine.compute_service.busy and Time.get_ticks_msec() < deadline:
 		await process_frame
@@ -185,21 +185,21 @@ func _lifecycle() -> void:
 	engine.entity_service.spawn(AnimalEntity.Kind.SHEEP, 8, Vector2(300, 300))
 	engine.animal_service.schedule_updates(1.0)
 	deadline = Time.get_ticks_msec() + 10000
-	while engine.animal_service.applied[0] == 0 and Time.get_ticks_msec() < deadline:
+	while engine.data_service.decisions.applied[0] == 0 and Time.get_ticks_msec() < deadline:
 		engine.animal_service.apply_completed()
 		await process_frame
-	_check(engine.animal_service.applied[0] > 0, "GPU resumes after reset")
+	_check(engine.data_service.decisions.applied[0] > 0, "GPU resumes after reset")
 	engine.animal_service.schedule_updates(1.0)
 	for index in range(12):
 		engine.animal_service.apply_completed()
 		await process_frame
-	var before := int(engine.animal_service.applied[0])
+	var before := int(engine.data_service.decisions.applied[0])
 	engine.animal_service.schedule_updates(1.0)
 	engine.job_service.invalidate_async()
 	for index in range(12):
 		await process_frame
 	engine.animal_service.apply_completed()
-	_check(engine.animal_service.applied[0] == before, "configuration version invalidates pending work")
+	_check(engine.data_service.decisions.applied[0] == before, "configuration version invalidates pending work")
 	engine.animal_service.schedule_updates(1.0)
 	engine.stop_simulation()
 	for index in range(12):

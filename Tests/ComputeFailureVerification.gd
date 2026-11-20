@@ -19,17 +19,15 @@ class FailedDevice extends ComputeShaderService:
 	func _initialize_movement_pipeline() -> String:
 		return "Injected movement pipeline creation failure" if phase == "pipeline" else super._initialize_movement_pipeline()
 
-	func execute_numeric_gpu(job: NumericComputeJob) -> PackedByteArray:
+	func submit_numeric(job: NumericComputeJob) -> bool:
 		if phase == "movement":
 			job.error = "Injected movement execution failure"
-			return PackedByteArray()
-		return super.execute_numeric_gpu(job)
+		return super.submit_numeric(job)
 
-	func execute_gpu(job: SheepComputeJob) -> PackedByteArray:
+	func submit(job: SheepComputeJob) -> bool:
 		if phase == "readback":
 			job.error = "Injected sheep readback failure"
-			return PackedByteArray()
-		return super.execute_gpu(job)
+		return super.submit(job)
 
 var engine: Node
 var steps_at_failure: int = 0
@@ -43,7 +41,7 @@ func _run() -> void:
 		if argument.begins_with("--phase="):
 			phase = argument.trim_prefix("--phase=")
 	engine = root.get_node("g_gameplayEngine")
-	var device := FailedDevice.new()
+	var device: FailedDevice = FailedDevice.new()
 	device.phase = phase
 	engine.add_child(device)
 	engine.compute_service = device
@@ -64,11 +62,11 @@ func _run() -> void:
 
 	steps_at_failure = engine.step_count
 	var time_at_failure: float = engine.simulation_time
-	var positions: PackedVector2Array = engine.entity_service.data.motion_position.duplicate()
+	var positions: PackedVector2Array = engine.data_service.animals.motion.position.duplicate()
 	engine.simulate_step(1.0 / 30.0)
 	engine.request_reset()
 	engine._process(1.0)
-	var stopped: bool = engine.step_failed and not engine.running and engine.step_count == steps_at_failure and engine.simulation_time == time_at_failure and engine.entity_service.data.motion_position == positions
+	var stopped: bool = engine.step_failed and not engine.running and engine.step_count == steps_at_failure and engine.simulation_time == time_at_failure and engine.data_service.animals.motion.position == positions
 	print("FATAL_VERIFICATION phase=%s stopped=%s debug=%s" % [phase, stopped, OS.is_debug_build()])
 	if not stopped:
 		push_error("FAIL: fatal compute failure must latch and stop simulation")

@@ -37,12 +37,12 @@ func _check_camera_fit(label: String) -> void:
 
 func _click(control: Control) -> void:
 	var point := root.get_final_transform() * control.get_global_rect().get_center()
-	var motion := InputEventMouseMotion.new()
+	var motion: InputEventMouseMotion = InputEventMouseMotion.new()
 	motion.position = point
 	motion.global_position = point
 	Input.parse_input_event(motion)
 	for pressed in [true, false]:
-		var event := InputEventMouseButton.new()
+		var event: InputEventMouseButton = InputEventMouseButton.new()
 		event.button_index = MOUSE_BUTTON_LEFT
 		event.pressed = pressed
 		event.position = point
@@ -52,7 +52,7 @@ func _click(control: Control) -> void:
 
 func _key(code: Key) -> void:
 	for pressed in [true, false]:
-		var event := InputEventKey.new()
+		var event: InputEventKey = InputEventKey.new()
 		event.keycode = code
 		event.physical_keycode = code
 		event.pressed = pressed
@@ -60,7 +60,7 @@ func _key(code: Key) -> void:
 		await process_frame
 
 func _run() -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	capture_directory = "res://output/ecs-visuals/" + Time.get_datetime_string_from_system().replace(":", "-") + "_" + str(OS.get_process_id())
 	DirAccess.make_dir_recursive_absolute(capture_directory)
 	scene = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
@@ -97,29 +97,29 @@ func _run() -> void:
 	var wolf := service.spawn(AnimalEntity.Kind.WOLF, 1, Vector2(410, 300))[0]
 	var dog := service.spawn(AnimalEntity.Kind.SHEEPDOG, 1, Vector2(650, 500))[0]
 	var sheep_visual: Dictionary = engine.render_service.get_visual_settings(AnimalEntity.Kind.SHEEP)
-	data.sheep_dog_pressure[sheep.row] = Vector2.RIGHT
-	data.sheep_panic_strength[sheep.row] = 0.5
+	data.sheep.dog_pressure[sheep.row] = Vector2.RIGHT
+	data.sheep.panic_strength[sheep.row] = 0.5
 	var rng_state: int = engine.rng.state
 	engine.render_service.sync()
 	var expected_color: Color = sheep_visual.behavior_colors["Herded"].lerp(sheep_visual.behavior_colors["Flee"], 0.5)
-	_check(data.brain_instance[sheep.row] == null and _render_color(sheep).is_equal_approx(expected_color), "sheep blends continuous pressure colors without a behavior tree")
+	_check(data.brain.instance[sheep.row] == null and _render_color(sheep).is_equal_approx(expected_color), "sheep blends continuous pressure colors without a behavior tree")
 	_check(engine.rng.state == rng_state, "continuous sheep presentation does not consume simulation RNG")
 
-	data.sheep_dog_pressure[sheep.row] = Vector2.ZERO
-	data.sheep_panic_strength[sheep.row] = 0.0
-	data.motion_facing[wolf.row] = Vector2.RIGHT
-	data.memory_target[wolf.row] = sheep
-	data.memory_target_visible[wolf.row] = int(false)
-	data.memory_last_seen_position[wolf.row] = Vector2(570, 350)
-	data.memory_unseen_elapsed[wolf.row] = 0.8
-	data.motion_movement_goal[wolf.row] = data.memory_last_seen_position[wolf.row]
-	data.brain_current_behavior[wolf.row] = AnimalEntity.Behavior.SEARCH
-	data.motion_facing[dog.row] = Vector2.UP
-	data.dog_protected_sheep[dog.row] = sheep
-	data.dog_collected_sheep[dog.row] = sheep
-	data.dog_protection_center[dog.row] = Vector2(600, 420)
-	data.dog_guard_point[dog.row] = Vector2(680, 480)
-	data.motion_movement_goal[dog.row] = Vector2(675, 330)
+	data.sheep.dog_pressure[sheep.row] = Vector2.ZERO
+	data.sheep.panic_strength[sheep.row] = 0.0
+	data.motion.facing[wolf.row] = Vector2.RIGHT
+	data.memory.target[wolf.row] = sheep
+	data.memory.target_visible[wolf.row] = int(false)
+	data.memory.last_seen_position[wolf.row] = Vector2(570, 350)
+	data.memory.unseen_elapsed[wolf.row] = 0.8
+	data.motion.movement_goal[wolf.row] = data.memory.last_seen_position[wolf.row]
+	data.brain.current_behavior[wolf.row] = AnimalEntity.Behavior.SEARCH
+	data.motion.facing[dog.row] = Vector2.UP
+	data.dog.protected_sheep[dog.row] = sheep
+	data.dog.collected_sheep[dog.row] = sheep
+	data.dog.protection_center[dog.row] = Vector2(600, 420)
+	data.dog.guard_point[dog.row] = Vector2(680, 480)
+	data.motion.movement_goal[dog.row] = Vector2(675, 330)
 	engine.render_service.sync()
 	var debug: DebugService = engine.debug_service
 	debug.selected = wolf
@@ -168,12 +168,12 @@ func _run() -> void:
 	_check(not debug.show_details and debug.howl_events.is_empty(), "F1 input disables visuals and clears pulses")
 
 	ReferenceSimulation.rebuild(engine.grid_service)
-	var region_job := DogPerceptionJob.new()
-	region_job.snapshot = engine.animal_system.decision_snapshot(PackedInt32Array([2]))
+	var region_job: DogPerceptionJob = DogPerceptionJob.new()
+	region_job.snapshot = GridAggregateJob.capture_snapshot(PackedInt32Array([2]))
 	region_job.grid = ReferenceSimulation.build_snapshot(region_job.snapshot)
-	region_job.rows = region_job.snapshot.dogs
+	region_job.rows = region_job.snapshot.index.dog_rows
 	region_job.execute()
-	engine.dog_system.apply_decision(region_job)
+	region_job.apply_result()
 	debug.show_details = true
 	debug.selected = null
 	debug.set_visual_option("fine_grid", true)
@@ -193,7 +193,7 @@ func _run() -> void:
 	debug.set_visual_option("fine_grid", false)
 	debug.set_visual_option("dog_regions", false)
 
-	var retained: int = data.row_to_slot.size()
+	var retained: int = data.index.row_to_slot.size()
 	service.capture(sheep)
 	engine.request_single_step()
 	engine._process(0.0)
@@ -201,7 +201,7 @@ func _run() -> void:
 
 	for index in range(20):
 		engine.simulate_step(1.0 / 60.0)
-	_check(not _render_visible(sheep) and data.row_to_slot.size() == retained, "corpse returns to pool without growing retained objects")
+	_check(not _render_visible(sheep) and data.index.row_to_slot.size() == retained, "corpse returns to pool without growing retained objects")
 
 	await _capture("recycled")
 	engine.stop_simulation()
@@ -211,25 +211,25 @@ func _run() -> void:
 	quit(0 if failures == 0 else 1)
 
 func _render_index(animal: AnimalEntity) -> int:
-	var data: AnimalData = engine.entity_service.data
+	var data: AnimalData = engine.data_service.animals
 	var index := 0
 	for row in range(animal.row):
-		if data.identity_kind[row] == data.identity_kind[animal.row]:
+		if data.identity.kind[row] == data.identity.kind[animal.row]:
 			index += 1
 	return index
 
 func _render_visible(animal: AnimalEntity) -> bool:
-	var data: AnimalData = engine.entity_service.data
-	return animal.row >= 0 and animal.row < data.retained_count and data.handles[animal.row] == animal
+	var data: AnimalData = engine.data_service.animals
+	return animal.row >= 0 and animal.row < data.index.retained_count and data.index.handles[animal.row] == animal
 
 func _render_transform(animal: AnimalEntity) -> Transform2D:
-	var data: AnimalData = engine.entity_service.data
-	var buffer: PackedFloat32Array = engine.render_service.buffers[data.identity_kind[animal.row]]
+	var data: AnimalData = engine.data_service.animals
+	var buffer: PackedFloat32Array = engine.render_service.buffers[data.identity.kind[animal.row]]
 	var index := _render_index(animal) * 12
 	return Transform2D(Vector2(buffer[index], buffer[index + 4]), Vector2(buffer[index + 1], buffer[index + 5]), Vector2(buffer[index + 3], buffer[index + 7]))
 
 func _render_color(animal: AnimalEntity) -> Color:
-	var data: AnimalData = engine.entity_service.data
-	var buffer: PackedFloat32Array = engine.render_service.buffers[data.identity_kind[animal.row]]
+	var data: AnimalData = engine.data_service.animals
+	var buffer: PackedFloat32Array = engine.render_service.buffers[data.identity.kind[animal.row]]
 	var index := _render_index(animal) * 12 + 8
 	return Color(buffer[index], buffer[index + 1], buffer[index + 2], buffer[index + 3])

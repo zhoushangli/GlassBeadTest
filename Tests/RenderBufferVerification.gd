@@ -14,12 +14,12 @@ func _check(condition: bool, label: String) -> void:
 		push_error("FAIL: " + label)
 
 func _compare(label: String) -> void:
-	var data: AnimalData = engine.entity_service.data
+	var data: AnimalData = engine.data_service.animals
 	var render: RenderService = engine.render_service
 	var expected: Array[PackedFloat32Array] = []
 	var counts := Vector3i.ZERO
-	for row in range(data.retained_count):
-		counts[data.identity_kind[row]] += 1
+	for row in range(data.index.retained_count):
+		counts[data.identity.kind[row]] += 1
 	for kind in range(3):
 		var buffer := render.buffers[kind].duplicate()
 		buffer.resize(maxi(buffer.size(), counts[kind] * 12))
@@ -29,18 +29,18 @@ func _compare(label: String) -> void:
 			colors.append(visual.behavior_colors.get(name, visual.base_color))
 		var scale: Vector2 = visual.scale
 		var index := 0
-		for row in range(data.retained_count):
-			if data.identity_kind[row] != kind:
+		for row in range(data.index.retained_count):
+			if data.identity.kind[row] != kind:
 				continue
 
-			var point := data.motion_position[row]
-			var facing := data.motion_facing[row].normalized()
-			var color := colors[data.brain_current_behavior[row]]
-			if not data.identity_alive[row]:
+			var point := data.motion.position[row]
+			var facing := data.motion.facing[row].normalized()
+			var color := colors[data.brain.current_behavior[row]]
+			if not data.identity.alive[row]:
 				color = Color("#7b8794")
 			elif kind == AnimalEntity.Kind.SHEEP:
-				color = colors[AnimalEntity.Behavior.FLOCK].lerp(colors[AnimalEntity.Behavior.HERDED], minf(1.0, data.sheep_dog_pressure[row].length()))
-				color = color.lerp(colors[AnimalEntity.Behavior.FLEE], maxf(data.sheep_threat_strength[row], data.sheep_panic_strength[row]))
+				color = colors[AnimalEntity.Behavior.FLOCK].lerp(colors[AnimalEntity.Behavior.HERDED], minf(1.0, data.sheep.dog_pressure[row].length()))
+				color = color.lerp(colors[AnimalEntity.Behavior.FLEE], maxf(data.sheep.threat_strength[row], data.sheep.panic_strength[row]))
 			buffer[index] = -facing.y * scale.x
 			buffer[index + 1] = -facing.x * scale.y
 			buffer[index + 3] = point.x
@@ -72,18 +72,18 @@ func _run() -> void:
 	engine.set_process(false)
 	engine.paused = true
 	var service: EntityService = engine.entity_service
-	var data := service.data
+	var data: AnimalData = engine.data_service.animals
 	_compare("empty")
 	for amount in [1, 12, 50]:
 		for kind in range(3):
 			service.spawn(kind, amount)
-		for row in range(data.retained_count):
-			data.motion_facing[row] = Vector2.ZERO if row % 4 == 0 else Vector2(3, 4)
-			data.sheep_dog_pressure[row] = Vector2(row % 4 * 0.5, 0)
-			data.sheep_threat_strength[row] = (row % 5) * 0.2
-			data.sheep_panic_strength[row] = (row % 3) * 0.3
+		for row in range(data.index.retained_count):
+			data.motion.facing[row] = Vector2.ZERO if row % 4 == 0 else Vector2(3, 4)
+			data.sheep.dog_pressure[row] = Vector2(row % 4 * 0.5, 0)
+			data.sheep.threat_strength[row] = (row % 5) * 0.2
+			data.sheep.panic_strength[row] = (row % 3) * 0.3
 		_compare("mixed growth %d" % amount)
-	service.capture(data.handles[service.sheep_rows[0]])
+	service.capture(data.index.handles[g_gameplayEngine.data_service.animals.index.sheep_rows[0]])
 	service.remove_expired()
 	_compare("compaction and visible corpse")
 	service.remove_expired(10.0)

@@ -8,6 +8,7 @@ const PRESET_PATH := "user://CFG_Runtime.tres"
 
 @export var config: SimulationConfig
 
+@onready var data_service: DataService = $DataService
 @onready var compute_service: ComputeShaderService = $ComputeShaderService
 @onready var animal_service: AnimalService = $AnimalService
 @onready var job_service: JobService = $JobService
@@ -18,7 +19,7 @@ const PRESET_PATH := "user://CFG_Runtime.tres"
 @onready var profile_service: ProfileService = $ProfileService
 
 var defaults: SimulationConfig
-var rng := RandomNumberGenerator.new()
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var running: bool = false
 var paused: bool = false:
 	set(value):
@@ -69,6 +70,7 @@ func start_simulation(world: Node2D, debug_hud: DebugHUD, settings: SimulationCo
 	render_service.container = entity_service.container
 	debug_service.hud = debug_hud
 	running = true
+	data_service.startup()
 	compute_service.startup()
 	if not compute_service.available():
 		fail_step("GPU initialization failed: " + compute_service.failure)
@@ -92,6 +94,7 @@ func stop_simulation() -> void:
 	profile_service.shutdown()
 	render_service.shutdown()
 	grid_service.shutdown()
+	data_service.shutdown()
 	_pending_spawns.clear()
 	_pending_config = null
 	_reset_pending = false
@@ -141,7 +144,7 @@ func _apply_pending_config() -> void:
 		reset_simulation()
 		paused = was_paused
 	else:
-		for animal in entity_service.entities:
+		for animal in data_service.animals.index.entities:
 			g_gameplayEngine.refresh_animal_config(animal)
 	configuration_applied.emit(restart)
 
@@ -305,20 +308,20 @@ func advance_decision(animal: AnimalEntity) -> void:
 	animal_service.advance_decision(animal)
 
 func refresh_animal_config(animal: AnimalEntity) -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	var row := animal.row
-	data.settings[row] = [config.sheep, config.wolf, config.sheepdog][data.identity_kind[row]]
-	data.memory_perception_ready[row] = false
-	if data.identity_kind[row] == AnimalEntity.Kind.SHEEP and config.sheep.panic_duration == 0.0:
-		data.sheep_panic_strength[row] = 0.0
-	if data.identity_kind[row] != AnimalEntity.Kind.SHEEP:
-		data.memory_vision_radius_squared[row] = data.settings[row].perception_radius * data.settings[row].perception_radius
-		data.memory_vision_cos[row] = cos(deg_to_rad(data.settings[row].vision_angle * 0.5))
-	if data.identity_kind[row] == AnimalEntity.Kind.SHEEPDOG:
-		data.dog_assignment_remaining[row] = 0.0
+	data.settings[row] = [config.sheep, config.wolf, config.sheepdog][data.identity.kind[row]]
+	data.memory.perception_ready[row] = false
+	if data.identity.kind[row] == AnimalEntity.Kind.SHEEP and config.sheep.panic_duration == 0.0:
+		data.sheep.panic_strength[row] = 0.0
+	if data.identity.kind[row] != AnimalEntity.Kind.SHEEP:
+		data.memory.vision_radius_squared[row] = data.settings[row].perception_radius * data.settings[row].perception_radius
+		data.memory.vision_cos[row] = cos(deg_to_rad(data.settings[row].vision_angle * 0.5))
+	if data.identity.kind[row] == AnimalEntity.Kind.SHEEPDOG:
+		data.dog.assignment_remaining[row] = 0.0
 
 func debug_details(animal: AnimalEntity) -> String:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	var row := animal.row
-	var system: RefCounted = [sheep_system, wolf_system, dog_system][data.identity_kind[row]]
+	var system: RefCounted = [sheep_system, wolf_system, dog_system][data.identity.kind[row]]
 	return system.call("get_debug_details", animal)

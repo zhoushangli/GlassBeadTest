@@ -22,4 +22,4 @@ var row: int = -1
 
 var enabled: bool:
 	get:
-		return g_gameplayEngine.entity_service.data.live(self) != null
+		return g_gameplayEngine.data_service.animals.live(self) != null

@@ -185,7 +185,7 @@ func finish_stage() -> void:
 	completed.clear()
 	_stage = &""
 
-func run_batches(stage: StringName, rows: PackedInt32Array, job_script: Script, input: Job, target: Object, batch_size: int = 100) -> void:
+func run_batches(stage: StringName, rows: PackedInt32Array, job_script: Script, input: Job, batch_size: int = 100) -> void:
 	assert(started and stage != &"" and _stage == &"" and pending.is_empty() and working.is_empty() and completed.is_empty())
 	var started_at := Time.get_ticks_usec()
 	var size := mini(maxi(1, batch_size), maxi(1, ceili(rows.size() / float(maxi(1, max_workers)))))
@@ -200,7 +200,6 @@ func run_batches(stage: StringName, rows: PackedInt32Array, job_script: Script, 
 		job.batch = batch
 		job.rows = rows.slice(first, mini(first + size, rows.size()))
 		job.copy_input(input)
-		job.target = target
 		var accepted := add_job(job)
 		assert(accepted)
 

@@ -8,7 +8,7 @@ var overlay_enabled: bool = true
 var _selected: AnimalEntity
 var selected: AnimalEntity:
 	get:
-		return g_gameplayEngine.entity_service.data.live(_selected)
+		return g_gameplayEngine.data_service.animals.live(_selected)
 	set(value):
 		_selected = value
 
@@ -89,12 +89,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func select_at(point: Vector2) -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	selected = null
 	var nearest_distance: float = 19.0
-	for animal in g_gameplayEngine.entity_service.entities:
-		if data.identity_alive[animal.row]:
-			var distance := point.distance_to(data.motion_position[animal.row])
+	for animal in g_gameplayEngine.data_service.animals.index.entities:
+		if data.identity.alive[animal.row]:
+			var distance := point.distance_to(data.motion.position[animal.row])
 			if distance < nearest_distance:
 				selected = animal
 				nearest_distance = distance
@@ -106,8 +106,8 @@ func clear_selection() -> void:
 	queue_redraw()
 
 func clear_invalid_selection() -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
-	if not is_instance_valid(selected) or not data.identity_alive[selected.row]:
+	var data: AnimalData = g_gameplayEngine.data_service.animals
+	if not is_instance_valid(selected) or not data.identity.alive[selected.row]:
 		selected = null
 
 func refresh() -> void:
@@ -115,18 +115,18 @@ func refresh() -> void:
 	queue_redraw()
 
 func selection_text() -> String:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	if not is_instance_valid(selected):
 		return "Click an animal to inspect its behavior and target."
-	if data.identity_kind[selected.row] == AnimalEntity.Kind.SHEEP:
-		return "Sheep #%d | %s" % [data.identity_entity_id[selected.row], g_gameplayEngine.debug_details(selected)]
+	if data.identity.kind[selected.row] == AnimalEntity.Kind.SHEEP:
+		return "Sheep #%d | %s" % [data.identity.entity_id[selected.row], g_gameplayEngine.debug_details(selected)]
 
 	var target_text := "none"
-	if g_gameplayEngine.animal_system.is_live(selected, data.live(data.memory_target[selected.row])):
-		target_text = "%s #%d" % [AnimalEntity.KIND_NAMES[data.identity_kind[data.live(data.memory_target[selected.row]).row]], data.identity_entity_id[data.live(data.memory_target[selected.row]).row]]
+	if g_gameplayEngine.animal_system.is_live(selected, data.live(data.memory.target[selected.row])):
+		target_text = "%s #%d" % [AnimalEntity.KIND_NAMES[data.identity.kind[data.live(data.memory.target[selected.row]).row]], data.identity.entity_id[data.live(data.memory.target[selected.row]).row]]
 	var text := "%s #%d  |  %s  |  Target: %s" % [
-		AnimalEntity.KIND_NAMES[data.identity_kind[selected.row]], data.identity_entity_id[selected.row],
-		AnimalEntity.BEHAVIOR_NAMES[data.brain_current_behavior[selected.row]], target_text]
+		AnimalEntity.KIND_NAMES[data.identity.kind[selected.row]], data.identity.entity_id[selected.row],
+		AnimalEntity.BEHAVIOR_NAMES[data.brain.current_behavior[selected.row]], target_text]
 	var details: String = g_gameplayEngine.debug_details(selected)
 	if not details.is_empty():
 		text += "  |  " + details
@@ -139,18 +139,18 @@ func set_visual_option(key: String, value: bool) -> void:
 	queue_redraw()
 
 func record_howl(animal: AnimalEntity) -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	var row := animal.row
 	if not overlay_enabled or not show_details or not visual_options["howl"]:
 		return
 	if selected_only and selected != animal:
 		return
 
-	var visual: Dictionary = g_gameplayEngine.render_service.get_visual_settings(data.identity_kind[row])
+	var visual: Dictionary = g_gameplayEngine.render_service.get_visual_settings(data.identity.kind[row])
 	howl_events.append({
-		"position": data.motion_position[row], "radius": data.settings[row].howl_radius,
+		"position": data.motion.position[row], "radius": data.settings[row].howl_radius,
 		"duration": visual.howl_visual_duration, "elapsed": 0.0,
-		"color": visual.howl_color, "id": data.identity_entity_id[row],
+		"color": visual.howl_color, "id": data.identity.entity_id[row],
 		"animal_id": animal.id,
 	})
 
@@ -165,21 +165,21 @@ func advance_visuals(delta: float) -> void:
 			howl_events.remove_at(index)
 
 func _draw() -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	if not started or not g_gameplayEngine.running or not overlay_enabled:
 		return
 
 	var started_at := Time.get_ticks_usec() if g_gameplayEngine.profile_service.performance_stats_enabled else 0
 	if selected != null:
-		draw_arc(data.motion_position[selected.row], 17.0, 0.0, TAU, 40, Color("#f4f7ed"), 2.0, true)
+		draw_arc(data.motion.position[selected.row], 17.0, 0.0, TAU, 40, Color("#f4f7ed"), 2.0, true)
 	if show_details:
 		_draw_grids()
 		if selected_only:
 			if selected != null:
 				_draw_animal(selected)
 		else:
-			for animal in g_gameplayEngine.entity_service.entities:
-				if animal.enabled and data.identity_alive[animal.row]:
+			for animal in g_gameplayEngine.data_service.animals.index.entities:
+				if animal.enabled and data.identity.alive[animal.row]:
 					_draw_animal(animal)
 		if visual_options["howl"]:
 			for event in howl_events:
@@ -197,16 +197,16 @@ func _draw() -> void:
 		g_gameplayEngine.profile_service.record_debug_time("OverlayDrawCPUTime", started_at)
 
 func _draw_animal(animal: AnimalEntity) -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	var row := animal.row
-	var point := data.motion_position[row]
-	var visual: Dictionary = g_gameplayEngine.render_service.get_visual_settings(data.identity_kind[row])
+	var point := data.motion.position[row]
+	var visual: Dictionary = g_gameplayEngine.render_service.get_visual_settings(data.identity.kind[row])
 	var width: float = visual.debug_line_width
-	var vision_key: String = ["", "wolf_vision", "dog_vision"][data.identity_kind[row]]
-	if data.identity_kind[row] != AnimalEntity.Kind.SHEEP and visual_options[vision_key]:
+	var vision_key: String = ["", "wolf_vision", "dog_vision"][data.identity.kind[row]]
+	if data.identity.kind[row] != AnimalEntity.Kind.SHEEP and visual_options[vision_key]:
 		var half_angle: float = deg_to_rad(data.settings[row].vision_angle * 0.5)
 		var radius: float = data.settings[row].perception_radius
-		var direction := data.motion_facing[row].angle()
+		var direction := data.motion.facing[row].angle()
 		var points := PackedVector2Array([point])
 		for index in range(33):
 			points.append(point + Vector2.from_angle(direction - half_angle + 2.0 * half_angle * index / 32.0) * radius)
@@ -216,37 +216,38 @@ func _draw_animal(animal: AnimalEntity) -> void:
 		draw_line(point, points[1], edge, width, true)
 		draw_line(point, points[-1], edge, width, true)
 
-	if data.live(data.memory_target[row]) != null:
+	if data.live(data.memory.target[row]) != null:
 		if visual_options["tracking"]:
-			if data.memory_target_visible[row]:
-				draw_line(point, data.memory_last_seen_position[row], Color(visual.base_color, 0.5), width, true)
+			if data.memory.target_visible[row]:
+				draw_line(point, data.memory.last_seen_position[row], Color(visual.base_color, 0.5), width, true)
 			else:
-				draw_dashed_line(point, data.memory_last_seen_position[row], Color(visual.base_color, 0.5), width, 6.0)
-		if visual_options["memory"] and not data.memory_target_visible[row]:
-			var remaining: float = clampf(1.0 - data.memory_unseen_elapsed[row] / maxf(data.settings[row].memory_duration, 0.00001), 0.0, 1.0)
+				draw_dashed_line(point, data.memory.last_seen_position[row], Color(visual.base_color, 0.5), width, 6.0)
+		if visual_options["memory"] and not data.memory.target_visible[row]:
+			var remaining: float = clampf(1.0 - data.memory.unseen_elapsed[row] / maxf(data.settings[row].memory_duration, 0.00001), 0.0, 1.0)
 			var color := Color(visual.base_color, remaining)
-			draw_arc(data.memory_last_seen_position[row], 7.0, 0.0, TAU, 20, color, width, true)
-			draw_line(data.memory_last_seen_position[row] - Vector2(4, 0), data.memory_last_seen_position[row] + Vector2(4, 0), color, width)
-			draw_line(data.memory_last_seen_position[row] - Vector2(0, 4), data.memory_last_seen_position[row] + Vector2(0, 4), color, width)
+			draw_arc(data.memory.last_seen_position[row], 7.0, 0.0, TAU, 20, color, width, true)
+			draw_line(data.memory.last_seen_position[row] - Vector2(4, 0), data.memory.last_seen_position[row] + Vector2(4, 0), color, width)
+			draw_line(data.memory.last_seen_position[row] - Vector2(0, 4), data.memory.last_seen_position[row] + Vector2(0, 4), color, width)
 
 	if visual_options["movement"]:
-		if not visual_options["tracking"] or data.live(data.memory_target[row]) == null or not data.motion_movement_goal[row].is_equal_approx(data.memory_last_seen_position[row]):
-			draw_line(point, data.motion_movement_goal[row], Color("#f4f7ed"), width, true)
-		draw_circle(data.motion_movement_goal[row], 3.0, Color("#f4f7ed"))
+		if not visual_options["tracking"] or data.live(data.memory.target[row]) == null or not data.motion.movement_goal[row].is_equal_approx(data.memory.last_seen_position[row]):
+			draw_line(point, data.motion.movement_goal[row], Color("#f4f7ed"), width, true)
+		draw_circle(data.motion.movement_goal[row], 3.0, Color("#f4f7ed"))
 
-	if visual_options["protection"] and data.identity_kind[row] == AnimalEntity.Kind.SHEEPDOG:
-		draw_arc(data.dog_protection_center[row], data.settings[row].local_flock_radius, 0.0, TAU, 48, Color("#93c5fd"), width, true)
-		draw_circle(data.dog_protection_center[row], 4.0, Color("#93c5fd"))
-		draw_circle(data.dog_guard_point[row], 4.0, Color("#93c5fd"), false, width, true)
-		if data.live(data.dog_collected_sheep[row]) != null:
-			draw_dashed_line(point, data.motion_position[data.live(data.dog_collected_sheep[row]).row], Color("#4de6b3"), width, 6.0)
+	if visual_options["protection"] and data.identity.kind[row] == AnimalEntity.Kind.SHEEPDOG:
+		draw_arc(data.dog.protection_center[row], data.settings[row].local_flock_radius, 0.0, TAU, 48, Color("#93c5fd"), width, true)
+		draw_circle(data.dog.protection_center[row], 4.0, Color("#93c5fd"))
+		draw_circle(data.dog.guard_point[row], 4.0, Color("#93c5fd"), false, width, true)
+		if data.live(data.dog.collected_sheep[row]) != null:
+			draw_dashed_line(point, data.motion.position[data.live(data.dog.collected_sheep[row]).row], Color("#4de6b3"), width, 6.0)
 
 func grid_status_text() -> String:
+	var spatial: DataService.Spatial = g_gameplayEngine.data_service.spatial
 	var service: GridService = g_gameplayEngine.grid_service
 	var lines := PackedStringArray()
-	for entry in [["Fine", service.debug_snapshot], ["Regions", service.dog_debug_snapshot]]:
+	for entry in [["Fine", spatial.current], ["Regions", spatial.debug.dog_snapshot]]:
 		var grid: GridSnapshot = entry[1]
-		if grid != null:
+		if grid != null and grid.width > 0:
 			lines.append("%s t=%.2f | age %.0f ms" % [entry[0], grid.time, (Time.get_ticks_usec() - grid.captured_usec) / 1000.0])
 	return "\n".join(lines)
 
@@ -257,19 +258,20 @@ func _draw_grid_lines(bounds: Rect2, size: float, color: Color, width: float) ->
 		draw_line(Vector2(bounds.position.x, y * size), Vector2(bounds.end.x, y * size), color, width, true)
 
 func _draw_grids() -> void:
+	var spatial: DataService.Spatial = g_gameplayEngine.data_service.spatial
 	if not visual_options["fine_grid"] and not visual_options["dog_regions"]:
 		return
 
 	var started_at := Time.get_ticks_usec()
 	var service: GridService = g_gameplayEngine.grid_service
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	var transform := get_global_transform_with_canvas()
 	var zoom := maxf(0.001, transform.get_scale().x)
 	var bounds := (transform.affine_inverse() * get_viewport_rect()).intersection(Rect2(Vector2.ZERO, g_gameplayEngine.config.arena_size))
-	var grid := service.debug_snapshot
-	if visual_options["fine_grid"] and grid != null:
+	var grid := spatial.current
+	if visual_options["fine_grid"] and grid != null and grid.width > 0:
 		var size := grid.cell_size
-		for cell in grid.populated:
+		for cell in grid.cells.populated:
 			var rectangle := Rect2(Vector2(cell % grid.width, floori(float(cell) / grid.width)) * size, Vector2.ONE * size)
 			if bounds.intersects(rectangle):
 				draw_rect(rectangle.intersection(bounds), Color(0.5, 0.8, 0.8, 0.10))
@@ -277,33 +279,33 @@ func _draw_grids() -> void:
 		if selected != null:
 			var snapshot_row := grid.animal_ids.find(selected.id)
 			if snapshot_row >= 0:
-				var cell := grid.row_cells[snapshot_row]
+				var cell := grid.cells.row_cells[snapshot_row]
 				draw_rect(Rect2(Vector2(cell % grid.width, floori(float(cell) / grid.width)) * size, Vector2.ONE * size), Color("#f4f7ed"), false, 1.5 / zoom)
 
-	grid = service.dog_debug_snapshot if service.dog_debug_snapshot != null else service.debug_snapshot
-	if visual_options["dog_regions"] and grid != null:
+	grid = spatial.debug.dog_snapshot if spatial.debug.dog_snapshot != null else spatial.current
+	if visual_options["dog_regions"] and grid != null and grid.width > 0:
 		var size := grid.cell_size * 4.0
 		var font := ThemeDB.fallback_font
 		var font_size := ceili(9.0 / zoom)
 		_draw_grid_lines(bounds, size, Color(0.35, 0.6, 1.0, 0.65), 1.2 / zoom)
-		for region in grid.occupied_regions:
-			var origin := Vector2(region % grid.region_width, floori(float(region) / grid.region_width)) * size
+		for region in grid.regions.occupied:
+			var origin := Vector2(region % grid.regions.width, floori(float(region) / grid.regions.width)) * size
 			var rectangle := Rect2(origin, Vector2.ONE * size).intersection(bounds)
 			if not rectangle.has_area():
 				continue
 
-			var dogs := service.dog_region_coverage[region] if region < service.dog_region_coverage.size() else 0
-			var threats := service.dog_region_threats[region] if region < service.dog_region_threats.size() else 0
+			var dogs := spatial.debug.dog_region_coverage[region] if region < spatial.debug.dog_region_coverage.size() else 0
+			var threats := spatial.debug.dog_region_threats[region] if region < spatial.debug.dog_region_threats.size() else 0
 			draw_rect(rectangle, Color(1.0, 0.3, 0.2, 0.18) if threats > 0 else Color(0.2, 0.5, 1.0, 0.06))
-			draw_circle(grid.region_centers[region], 2.0 / zoom, Color("#93c5fd"))
-			draw_string(font, origin + Vector2(2.0 / zoom, 11.0 / zoom), "%d/%d" % [grid.region_counts[region], dogs], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color("#dbeafe"))
-		if selected != null and data.identity_kind[selected.row] == AnimalEntity.Kind.SHEEPDOG:
-			var region := data.dog_region[selected.row]
-			if region >= 0 and region < grid.region_counts.size():
-				var rectangle := Rect2(Vector2(region % grid.region_width, floori(float(region) / grid.region_width)) * size, Vector2.ONE * size)
+			draw_circle(grid.regions.centers[region], 2.0 / zoom, Color("#93c5fd"))
+			draw_string(font, origin + Vector2(2.0 / zoom, 11.0 / zoom), "%d/%d" % [grid.regions.counts[region], dogs], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color("#dbeafe"))
+		if selected != null and data.identity.kind[selected.row] == AnimalEntity.Kind.SHEEPDOG:
+			var region := data.dog.region[selected.row]
+			if region >= 0 and region < grid.regions.counts.size():
+				var rectangle := Rect2(Vector2(region % grid.regions.width, floori(float(region) / grid.regions.width)) * size, Vector2.ONE * size)
 				draw_rect(rectangle, Color("#facc15"), false, 2.0 / zoom)
-				draw_line(data.motion_position[selected.row], grid.region_centers[region], Color("#facc15"), 1.5 / zoom)
-				draw_line(grid.region_centers[region], data.dog_protection_center[selected.row], Color("#93c5fd"), 1.0 / zoom)
+				draw_line(data.motion.position[selected.row], grid.regions.centers[region], Color("#facc15"), 1.5 / zoom)
+				draw_line(grid.regions.centers[region], data.dog.protection_center[selected.row], Color("#93c5fd"), 1.0 / zoom)
 
 	if g_gameplayEngine.profile_service.performance_stats_enabled:
 		g_gameplayEngine.profile_service.record_duration("Debug/GridDrawCPU", (Time.get_ticks_usec() - started_at) / 1000.0)

@@ -18,6 +18,8 @@
 
 [ext_resource type="Script" path="res://Scripts/Core/ComputeShaderService.gd" id="12"]
 
+[ext_resource type="Script" path="res://Scripts/Core/DataService.gd" id="13"]
+
 [node name="GameplayEngine" type="Node"]
 script = ExtResource("1")
 config = ExtResource("7")
@@ -48,3 +50,6 @@ script = ExtResource("11")
 
 [node name="ComputeShaderService" type="Node2D" parent="."]
 script = ExtResource("12")
+
+[node name="DataService" type="Node2D" parent="."]
+script = ExtResource("13")

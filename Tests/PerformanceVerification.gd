@@ -18,23 +18,23 @@ func _check(condition: bool, label: String) -> void:
 		push_error("FAIL: " + label)
 
 func _state() -> Array:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
-	var values: Array = [engine.rng.state, engine.entity_service.capture_count]
-	for animal in engine.entity_service.entities:
-		var target_id: int = data.identity_entity_id[data.live(data.memory_target[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.memory_target[animal.row])) else 0
-		values.append([data.identity_entity_id[animal.row], data.motion_position[animal.row], data.motion_velocity[animal.row], data.brain_current_behavior[animal.row], target_id, data.identity_alive[animal.row], data.motion_facing[animal.row], data.memory_last_seen_position[animal.row], data.memory_last_seen_velocity[animal.row], data.memory_unseen_elapsed[animal.row]])
-		if data.identity_kind[animal.row] == AnimalEntity.Kind.SHEEP:
-			values.append([data.sheep_threat_strength[animal.row], data.sheep_panic_strength[animal.row]])
-		elif data.identity_kind[animal.row] == AnimalEntity.Kind.WOLF:
-			values.append([data.wolf_hunting[animal.row], data.wolf_hunt_elapsed[animal.row], data.wolf_charging[animal.row], data.wolf_strategy[animal.row], data.wolf_strategy_failures[animal.row], data.wolf_rest_elapsed[animal.row], data.wolf_howl_elapsed[animal.row], data.wolf_howled[animal.row], data.wolf_retreating[animal.row]])
-		elif data.identity_kind[animal.row] == AnimalEntity.Kind.SHEEPDOG:
-			var anchor_id: int = data.identity_entity_id[data.live(data.dog_protected_sheep[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.dog_protected_sheep[animal.row])) else 0
-			var stray_id: int = data.identity_entity_id[data.live(data.dog_collected_sheep[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.dog_collected_sheep[animal.row])) else 0
-			values.append([anchor_id, stray_id, data.dog_protection_center[animal.row], data.dog_guard_point[animal.row], data.dog_patrol_angle[animal.row], data.dog_returning[animal.row]])
+	var data: AnimalData = g_gameplayEngine.data_service.animals
+	var values: Array = [engine.rng.state, g_gameplayEngine.data_service.animals.index.capture_count]
+	for animal in g_gameplayEngine.data_service.animals.index.entities:
+		var target_id: int = data.identity.entity_id[data.live(data.memory.target[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.memory.target[animal.row])) else 0
+		values.append([data.identity.entity_id[animal.row], data.motion.position[animal.row], data.motion.velocity[animal.row], data.brain.current_behavior[animal.row], target_id, data.identity.alive[animal.row], data.motion.facing[animal.row], data.memory.last_seen_position[animal.row], data.memory.last_seen_velocity[animal.row], data.memory.unseen_elapsed[animal.row]])
+		if data.identity.kind[animal.row] == AnimalEntity.Kind.SHEEP:
+			values.append([data.sheep.threat_strength[animal.row], data.sheep.panic_strength[animal.row]])
+		elif data.identity.kind[animal.row] == AnimalEntity.Kind.WOLF:
+			values.append([data.wolf.hunting[animal.row], data.wolf.hunt_elapsed[animal.row], data.wolf.charging[animal.row], data.wolf.strategy[animal.row], data.wolf.strategy_failures[animal.row], data.wolf.rest_elapsed[animal.row], data.wolf.howl_elapsed[animal.row], data.wolf.howled[animal.row], data.wolf.retreating[animal.row]])
+		elif data.identity.kind[animal.row] == AnimalEntity.Kind.SHEEPDOG:
+			var anchor_id: int = data.identity.entity_id[data.live(data.dog.protected_sheep[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.dog.protected_sheep[animal.row])) else 0
+			var stray_id: int = data.identity.entity_id[data.live(data.dog.collected_sheep[animal.row]).row] if g_gameplayEngine.animal_system.is_live(animal, data.live(data.dog.collected_sheep[animal.row])) else 0
+			values.append([anchor_id, stray_id, data.dog.protection_center[animal.row], data.dog.guard_point[animal.row], data.dog.patrol_angle[animal.row], data.dog.returning[animal.row]])
 	return values
 
 func _verify() -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	var defaults := load("res://Resources/Gameplay/CFG_Simulation.tres") as SimulationConfig
 	var original_size := defaults.arena_size
 	for total in [1000, 2000, 3000, 4000]:
@@ -76,32 +76,32 @@ func _verify() -> void:
 	_check(engine.entity_service.get_counts() == configured_counts, "expanded species counts")
 	_check(engine.config.arena_size == original_size * 2.0, "expanded area")
 
-	var entity_count: int = engine.entity_service.entities.size()
+	var entity_count: int = g_gameplayEngine.data_service.animals.index.entities.size()
 	for item: Service in [engine.animal_service, engine.entity_service, engine.grid_service, engine.debug_service, engine.profile_service, engine.render_service]:
 		_check(item.started, "service is started")
 
 		item.startup()
-	_check(engine.entity_service.entities.size() == entity_count, "repeated startup preserves entities")
+	_check(g_gameplayEngine.data_service.animals.index.entities.size() == entity_count, "repeated startup preserves entities")
 	_check(Performance.has_custom_monitor("Simulation/StepMean"), "repeated startup preserves monitor registration")
 
-	engine.debug_service.selected = engine.entity_service.entities[0]
+	engine.debug_service.selected = g_gameplayEngine.data_service.animals.index.entities[0]
 	engine.debug_service.reset()
 	_check(engine.debug_service.selected == null, "debug reset releases selected animal")
 
 	var positions: Array[Vector2] = []
 	var bounds := Rect2(Vector2.ZERO, engine.config.arena_size)
 	var in_bounds := true
-	for animal in engine.entity_service.entities:
-		positions.append(data.motion_position[animal.row])
-		in_bounds = in_bounds and bounds.has_point(data.motion_position[animal.row])
+	for animal in g_gameplayEngine.data_service.animals.index.entities:
+		positions.append(data.motion.position[animal.row])
+		in_bounds = in_bounds and bounds.has_point(data.motion.position[animal.row])
 	_check(in_bounds, "spawned animals stay inside arena")
 
 	engine.entity_service.clear()
 	engine.rng.seed = engine.config.random_seed
 	_spawn_layout(original_size)
 	var repeated: Array[Vector2] = []
-	for animal in engine.entity_service.entities:
-		repeated.append(data.motion_position[animal.row])
+	for animal in g_gameplayEngine.data_service.animals.index.entities:
+		repeated.append(data.motion.position[animal.row])
 	_check(positions == repeated, "layout positions reproduce with fixed seed")
 
 	engine.entity_service.clear()
@@ -109,9 +109,9 @@ func _verify() -> void:
 	_spawn_layout(original_size)
 	var central := Rect2((engine.config.arena_size - original_size) * 0.5, original_size)
 	var clustered := true
-	for animal in engine.entity_service.entities:
-		clustered = clustered and central.has_point(data.motion_position[animal.row])
-	_check(clustered and engine.entity_service.entities.size() == configured_counts.x + configured_counts.y + configured_counts.z, "cluster preserves population in one central region")
+	for animal in g_gameplayEngine.data_service.animals.index.entities:
+		clustered = clustered and central.has_point(data.motion.position[animal.row])
+	_check(clustered and g_gameplayEngine.data_service.animals.index.entities.size() == configured_counts.x + configured_counts.y + configured_counts.z, "cluster preserves population in one central region")
 
 	engine.entity_service.clear()
 	var old_counts := configured_counts
@@ -134,16 +134,16 @@ func _verify() -> void:
 	var exact_positions: Array[Vector2] = []
 	var exact_bounds := Rect2(Vector2(12, 94), engine.config.arena_size - Vector2(24, 152))
 	var exact_inside := true
-	for animal in engine.entity_service.entities:
-		exact_positions.append(data.motion_position[animal.row])
-		exact_inside = exact_inside and exact_bounds.has_point(data.motion_position[animal.row])
+	for animal in g_gameplayEngine.data_service.animals.index.entities:
+		exact_positions.append(data.motion.position[animal.row])
+		exact_inside = exact_inside and exact_bounds.has_point(data.motion.position[animal.row])
 	_check(exact_inside, "uniform animal positions inside movement boundaries")
 
 	engine.entity_service.clear()
 	_spawn_exact_layout()
 	var exact_repeated: Array[Vector2] = []
-	for animal in engine.entity_service.entities:
-		exact_repeated.append(data.motion_position[animal.row])
+	for animal in g_gameplayEngine.data_service.animals.index.entities:
+		exact_repeated.append(data.motion.position[animal.row])
 	_check(exact_positions == exact_repeated, "uniform layout independent of animal initialization RNG")
 
 	engine.entity_service.clear()
@@ -295,12 +295,12 @@ func _verify() -> void:
 	engine.reset_simulation()
 	_check(Performance.get_custom_monitor("Simulation/StepMean") == 0.0 and engine.grid_service.spatial_query_count == 0, "reset clears counters and monitors")
 
-	engine.debug_service.selected = engine.entity_service.entities[0] if not engine.entity_service.entities.is_empty() else null
+	engine.debug_service.selected = g_gameplayEngine.data_service.animals.index.entities[0] if not g_gameplayEngine.data_service.animals.index.entities.is_empty() else null
 	engine.stop_simulation()
 	engine.stop_simulation()
 	_check(not Performance.has_custom_monitor("Spatial/QueriesPerStep"), "stop unregisters monitors")
 	_check(engine.debug_service.selected == null and engine.debug_service.hud == null, "shutdown releases debug references")
-	_check(engine.entity_service.entities.is_empty() and engine.entity_service.container == null, "shutdown releases entities and container")
+	_check(g_gameplayEngine.data_service.animals.index.entities.is_empty() and engine.entity_service.container == null, "shutdown releases entities and container")
 
 	for item: Service in [engine.animal_service, engine.entity_service, engine.grid_service, engine.debug_service, engine.profile_service, engine.render_service]:
 		item.reset()

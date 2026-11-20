@@ -28,25 +28,25 @@ func _run() -> void:
 	engine.set_process(false)
 	engine.paused = true
 	var service: EntityService = engine.entity_service
-	var data := service.data
+	var data: AnimalData = engine.data_service.animals
 	var first := service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(300, 300))[0]
 	var second := service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(500, 300))[0]
 	var first_id := first.id
 	var second_id := second.id
 	var first_slot := AnimalID.get_slot(first_id)
-	var snapshot: AnimalSnapshot = engine.animal_system.decision_snapshot()
-	var alias := AnimalEntity.new()
+	var snapshot: AnimalSnapshot = GridAggregateJob.capture_snapshot()
+	var alias: AnimalEntity = AnimalEntity.new()
 	alias.id = second_id
 	_check(data.live(alias) == second and data.row_of_id(second_id) == second.row, "resolver returns the canonical current-row handle")
 	_check(data.row_of_id(AnimalID.INVALID) == -1 and data.row_of_id(-1) == -1, "resolver rejects invalid and unallocated slots")
 	service.capture(first)
 	service.remove_expired()
 	_check(second.row == 0 and second.id == second_id and data.row_of_id(second_id) == 0, "row compaction preserves full identity")
-	_check(engine.animal_system.snapshot_animal(snapshot, 1) == second and engine.animal_system.snapshot_animal(snapshot, 0) == null, "snapshot resolves moved life and rejects captured life")
+	_check(Job.new().snapshot_animal(snapshot, 1) == second and Job.new().snapshot_animal(snapshot, 0) == null, "snapshot resolves moved life and rejects captured life")
 	service.remove_expired(10.0)
 	var replacement := service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(600, 300))[0]
 	_check(AnimalID.get_slot(replacement.id) == first_slot and replacement.id != first_id and data.live(first) == null, "slot reuse changes the full ID without reviving its old handle")
-	_check(engine.animal_system.snapshot_animal(snapshot, 0) == null, "old snapshot cannot resolve a replacement life")
+	_check(Job.new().snapshot_animal(snapshot, 0) == null, "old snapshot cannot resolve a replacement life")
 	var old := replacement.id
 	var previous := replacement
 	engine.reset_simulation()
@@ -56,15 +56,15 @@ func _run() -> void:
 	service.clear()
 	replacement = service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(600, 300))[0]
 	_check(replacement.id != old and data.row_of_id(old) == -1, "clear cannot reuse a prior full ID")
-	var allocated := data.row_to_slot.size()
-	var active := data.active_count
+	var allocated := data.index.row_to_slot.size()
+	var active := data.index.active_count
 	var state: int = engine.rng.state
-	service._next_uid = AnimalID.PART_MASK - 1
-	_check(service.spawn(AnimalEntity.Kind.SHEEP, 2).is_empty() and data.active_count == active and data.row_to_slot.size() == allocated and engine.rng.state == state, "insufficient serial capacity rejects whole batch before mutation")
+	g_gameplayEngine.data_service.animals.index.next_uid = AnimalID.PART_MASK - 1
+	_check(service.spawn(AnimalEntity.Kind.SHEEP, 2).is_empty() and data.index.active_count == active and data.index.row_to_slot.size() == allocated and engine.rng.state == state, "insufficient serial capacity rejects whole batch before mutation")
 	var final := service.spawn(AnimalEntity.Kind.SHEEP, 1, Vector2(700, 300))[0]
 	_check(AnimalID.is_valid(final.id), "last serial remains usable")
-	active = data.active_count
-	_check(service.spawn(AnimalEntity.Kind.SHEEP, 1).is_empty() and data.active_count == active, "exhausted allocator never wraps")
+	active = data.index.active_count
+	_check(service.spawn(AnimalEntity.Kind.SHEEP, 1).is_empty() and data.index.active_count == active, "exhausted allocator never wraps")
 	engine.stop_simulation()
 	scene.queue_free()
 	await process_frame

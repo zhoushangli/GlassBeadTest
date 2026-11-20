@@ -380,7 +380,7 @@ func _run_fixed_steps() -> void:
 		_simulate_benchmark_step(interval)
 
 	initial_counts = engine.entity_service.get_counts()
-	capture_started = engine.entity_service.capture_count
+	capture_started = g_gameplayEngine.data_service.animals.index.capture_count
 	var times: Array[float] = []
 	for index in range(fixed_steps):
 		var before := Time.get_ticks_usec()
@@ -405,7 +405,7 @@ func _run_fixed_steps() -> void:
 		"stages_mean_ms": stage_totals, "configured_counts": [configured_counts.x, configured_counts.y, configured_counts.z],
 		"initial_counts": [initial_counts.x, initial_counts.y, initial_counts.z],
 		"final_counts": [engine.entity_service.get_counts().x, engine.entity_service.get_counts().y, engine.entity_service.get_counts().z],
-		"captures": engine.entity_service.capture_count - capture_started,
+		"captures": g_gameplayEngine.data_service.animals.index.capture_count - capture_started,
 		"engine": Engine.get_version_info(), "headless": DisplayServer.get_name() == "headless",
 		"renderer": ProjectSettings.get_setting("rendering/renderer/rendering_method"),
 		"arena_size": [engine.config.arena_size.x, engine.config.arena_size.y], "seed": engine.config.random_seed,
@@ -433,7 +433,7 @@ func _prepare_exact_settings(settings: SimulationConfig) -> void:
 	settings.arena_size *= sqrt(ratio)
 
 func _spawn_exact_layout() -> void:
-	var positions_rng := RandomNumberGenerator.new()
+	var positions_rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	positions_rng.seed = engine.config.random_seed
 	var lower := Vector2(12.0, 94.0)
 	var upper: Vector2 = engine.config.arena_size - Vector2(12.0, 58.0)
@@ -443,7 +443,7 @@ func _spawn_exact_layout() -> void:
 			engine.entity_service.spawn(kind, 1, point)
 
 func _spawn_layout(base_size: Vector2) -> void:
-	var positions_rng := RandomNumberGenerator.new()
+	var positions_rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	positions_rng.seed = engine.config.random_seed
 	var regions := tiles * tiles
 	for region in range(regions):
@@ -489,18 +489,18 @@ func _process(_delta: float) -> bool:
 			last_sample = now
 			initial_counts = engine.entity_service.get_counts()
 			sim_started = engine.simulation_time
-			capture_started = engine.entity_service.capture_count
+			capture_started = g_gameplayEngine.data_service.animals.index.capture_count
 			engine.profile_service.reset()
 			engine.profile_service.begin_capture()
 			async_sequences.clear()
 			for stage in engine.job_service.async_timings:
 				async_sequences[stage] = engine.job_service.async_timings[stage].sequence
-			engine.animal_service.preprocessing_samples.clear()
-			for numeric_samples: Array in engine.compute_service.numeric_samples.values():
+			engine.profile_service.preprocessing_samples.clear()
+			for numeric_samples: Array in engine.profile_service.numeric_samples.values():
 				numeric_samples.clear()
 			for kind in range(3):
-				applied_at_start[kind] = engine.animal_service.applied[kind]
-				requested_at_start[kind] = engine.animal_service.requested[kind]
+				applied_at_start[kind] = engine.data_service.decisions.applied[kind]
+				requested_at_start[kind] = engine.data_service.decisions.requested[kind]
 		return false
 
 	frame_steps.append(float(pending_frame_steps))
@@ -533,6 +533,7 @@ func _record_frame(elapsed_ms: float) -> void:
 			render_submit_total += engine.render_service.last_submit_ms
 
 func _record_step() -> void:
+	var spatial: DataService.Spatial = g_gameplayEngine.data_service.spatial
 	if started > 0 and not done:
 		pending_frame_steps += 1
 		step_times.append(engine.profile_service.last_step_ms)
@@ -545,8 +546,8 @@ func _record_step() -> void:
 			hotspot_calls[name] += engine.profile_service.last_hotspot_calls[name]
 
 		var service: GridService = engine.grid_service
-		preprocessing_totals.pressure_samples += service.pressure_sample_count
-		preprocessing_totals.pressure_source_pairs += service.pressure_source_pairs
+		preprocessing_totals.pressure_samples += spatial.current.pressure.sample_count
+		preprocessing_totals.pressure_source_pairs += spatial.pressure.source_pairs
 		preprocessing_totals.dog_groups += engine.dog_system.shared_group_count
 		preprocessing_totals.dog_group_hits += engine.dog_system.shared_group_hits
 		preprocessing_totals.dog_candidate_groups += engine.dog_system.shared_candidate_groups
@@ -596,6 +597,7 @@ func _async_means() -> Dictionary:
 	return result
 
 func _record_sample(elapsed: float) -> void:
+	var spatial: DataService.Spatial = g_gameplayEngine.data_service.spatial
 	var counts: Vector3i = engine.entity_service.get_counts()
 	var steps := step_times.size() - window_step_index
 	var sample := {"wall_seconds": elapsed, "window_wall_seconds": elapsed - window_elapsed,
@@ -607,7 +609,7 @@ func _record_sample(elapsed: float) -> void:
 		"step_p95_ms": _percentile(step_times.slice(window_step_index), 0.95),
 		"frame_p95_ms": _percentile(frame_times.slice(window_frame_index), 0.95),
 		"stages_mean_ms": {}, "hotspots": {}, "debug": {},
-		"preprocessing_last_step": {"pressure_samples": engine.grid_service.pressure_sample_count, "pressure_source_pairs": engine.grid_service.pressure_source_pairs,
+		"preprocessing_last_step": {"pressure_samples": spatial.current.pressure.sample_count, "pressure_source_pairs": spatial.pressure.source_pairs,
 			"dog_groups": engine.dog_system.shared_group_count, "dog_group_hits": engine.dog_system.shared_group_hits},
 		"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		"job_backlog": _job_backlog(), "compute_busy": engine.compute_service.busy, "profile_counters": engine.profile_service.counters.duplicate(),
@@ -653,7 +655,7 @@ func _percentile(values: Array[float], fraction: float) -> float:
 	return sorted[mini(sorted.size() - 1, int(ceil(sorted.size() * fraction)) - 1)]
 
 func _finish(elapsed: float) -> void:
-	if engine.animal_service.preprocessing_samples.is_empty():
+	if engine.profile_service.preprocessing_samples.is_empty():
 		_fail("Forced GPU produced no applied sheep results")
 		return
 	done = true
@@ -689,7 +691,7 @@ func _finish(elapsed: float) -> void:
 		"steering_mean_ms": stages_mean["Steering"],
 		"movement_mean_ms": stages_mean["Movement"], "interaction_mean_ms": stages_mean["Interaction"],
 		"cleanup_mean_ms": stages_mean["Cleanup"],
-		"gpu_timing_available": engine.animal_service.preprocessing_samples.any(func(sample: ComputeShaderService.Metrics) -> bool: return sample.backend == "gpu" and sample.gpu_ms >= 0.0),
+		"gpu_timing_available": engine.profile_service.preprocessing_samples.any(func(sample: ProfileService.Metrics) -> bool: return sample.backend == "gpu" and sample.gpu_ms >= 0.0),
 		"motion_mode": motion_mode,
 		"render_sync_calls": render_sync_calls,
 		"render_fill_mean_per_sync_ms": render_fill_total / maxi(1, render_sync_calls),
@@ -717,7 +719,7 @@ func _finish(elapsed: float) -> void:
 		"simulation_hz": engine.config.simulation_hz, "max_steps_per_frame": engine.config.max_steps_per_frame,
 		"actual_simulation_hz": step_times.size() / elapsed,
 		"sheep_update_hz": engine.config.sheep_update_hz, "wolf_update_hz": engine.config.wolf_update_hz, "sheepdog_update_hz": engine.config.sheepdog_update_hz,
-		"logic_requests": engine.animal_service.requested, "logic_applications": engine.animal_service.applied,
+		"logic_requests": engine.data_service.decisions.requested, "logic_applications": engine.data_service.decisions.applied,
 		"async_decisions": _async_means(), "compute": _compute_summary(elapsed),
 		"seed": engine.config.random_seed, "warmup_wall_seconds": warmup,
 		"measured_wall_seconds": elapsed, "process_iterations": frames,
@@ -738,10 +740,10 @@ func _finish(elapsed: float) -> void:
 		"simulation_seconds_advanced": engine.simulation_time - sim_started,
 		"initial_counts": [initial_counts.x, initial_counts.y, initial_counts.z],
 		"final_counts": [counts.x, counts.y, counts.z],
-		"retained_entities": engine.entity_service.data.row_to_slot.size(),
-		"pooled_entities": engine.entity_service.data.row_to_slot.size() - engine.entity_service.data.retained_count,
-		"corpse_entities": engine.entity_service.data.retained_count - engine.entity_service.data.active_count,
-		"captures_during_measurement": engine.entity_service.capture_count - capture_started,
+		"retained_entities": engine.data_service.animals.index.row_to_slot.size(),
+		"pooled_entities": engine.data_service.animals.index.row_to_slot.size() - engine.data_service.animals.index.retained_count,
+		"corpse_entities": engine.data_service.animals.index.retained_count - engine.data_service.animals.index.active_count,
+		"captures_during_measurement": g_gameplayEngine.data_service.animals.index.capture_count - capture_started,
 		"samples": samples
 	}
 
@@ -781,33 +783,33 @@ func _simulate_benchmark_step(delta: float) -> void:
 		engine.simulate_step(delta)
 		return
 
-	var data: AnimalData = engine.entity_service.data
+	var data: AnimalData = engine.data_service.animals
 	var profile: ProfileService = engine.profile_service
 	profile.begin_step()
 	for name in profile.STAGE_NAMES:
 		profile.last_stages_ms[name] = 0.0
 	var lower := Vector2(12.0, 94.0)
 	var upper: Vector2 = engine.config.arena_size - Vector2(12.0, 58.0)
-	for row in range(data.active_count):
-		data.motion_wander_remaining[row] -= delta
-		if data.motion_wander_remaining[row] <= 0.0:
-			data.motion_facing[row] = Vector2.from_angle(engine.rng.randf_range(-PI, PI))
-			data.motion_wander_remaining[row] += engine.rng.randf_range(0.8, 1.2)
-		var velocity: Vector2 = data.motion_facing[row] * data.settings[row].move_speed
-		var position: Vector2 = data.motion_position[row] + velocity * delta
+	for row in range(data.index.active_count):
+		data.motion.wander_remaining[row] -= delta
+		if data.motion.wander_remaining[row] <= 0.0:
+			data.motion.facing[row] = Vector2.from_angle(engine.rng.randf_range(-PI, PI))
+			data.motion.wander_remaining[row] += engine.rng.randf_range(0.8, 1.2)
+		var velocity: Vector2 = data.motion.facing[row] * data.settings[row].move_speed
+		var position: Vector2 = data.motion.position[row] + velocity * delta
 		if position.x < lower.x or position.x > upper.x:
 			velocity.x = -velocity.x
 		if position.y < lower.y or position.y > upper.y:
 			velocity.y = -velocity.y
-		data.motion_position[row] = position.clamp(lower, upper)
-		data.motion_velocity[row] = velocity
-		data.motion_facing[row] = velocity.normalized()
+		data.motion.position[row] = position.clamp(lower, upper)
+		data.motion.velocity[row] = velocity
+		data.motion.facing[row] = velocity.normalized()
 	profile.end_stage("Movement")
 	if "render_service" in engine:
 		engine.render_service.sync()
 	else:
 		var views: Array = data.get("brain_view")
-		for row in range(data.active_count):
+		for row in range(data.index.active_count):
 			views[row].sync()
 	engine.simulation_time += delta
 	engine.step_count += 1
@@ -824,34 +826,34 @@ func _active_bt_instances() -> int:
 	if motion_mode == "random":
 		return 0
 
-	var data: AnimalData = engine.entity_service.data
+	var data: AnimalData = engine.data_service.animals
 	var count := 0
-	for row in range(data.active_count):
-		if data.identity_alive[row] and data.brain_instance[row] != null:
+	for row in range(data.index.active_count):
+		if data.identity.alive[row] and data.brain.instance[row] != null:
 			count += 1
 	return count
 
 func _motion_hash() -> String:
-	var data: AnimalData = engine.entity_service.data
-	return var_to_bytes([engine.rng.state, data.motion_position, data.motion_velocity, data.motion_facing]).hex_encode().sha256_text()
+	var data: AnimalData = engine.data_service.animals
+	return var_to_bytes([engine.rng.state, data.motion.position, data.motion.velocity, data.motion.facing]).hex_encode().sha256_text()
 
 func _compute_summary(elapsed: float) -> Dictionary:
-	var service: AnimalService = engine.animal_service
+	var decisions: DataService.Decisions = engine.data_service.decisions
 	var rows: Array[Dictionary] = []
-	for sample in service.preprocessing_samples:
+	for sample in engine.profile_service.preprocessing_samples:
 		rows.append(sample.to_dictionary())
 	var compute: ComputeShaderService = engine.compute_service
 	var result := {"required_backend": "gpu", "device": "local" if compute.available() else "unavailable", "samples": rows, "requests_hz": [], "applied_hz": [], "metrics": {}, "failure": compute.failure}
 	for kind in range(3):
-		result.requests_hz.append((service.requested[kind] - requested_at_start[kind]) / elapsed)
-		result.applied_hz.append((service.applied[kind] - applied_at_start[kind]) / elapsed)
+		result.requests_hz.append((decisions.requested[kind] - requested_at_start[kind]) / elapsed)
+		result.applied_hz.append((decisions.applied[kind] - applied_at_start[kind]) / elapsed)
 	for metric in ["latency_ms", "processing_ms", "grid_ms", "prepare_ms", "pack_ms", "device_queue_ms", "gpu_wait_ms", "upload_submit_ms", "gpu_ms", "buffer_read_ms", "decode_ms", "apply_ms", "execute_ms", "upload_bytes", "download_bytes"]:
 		var values: Array[float] = []
 		for sample in rows:
 			if sample.has(metric) and sample[metric] >= 0.0:
 				values.append(float(sample[metric]))
 		result.metrics[metric] = {"count": values.size(), "mean": _mean(values), "p95": _percentile(values, 0.95), "max": values.max() if not values.is_empty() else 0.0}
-	result["numeric"] = {"movement_backend": "gpu", "timers_backend": "cpu", "samples": compute.numeric_samples.duplicate(true)}
+	result["numeric"] = {"movement_backend": "gpu", "timers_backend": "cpu", "samples": engine.profile_service.numeric_samples.duplicate(true)}
 	result.window_size = [root.size.x, root.size.y]
 	var viewport_size := root.get_texture().get_size()
 	result.render_size = [viewport_size.x, viewport_size.y]

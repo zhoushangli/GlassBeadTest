@@ -44,7 +44,7 @@ func _toggle_debug() -> void:
 	debug_panel.toggle()
 
 func refresh() -> void:
-	var data: AnimalData = g_gameplayEngine.entity_service.data
+	var data: AnimalData = g_gameplayEngine.data_service.animals
 	var counts: Vector3i = gameplay_engine.entity_service.get_counts()
 	var frequency := "Paused" if gameplay_engine.paused else "%.1f / %.0f Hz" % [gameplay_engine.actual_simulation_hz, gameplay_engine.config.simulation_hz]
 	metrics.text = "FPS %d | Sim %s | Step %.2f ms | Alive %d | Sheep %d Wolves %d Dogs %d" % [
@@ -55,14 +55,14 @@ func refresh() -> void:
 	var requests := logic.actual_request_hz if not gameplay_engine.paused else Vector3.ZERO
 	var applications := logic.actual_apply_hz if not gameplay_engine.paused else Vector3.ZERO
 	var hunters: int = 0
-	for wolf_row in gameplay_engine.entity_service.wolf_rows:
-		var wolf := data.handles[wolf_row]
-		if data.identity_alive[wolf.row] and data.wolf_hunting[wolf.row]:
+	for wolf_row in gameplay_engine.data_service.animals.index.wolf_rows:
+		var wolf := data.index.handles[wolf_row]
+		if data.identity.alive[wolf.row] and data.wolf.hunting[wolf.row]:
 			hunters += 1
 
 	status.text = "%s | Seed %d | Sim %.1f s | Captured %d | %s | Debug %s" % [
 		"PAUSED" if gameplay_engine.paused else "RUNNING", gameplay_engine.config.random_seed,
-		gameplay_engine.simulation_time, gameplay_engine.entity_service.capture_count,
+		gameplay_engine.simulation_time, data.index.capture_count,
 		"Hunting %d" % hunters,
 		"ON" if gameplay_engine.debug_service.show_details else "OFF"]
 	status.text += " | Logic S/W/D target %d/%d/%d req %.0f/%.0f/%.0f apply %.0f/%.0f/%.0f Hz" % [

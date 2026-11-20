@@ -4,34 +4,23 @@ extends Service
 const SHEEP_SHADER: RDShaderFile = preload("res://Shaders/Simulation/SheepCompute.glsl")
 const MOVEMENT_SHADER: RDShaderFile = preload("res://Shaders/Simulation/NumericCompute.glsl")
 
-class Metrics extends RefCounted:
-	var main_wait_ms: float = 0.0
-	var pack_ms: float = 0.0
-	var upload_submit_ms: float = 0.0
-	var gpu_ms: float = -1.0
-	var device_queue_ms: float = -1.0
-	var gpu_wait_ms: float = -1.0
-	var buffer_read_ms: float = -1.0
-	var decode_ms: float = 0.0
-	var apply_ms: float = 0.0
-	var grid_ms: float = 0.0
-	var prepare_ms: float = 0.0
-	var execute_ms: float = 0.0
-	var latency_ms: float = 0.0
-	var processing_ms: float = 0.0
-	var upload_bytes: int = 0
-	var download_bytes: int = 0
-	var gpu_sequence: int = -1
-	var backend: String = "gpu"
+class Resources extends RefCounted:
+	var device: RenderingDevice
+	var owner_thread_id: int = 0
+	var shader := RID()
+	var pipeline := RID()
+	var uniform := RID()
+	var buffers: Array[RID] = []
+	var capacities := PackedInt32Array()
+	var parameters := PackedByteArray()
 
-	func to_dictionary() -> Dictionary:
-		return {"main_wait_ms": main_wait_ms, "pack_ms": pack_ms, "upload_submit_ms": upload_submit_ms, "gpu_ms": gpu_ms,
-			"device_queue_ms": device_queue_ms, "gpu_wait_ms": gpu_wait_ms, "buffer_read_ms": buffer_read_ms,
-			"decode_ms": decode_ms, "apply_ms": apply_ms, "grid_ms": grid_ms, "prepare_ms": prepare_ms,
-			"execute_ms": execute_ms, "latency_ms": latency_ms, "processing_ms": processing_ms,
-			"upload_bytes": upload_bytes, "download_bytes": download_bytes, "gpu_sequence": gpu_sequence, "backend": backend}
+	func _init(count: int) -> void:
+		buffers.resize(count)
+		capacities.resize(count)
 
-var numeric_samples: Dictionary = {"Movement": []}
+var sheep_resources: Resources = Resources.new(3)
+var movement_resources: Resources = Resources.new(4)
+
 var owner_thread_id: int = 0
 var failure: String:
 	get:
@@ -46,23 +35,17 @@ var busy: bool:
 		_mutex.unlock()
 		return value
 
-var _thread := Thread.new()
-var _mutex := Mutex.new()
-var _wake := Semaphore.new()
-var _ready := Semaphore.new()
+var _thread: Thread = Thread.new()
+var _mutex: Mutex = Mutex.new()
+var _wake: Semaphore = Semaphore.new()
+var _ready: Semaphore = Semaphore.new()
 var _stopping: bool = false
 var _failure: String = ""
 var _active: SheepComputeJob
 var _sequence: int = 0
 var _foreground: NumericComputeJob
-var _numeric_kernels: Dictionary = {}
 
 var _rd: RenderingDevice
-var _shader := RID()
-var _pipeline := RID()
-var _uniform_set := RID()
-var _buffers: Array[RID] = [RID(), RID(), RID()]
-var _capacities := PackedInt32Array([0, 0, 0])
 
 func _startup() -> void:
 	_failure = ""
@@ -95,7 +78,7 @@ func submit(job: SheepComputeJob) -> bool:
 		return false
 
 	_sequence += 1
-	job.compute = self
+	job.resources = sheep_resources
 	job.stage = &"Compute"
 	job.version = g_gameplayEngine.job_service.async_version
 	job.sequence = _sequence
@@ -148,6 +131,10 @@ func _initialize_device() -> void:
 		_failure = "Local RenderingDevice creation failed"
 		return
 
+	for resources in [sheep_resources, movement_resources]:
+		resources.device = _rd
+		resources.owner_thread_id = owner_thread_id
+
 	_failure = _initialize_sheep_pipeline()
 	if _failure.is_empty():
 		_failure = _initialize_movement_pipeline()
@@ -159,21 +146,18 @@ func _initialize_sheep_pipeline() -> String:
 	if not spirv.compile_error_compute.is_empty():
 		return spirv.compile_error_compute
 
-	_shader = _rd.shader_create_from_spirv(spirv)
-	if not _shader.is_valid():
+	sheep_resources.shader = _rd.shader_create_from_spirv(spirv)
+	if not sheep_resources.shader.is_valid():
 		return "Compute shader creation failed"
 
-	_pipeline = _rd.compute_pipeline_create(_shader)
-	if not _pipeline.is_valid():
+	sheep_resources.pipeline = _rd.compute_pipeline_create(sheep_resources.shader)
+	if not sheep_resources.pipeline.is_valid():
 		return "Compute pipeline creation failed"
 
 	return ""
 
 func _initialize_movement_pipeline() -> String:
-	if not _numeric_kernels.has(0):
-		_numeric_kernels[0] = {"shader": RID(), "pipeline": RID(), "uniform": RID(),
-			"buffers": [RID(), RID(), RID(), RID()], "capacities": PackedInt32Array([0, 0, 0, 0]), "parameters": PackedByteArray()}
-	var kernel: Dictionary = _numeric_kernels[0]
+	var kernel := movement_resources
 	if not kernel.shader.is_valid():
 		var shader_file := MOVEMENT_SHADER
 		var spirv := shader_file.get_spirv()
@@ -238,8 +222,6 @@ func flush() -> void:
 	job.release_input()
 
 func _reset() -> void:
-	for samples: Array in numeric_samples.values():
-		samples.clear()
 	_mutex.lock()
 	if _active != null:
 		_active.cancel()
@@ -260,220 +242,11 @@ func _shutdown() -> void:
 		_discard(_active)
 		_active = null
 
-func execute_gpu(job: SheepComputeJob) -> PackedByteArray:
-	assert(OS.get_thread_caller_id() == owner_thread_id)
-	if job.is_cancelled():
-		return PackedByteArray()
-	var metrics := job.metrics
-	var started_at := Time.get_ticks_usec()
-	var sizes := PackedInt32Array([job.input_bytes.size(), job.index_bytes.size(), metrics.download_bytes])
-	var resized := false
-	for index in range(3):
-		if sizes[index] > _capacities[index]:
-			if _uniform_set.is_valid():
-				_rd.free_rid(_uniform_set)
-				_uniform_set = RID()
-			if _buffers[index].is_valid():
-				_rd.free_rid(_buffers[index])
-			_capacities[index] = maxi(sizes[index], _capacities[index] * 2)
-			_buffers[index] = _rd.storage_buffer_create(_capacities[index])
-			if not _buffers[index].is_valid():
-				job.error = "Compute buffer creation failed"
-				return PackedByteArray()
-
-			resized = true
-	if resized or not _uniform_set.is_valid():
-		var uniforms: Array[RDUniform] = []
-		for index in range(3):
-			var uniform := RDUniform.new()
-			uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
-			uniform.binding = index
-			uniform.add_id(_buffers[index])
-			uniforms.append(uniform)
-		_uniform_set = _rd.uniform_set_create(uniforms, _shader, 0)
-		if not _uniform_set.is_valid():
-			job.error = "Compute uniform creation failed"
-			return PackedByteArray()
-
-	for index in range(2):
-		var bytes := job.input_bytes if index == 0 else job.index_bytes
-		var error := _rd.buffer_update(_buffers[index], 0, sizes[index], bytes)
-		if error != OK:
-			job.error = "Compute upload failed: %s" % error
-			return PackedByteArray()
-
-	var sequence := metrics.gpu_sequence
-	_rd.capture_timestamp("Compute:%d:begin" % sequence)
-	var list := _rd.compute_list_begin()
-	_rd.compute_list_bind_compute_pipeline(list, _pipeline)
-	_rd.compute_list_bind_uniform_set(list, _uniform_set, 0)
-	var counts := PackedInt32Array([job.grid.occupied.size(), job.grid.pressure_nodes.size(), job.snapshot.sheep.size() if job.snapshot.due.has(0) else 0])
-	for stage in range(3):
-		if counts[stage] == 0:
-			continue
-
-		var push := PackedInt32Array([stage]).to_byte_array()
-		_rd.compute_list_set_push_constant(list, push, push.size())
-		_rd.compute_list_dispatch(list, ceili(counts[stage] / 64.0), 1, 1)
-		_rd.compute_list_add_barrier(list)
-	_rd.compute_list_end()
-	_rd.capture_timestamp("Compute:%d:end" % sequence)
-	_rd.submit()
-	metrics.upload_submit_ms = (Time.get_ticks_usec() - started_at) / 1000.0
-	started_at = Time.get_ticks_usec()
-	_rd.sync()
-	metrics.gpu_wait_ms = (Time.get_ticks_usec() - started_at) / 1000.0
-	var begin_time: int = -1
-	for index in range(_rd.get_captured_timestamps_count()):
-		var name := _rd.get_captured_timestamp_name(index)
-		if name == "Compute:%d:begin" % sequence:
-			begin_time = _rd.get_captured_timestamp_gpu_time(index)
-		elif name == "Compute:%d:end" % sequence and begin_time >= 0:
-			metrics.gpu_ms = (_rd.get_captured_timestamp_gpu_time(index) - begin_time) / 1000000.0
-	if job.is_cancelled():
-		return PackedByteArray()
-
-	started_at = Time.get_ticks_usec()
-	var output := _rd.buffer_get_data(_buffers[2], 0, sizes[2])
-	metrics.buffer_read_ms = (Time.get_ticks_usec() - started_at) / 1000.0
-	if output.size() != sizes[2]:
-		job.error = "Compute readback size mismatch"
-	return output
-
-func run_movement(storage: AnimalData, delta: float) -> bool:
-	if not available():
-		return false
-	if storage.active_count == 0:
-		return true
-
-	var job := NumericComputeJob.new()
-	job.capture(storage, g_gameplayEngine.config, delta)
-	job.compute = self
-	_mutex.lock()
-	if _stopping or _foreground != null:
-		_mutex.unlock()
-		return false
-
-	_sequence += 1
-	job.sequence = _sequence
-	job.metrics.gpu_sequence = _sequence
-	job.metrics.backend = "gpu"
-	job.submitted_usec = Time.get_ticks_usec()
-	job.state = Job.State.PENDING
-	_foreground = job
-	_mutex.unlock()
-
-	# 1) Wait for this fixed-step numeric result before allowing dependent simulation work.
-	var waiting_at := Time.get_ticks_usec()
-	_wake.post()
-	job.completed.wait()
-	var wait_ms := (Time.get_ticks_usec() - waiting_at) / 1000.0
-	var applied_at := Time.get_ticks_usec()
-	var committed := job.commit(storage)
-
-	# 2) Record end-to-end costs, including waiting and decoding rather than GPU time alone.
-	job.metrics.main_wait_ms = wait_ms
-	job.metrics.apply_ms = (Time.get_ticks_usec() - applied_at) / 1000.0
-	job.metrics.execute_ms = (job.execution_finished_usec - job.execution_started_usec) / 1000.0
-	job.metrics.latency_ms = job.metrics.prepare_ms + (Time.get_ticks_usec() - job.submitted_usec) / 1000.0
-	job.metrics.processing_ms = job.metrics.prepare_ms + job.metrics.pack_ms + job.metrics.upload_submit_ms + maxf(0.0, job.metrics.gpu_ms) + maxf(0.0, job.metrics.buffer_read_ms) + job.metrics.decode_ms + job.metrics.apply_ms
-	var profile: ProfileService = g_gameplayEngine.profile_service
-	profile.record_duration("Numeric/" + String(job.stage) + "/MainWait", wait_ms)
-	for metric in ["prepare_ms", "pack_ms", "device_queue_ms", "upload_submit_ms", "gpu_ms", "gpu_wait_ms", "buffer_read_ms", "decode_ms", "apply_ms"]:
-		profile.record_duration("Numeric/" + String(job.stage) + "/" + metric, job.metrics.get(metric))
-	var samples: Array = numeric_samples[String(job.stage)]
-	samples.append(job.metrics.to_dictionary())
-	if samples.size() > 4096:
-		samples.pop_front()
-
-	if not committed:
-		_mutex.lock()
-		_failure = job.error if not job.error.is_empty() else "Movement result no longer matches the simulation step"
-		_mutex.unlock()
-		profile.count_event("Failed/" + String(job.stage))
-		return false
-
-	job.state = Job.State.APPLIED
-	return true
-
-func execute_numeric_gpu(job: NumericComputeJob) -> PackedByteArray:
-	assert(OS.get_thread_caller_id() == owner_thread_id)
-	var kernel: Dictionary = _numeric_kernels[0]
-	var started_at := Time.get_ticks_usec()
-	var parameters := job.parameters.to_byte_array()
-	var sizes := PackedInt32Array([maxi(4, job.input_bytes.size()), job.index_bytes.size(), job.metrics.download_bytes, parameters.size()])
-	for index in range(4):
-		if sizes[index] <= kernel.capacities[index]:
-			continue
-
-		if kernel.uniform.is_valid():
-			_rd.free_rid(kernel.uniform)
-			kernel.uniform = RID()
-		if kernel.buffers[index].is_valid():
-			_rd.free_rid(kernel.buffers[index])
-		kernel.capacities[index] = maxi(sizes[index], kernel.capacities[index] * 2)
-		kernel.buffers[index] = _rd.storage_buffer_create(kernel.capacities[index])
-		if not kernel.buffers[index].is_valid():
-			job.error = "Numeric buffer creation failed"
-			return PackedByteArray()
-		if index == 3:
-			kernel.parameters = PackedByteArray()
-	if not kernel.uniform.is_valid():
-		var uniforms: Array[RDUniform] = []
-		for index in range(4):
-			var uniform := RDUniform.new()
-			uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
-			uniform.binding = index
-			uniform.add_id(kernel.buffers[index])
-			uniforms.append(uniform)
-		kernel.uniform = _rd.uniform_set_create(uniforms, kernel.shader, 0)
-		if not kernel.uniform.is_valid():
-			job.error = "Numeric uniform creation failed"
-			return PackedByteArray()
-
-	for index in [0, 1, 3]:
-		if index == 3 and parameters == kernel.parameters:
-			continue
-
-		if index == 3:
-			job.metrics.upload_bytes += parameters.size()
-		var bytes := parameters if index == 3 else (job.input_bytes if index == 0 else job.index_bytes)
-		if not bytes.is_empty() and _rd.buffer_update(kernel.buffers[index], 0, bytes.size(), bytes) != OK:
-			job.error = "Numeric upload failed"
-			return PackedByteArray()
-	kernel.parameters = parameters
-	var sequence := job.sequence
-	_rd.capture_timestamp("Numeric:%d:begin" % sequence)
-	var list := _rd.compute_list_begin()
-	_rd.compute_list_bind_compute_pipeline(list, kernel.pipeline)
-	_rd.compute_list_bind_uniform_set(list, kernel.uniform, 0)
-	_rd.compute_list_dispatch(list, maxi(1, ceili(job.count / 64.0)), 1, 1)
-	_rd.compute_list_end()
-	_rd.capture_timestamp("Numeric:%d:end" % sequence)
-	_rd.submit()
-	job.metrics.upload_submit_ms = (Time.get_ticks_usec() - started_at) / 1000.0
-	started_at = Time.get_ticks_usec()
-	_rd.sync()
-	job.metrics.gpu_wait_ms = (Time.get_ticks_usec() - started_at) / 1000.0
-	var begin_time: int = -1
-	for index in range(_rd.get_captured_timestamps_count()):
-		var name := _rd.get_captured_timestamp_name(index)
-		if name == "Numeric:%d:begin" % sequence:
-			begin_time = _rd.get_captured_timestamp_gpu_time(index)
-		elif name == "Numeric:%d:end" % sequence and begin_time >= 0:
-			job.metrics.gpu_ms = (_rd.get_captured_timestamp_gpu_time(index) - begin_time) / 1000000.0
-	started_at = Time.get_ticks_usec()
-	var bytes: PackedByteArray = _rd.buffer_get_data(kernel.buffers[2], 0, sizes[2])
-	job.metrics.buffer_read_ms = (Time.get_ticks_usec() - started_at) / 1000.0
-	if bytes.size() != sizes[2]:
-		job.error = "Numeric readback size mismatch"
-	return bytes
-
 func _release_device() -> void:
 	if _rd == null:
 		return
 
-	for kernel: Dictionary in _numeric_kernels.values():
+	for kernel in [movement_resources]:
 		if kernel.uniform.is_valid():
 			_rd.free_rid(kernel.uniform)
 		for buffer: RID in kernel.buffers:
@@ -483,20 +256,52 @@ func _release_device() -> void:
 			_rd.free_rid(kernel.pipeline)
 		if kernel.shader.is_valid():
 			_rd.free_rid(kernel.shader)
-	_numeric_kernels.clear()
-	if _uniform_set.is_valid():
-		_rd.free_rid(_uniform_set)
-	for buffer in _buffers:
+	if sheep_resources.uniform.is_valid():
+		_rd.free_rid(sheep_resources.uniform)
+	for buffer in sheep_resources.buffers:
 		if buffer.is_valid():
 			_rd.free_rid(buffer)
-	if _pipeline.is_valid():
-		_rd.free_rid(_pipeline)
-	if _shader.is_valid():
-		_rd.free_rid(_shader)
+	if sheep_resources.pipeline.is_valid():
+		_rd.free_rid(sheep_resources.pipeline)
+	if sheep_resources.shader.is_valid():
+		_rd.free_rid(sheep_resources.shader)
 	_rd.free()
 	_rd = null
-	_shader = RID()
-	_pipeline = RID()
-	_uniform_set = RID()
-	_buffers = [RID(), RID(), RID()]
-	_capacities = PackedInt32Array([0, 0, 0])
+	movement_resources = Resources.new(4)
+	sheep_resources.device = null
+	sheep_resources.shader = RID()
+	sheep_resources.pipeline = RID()
+	sheep_resources.uniform = RID()
+	sheep_resources.buffers = [RID(), RID(), RID()]
+	sheep_resources.capacities = PackedInt32Array([0, 0, 0])
+
+func submit_numeric(job: NumericComputeJob) -> bool:
+	if not available() or job == null or job.state != Job.State.IDLE:
+		return false
+
+	_mutex.lock()
+	if _stopping or _foreground != null:
+		_mutex.unlock()
+		return false
+
+	_sequence += 1
+	job.resources = movement_resources
+	job.sequence = _sequence
+	job.metrics.gpu_sequence = _sequence
+	job.metrics.backend = "gpu"
+	job.submitted_usec = Time.get_ticks_usec()
+	job.state = Job.State.PENDING
+	_foreground = job
+	_mutex.unlock()
+	_wake.post()
+	return true
+
+func wait_for(job: NumericComputeJob) -> float:
+	var started_at := Time.get_ticks_usec()
+	job.completed.wait()
+	return (Time.get_ticks_usec() - started_at) / 1000.0
+
+func report_failure(message: String) -> void:
+	_mutex.lock()
+	_failure = message
+	_mutex.unlock()

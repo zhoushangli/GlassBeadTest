@@ -7,7 +7,7 @@ var data: AnimalData
 var animal: AnimalEntity
 
 func _setup() -> void:
-	data = g_gameplayEngine.entity_service.data
+	data = g_gameplayEngine.data_service.animals
 	animal = blackboard.get_var(&"animal", null)
 
 func _generate_name() -> String:
@@ -20,19 +20,19 @@ func _tick(_delta: float) -> Status:
 	var met := false
 	match condition:
 		&"has_threat":
-			met = data.live(data.memory_target[animal.row]) != null
+			met = data.live(data.memory.target[animal.row]) != null
 		&"has_nearby_dog":
-			met = data.live(data.wolf_nearest_threat[animal.row]) != null
+			met = data.live(data.wolf.nearest_threat[animal.row]) != null
 		&"needs_rest":
-			met = data.wolf_resting[animal.row] or (data.wolf_retreating[animal.row] and data.live(data.wolf_nearest_threat[animal.row]) == null)
+			met = data.wolf.resting[animal.row] or (data.wolf.retreating[animal.row] and data.live(data.wolf.nearest_threat[animal.row]) == null)
 		&"has_lost_prey":
-			met = data.wolf_hunting[animal.row] and not data.memory_target_visible[animal.row]
+			met = data.wolf.hunting[animal.row] and not data.memory.target_visible[animal.row]
 		&"has_prey":
-			met = data.wolf_hunting[animal.row]
+			met = data.wolf.hunting[animal.row]
 		&"can_charge":
 			met = g_gameplayEngine.wolf_system.can_charge(animal)
 		&"must_return":
-			met = data.dog_returning[animal.row] != 0
+			met = data.dog.returning[animal.row] != 0
 		&"has_stray":
-			met = data.live(data.dog_collected_sheep[animal.row]) != null
+			met = data.live(data.dog.collected_sheep[animal.row]) != null
 	return SUCCESS if met else FAILURE
